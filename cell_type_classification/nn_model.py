@@ -233,130 +233,81 @@ def analyze_lrp_classwise(model, lrp, X_test, y_test, test_correct_indices, gene
 
 def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn'):
     import traceback
-
     print(f"Explaining PyTorch model predictions using SHAP for model {save_name}")
-
     try:
         model.eval()
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        results_dir = os.path.join(base_dir, 'results')
-        os.makedirs(results_dir, exist_ok=True)
-
-        test_loader = torch.utils.data.DataLoader(test_data, batch_size=len(test_data), shuffle=False)
+        test_loader = DataLoader(test_data, batch_size=len(test_data), shuffle=False)
         X_all, y_all = next(iter(test_loader))
         X_all, y_all = X_all.to(device), y_all.to(device)
     except Exception as e:
-        print(f"Error preparing test data or model evaluation: {e}")
+        print(f"Error preparing test data: {e}")
         print(traceback.format_exc())
         return
-
     try:
         with torch.no_grad():
             outputs = model(X_all)
             y_pred = torch.argmax(outputs, dim=1)
-
         correct_mask = (y_pred == y_all)
         correct_indices = correct_mask.nonzero(as_tuple=True)[0]
-
         if len(correct_indices) == 0:
-            raise ValueError("No correctly predicted samples found in test set.")
-
+            raise ValueError("No correctly predicted samples in test set.")
         X_correct = X_all[correct_indices].detach().cpu().numpy()
         correct_labels = y_all[correct_indices].cpu().numpy()
         y_pred_np = y_pred[correct_indices].cpu().numpy()
-
-        print("Shape of correct_labels:", correct_labels.shape)
-
-        num_classes = len(le.classes_)
-        count_class = {i: (correct_labels == i).sum() for i in range(num_classes)}
-
-        print("Counts of correctly predicted labels per class:")
-        for label, count in count_class.items():
-            print(f"{label}: {count}")
-
     except Exception as e:
-        print(f"Error during model prediction or data extraction: {e}")
+        print(f"Error during model prediction/data extraction: {e}")
         print(traceback.format_exc())
         return
-
     try:
-        def model_forward(x_np):
-            x_tensor = torch.tensor(x_np, dtype=torch.float32).to(device)
-            with torch.no_grad():
-                out = model(x_tensor)
-            return out.cpu().numpy()
-
-        background_size = min(100, X_correct.shape[0])
-        X_background = X_correct[:background_size]
-
-        explainer = shap.DeepExplainer(model, torch.tensor(X_background, dtype=torch.float32).to(device))
-
-        shap_values_correct = explainer.shap_values(torch.tensor(X_correct, dtype=torch.float32).to(device))
-
-
-        print(f"SHAP values computed for {len(correct_indices)} correctly predicted samples.")
+        backbone = nn.Sequential(
+            model.fc1,
+            model.relu,
+            model.dropout1,
+            model.fc2,
+            model.relu,
+            model.dropout2
+        ).to(device)
+        head = model.fc3.to(device)
+        X_bg = X_correct[:min(100, len(X_correct))]
+        hb = backbone(torch.tensor(X_bg, dtype=torch.float32).to(device))
+        hc = backbone(torch.tensor(X_correct, dtype=torch.float32).to(device))
+    except Exception as e:
+        print(f"Error computing hidden representations: {e}")
+        print(traceback.format_exc())
+        return
+    try:
+        explainer = shap.DeepExplainer(head, hb)
+        shap_vals = explainer.shap_values(hc)
+        print(f"SHAP values computed for {len(X_correct)} correctly predicted samples.")
     except Exception as e:
         print(f"Error during SHAP explanation: {e}")
         print(traceback.format_exc())
         return
-
     try:
         shap_matrix = []
-        for i, idx in enumerate(correct_indices):
-            pred_class = y_pred_np[i]
-            shap_array = shap_values_correct[pred_class][i]
-            shap_matrix.append(shap_array)
-
-            if i < 3:
-                print(f"Sample {i}: SHAP values shape = {shap_array.shape} for predicted class {pred_class}")
-
-            assert len(shap_array) == len(feature_names), \
-                f"SHAP value length {len(shap_array)} doesn't match feature count {len(feature_names)}"
-
-        shap_matrix = np.array(shap_matrix)
-        print(f"Final SHAP matrix shape: {shap_matrix.shape}")
-    except Exception as e:
-        print(f"Error processing SHAP values: {e}")
-        print(traceback.format_exc())
-        return
-
-    try:
+        for i in range(len(shap_vals)):
+            cls = i
+            for sample_shap in shap_vals[i]:
+                shap_matrix.append((cls, sample_shap))
+        df_records = []
         K = 15
-        csv_path = os.path.join(results_dir, f"{save_name}_top_bottom15_genes_all_classes_from_shap_matrix.csv")
-
-        with open(csv_path, mode='w', newline='') as csvfile:
-            writer = csv.writer(csvfile)
-            writer.writerow(['class_name', 'gene', 'shap_value', 'rank_type'])
-
-            for cls in range(num_classes):
-                class_indices = np.where((correct_labels == cls) & (y_pred_np == cls))[0]
-
-                if len(class_indices) == 0:
-                    print(f"Class {cls}: No correctly predicted samples.")
-                    continue
-
-                shap_cls = shap_matrix[class_indices]
-                mean_shap_cls = np.mean(shap_cls, axis=0)
-
-                top_idx = np.argsort(-mean_shap_cls)[:K]
-                bottom_idx = np.argsort(mean_shap_cls)[:K]
-
-                top_features = [feature_names[i] for i in top_idx]
-                top_values = mean_shap_cls[top_idx]
-
-                bottom_features = [feature_names[i] for i in bottom_idx]
-                bottom_values = mean_shap_cls[bottom_idx]
-
-                class_name = le.inverse_transform([cls])[0]
-
-                for gene, val in zip(top_features, top_values):
-                    writer.writerow([class_name, gene, f"{val:.4f}", 'top'])
-
-                for gene, val in zip(bottom_features, bottom_values):
-                    writer.writerow([class_name, gene, f"{val:.4f}", 'bottom'])
-
-        print(f"Saved top and bottom {K} genes for all classes to {csv_path}")
+        for cls in range(len(le.classes_)):
+            class_arr = np.vstack([s for c, s in shap_matrix if c == cls])
+            if class_arr.size == 0:
+                continue
+            mean_shap = class_arr.mean(axis=0)
+            top_idx = np.argsort(-mean_shap)[:K]
+            bottom_idx = np.argsort(mean_shap)[:K]
+            for i in top_idx:
+                df_records.append([le.inverse_transform([cls])[0], feature_names[i], mean_shap[i], 'top'])
+            for i in bottom_idx:
+                df_records.append([le.inverse_transform([cls])[0], feature_names[i], mean_shap[i], 'bottom'])
+        df = pd.DataFrame(df_records, columns=['class_name', 'gene', 'shap_value', 'rank_type'])
+        csv_path = os.path.join('results', f"{save_name}_top_bottom15_genes_from_shap.csv")
+        df.to_csv(csv_path, index=False)
+        print(f"SHAP results saved to {csv_path}")
     except Exception as e:
-        print(f"Error writing SHAP results to CSV: {e}")
+        print(f"Error writing SHAP results: {e}")
         print(traceback.format_exc())
         return
+
