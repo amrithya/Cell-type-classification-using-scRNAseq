@@ -268,7 +268,7 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
             model.dropout2
         ).to(device)
         head = model.fc3.to(device)
-        X_bg = X_correct[:min(100, len(X_correct))]
+        X_bg = X_correct.copy()
         hb = backbone(torch.tensor(X_bg, dtype=torch.float32).to(device))
         hc = backbone(torch.tensor(X_correct, dtype=torch.float32).to(device))
     except Exception as e:
