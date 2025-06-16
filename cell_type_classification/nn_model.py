@@ -289,8 +289,10 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
         background_size = min(100, X_correct.shape[0])
         X_background = X_correct[:background_size]
 
-        explainer = shap.DeepExplainer(model_forward, X_background)
-        shap_values_correct = explainer.shap_values(X_correct)
+        explainer = shap.DeepExplainer(model, torch.tensor(X_background, dtype=torch.float32).to(device))
+
+        shap_values_correct = explainer.shap_values(torch.tensor(X_correct, dtype=torch.float32).to(device))
+
 
         print(f"SHAP values computed for {len(correct_indices)} correctly predicted samples.")
     except Exception as e:
