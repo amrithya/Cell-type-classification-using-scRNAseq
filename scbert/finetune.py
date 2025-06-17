@@ -26,6 +26,7 @@ import anndata as ad
 from utils import *
 import pickle as pkl
 from tqdm import tqdm
+import shap
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--local_rank", "--local-rank", type=int, default=-1)
@@ -74,6 +75,93 @@ seed_all(SEED + torch.distributed.get_rank())
 
 print(f"[Init] Seed: {SEED}, Epochs: {EPOCHS}, Batch size: {BATCH_SIZE}, LR: {LEARNING_RATE}")
 print(f"[Init] Using {world_size} GPUs, local_rank: {local_rank}")
+
+class SCBERTWrapper(torch.nn.Module):
+    """Wrap SCBERT model to expose input at embedding level."""
+    def __init__(self, model):
+        super().__init__()
+        self.model = model
+    
+    def forward(self, x_emb):
+        return self.model.module.performer.forward_from_embedding(x_emb)
+
+def run_shap_analysis(model, val_loader, device, save_name="scbert"):
+    model.eval()
+    
+    all_data = []
+    all_labels = []
+    all_preds = []
+    
+    with torch.no_grad():
+        for data, labels in val_loader:
+            data = data.to(device)
+            logits = model(data)
+            preds = logits.argmax(dim=-1)
+            
+            all_data.append(data.cpu())
+            all_labels.append(labels.cpu())
+            all_preds.append(preds.cpu())
+    
+    all_data = torch.cat(all_data)
+    all_labels = torch.cat(all_labels)
+    all_preds = torch.cat(all_preds)
+    
+    correct_mask = (all_labels == all_preds)
+    correct_data = all_data[correct_mask]
+    correct_labels = all_labels[correct_mask]
+    
+    if correct_data.shape[0] == 0:
+        print("[SHAP] No correctly predicted samples found.")
+        return
+    
+    background_data = correct_data.to(device)
+    test_data = correct_data.to(device)
+    test_labels = correct_labels
+
+    if test_data.shape[0] == 0:
+        print("[SHAP] No correctly predicted samples available for SHAP.")
+        return
+    
+    background_emb = model.module.performer.token_emb(background_data.to(device))
+    test_emb = model.module.performer.token_emb(test_data.to(device))
+    
+    wrapper = SCBERTWrapper(model)
+    explainer = shap.DeepExplainer(wrapper, background_emb)
+    shap_values = explainer.shap_values(test_emb)
+    
+    df_records = []
+    shap_values = np.array(shap_values)
+    
+    for sample_idx, label in enumerate(test_labels.numpy()):
+        class_idx = int(label)
+        class_shap = shap_values[class_idx][sample_idx]
+        gene_shap = np.mean(class_shap, axis=-1)
+        
+        gene_shap = gene_shap[:-1]
+        
+        top_idx = np.argsort(gene_shap)[-15:]
+        for gene_id in top_idx:
+            df_records.append((
+                f"class_{class_idx}",
+                f"gene_{gene_id}",
+                gene_shap[gene_id],
+                "top15"
+            ))
+        
+        bottom_idx = np.argsort(gene_shap)[:15]
+        for gene_id in bottom_idx:
+            df_records.append((
+                f"class_{class_idx}",
+                f"gene_{gene_id}",
+                gene_shap[gene_id],
+                "bottom15"
+            ))
+    
+    df = pd.DataFrame(df_records, columns=['class_name', 'gene', 'shap_value', 'rank_type'])
+    os.makedirs('results', exist_ok=True)
+    csv_path = os.path.join('results', f"{save_name}_top_bottom15_genes_from_shap.csv")
+    df.to_csv(csv_path, index=False)
+    print(f"[SHAP] Results saved to {csv_path}")
 
 class SCDataset(Dataset):
     def __init__(self, data, label):
@@ -270,6 +358,8 @@ for i in range(1, EPOCHS + 1):
             print(f'==  Epoch: {i} | Validation Loss: {val_loss:.6f} | F1 Score: {f1:.6f}  ==')
             print(confusion_matrix(truths, predictions))
             print(classification_report(truths, predictions, target_names=label_dict.tolist(), digits=4))
+            run_shap_analysis(model, val_loader, device, save_name="scbert")
+
         if cur_acc > max_acc:
             max_acc = cur_acc
             trigger_times = 0
