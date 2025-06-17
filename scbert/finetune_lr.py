@@ -147,6 +147,7 @@ def extract_cls_embeddings(model, dataloader, device):
     for data, label in tqdm(dataloader, desc="Extracting embeddings"):
         data = data.to(device)
         print("Input shape before model:", data.shape)
+        print(data.dtype)
         with torch.no_grad():
             out = model.module.performer(data) 
         print("Output shape after model:", out.shape)
