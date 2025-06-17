@@ -115,7 +115,7 @@ train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, sampler=train_sa
 val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, sampler=val_sampler)
 
 model = PerformerLM(
-    num_tokens=len(label_dict) + 2,
+    num_tokens=7,
     dim=200,
     depth=6,
     max_seq_len=SEQ_LEN,
