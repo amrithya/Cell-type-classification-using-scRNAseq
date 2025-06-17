@@ -149,7 +149,7 @@ def extract_cls_embeddings(model, dataloader, device):
         print("Input shape before model:", data.shape)
         print(data.dtype)
         with torch.no_grad():
-            out = model.module.performer(data) 
+            out = model(data) 
         print("Output shape after model:", out.shape)
         cls_emb = out[:, 0, :].cpu().numpy()
         embeddings.append(cls_emb)
