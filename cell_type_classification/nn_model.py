@@ -232,8 +232,8 @@ def analyze_lrp_classwise(model, lrp, X_test, y_test, test_correct_indices, gene
     df.to_csv(results_file, mode='a', header=not os.path.exists(results_file), index=False)
 
 
-def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn'):
 
+def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn'):
     print(f"Explaining PyTorch model predictions using SHAP for model {save_name}")
 
     try:
@@ -256,6 +256,16 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
 
         if len(correct_indices) == 0:
             raise ValueError("No correctly predicted samples in test set.")
+        
+        correct_labels = y_all[correct_indices]
+        print("Shape of correct_labels:", correct_labels.shape)
+
+        num_classes = len(le.classes_)
+        count_class = {i: (correct_labels == i).sum().item() for i in range(num_classes)}
+
+        print("Counts of correctly predicted labels per class:")
+        for label, count in count_class.items():
+            print(f"{label}: {count}")
 
         X_correct = X_all[correct_indices]
         y_correct = y_all[correct_indices]
@@ -272,6 +282,8 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
         shap_vals = explainer.shap_values(X_correct)
 
         print(f"SHAP values computed for {len(X_correct)} correctly predicted samples.")
+        print(f"Number of SHAP classes: {len(shap_vals)}")
+        print(f"Number of LabelEncoder classes: {len(le.classes_)}")
     except Exception as e:
         print(f"Error during SHAP explanation: {e}")
         print(traceback.format_exc())
@@ -279,9 +291,13 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
 
     try:
         df_records = []
-        K = 15  
+        K = 15  # top/bottom feature count
 
         for cls_idx, cls_shap in enumerate(shap_vals):
+            if cls_idx >= len(le.classes_):
+                print(f"Warning: SHAP returned class index {cls_idx} not present in LabelEncoder. Skipping.")
+                continue
+
             mean_shap = np.abs(cls_shap).mean(axis=0)
 
             top_idx = np.argsort(-mean_shap)[:K]
@@ -306,5 +322,3 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
         print(f"Error writing SHAP results: {e}")
         print(traceback.format_exc())
         return
-
-
