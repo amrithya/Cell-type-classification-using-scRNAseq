@@ -256,49 +256,44 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
 
         if len(correct_indices) == 0:
             raise ValueError("No correctly predicted samples in test set.")
-        
-        correct_labels = y_all[correct_indices]
-        print("Shape of correct_labels:", correct_labels.shape)
-
-        num_classes = len(le.classes_)
-        count_class = {i: (correct_labels == i).sum().item() for i in range(num_classes)}
-
-        print("Counts of correctly predicted labels per class:")
-        for label, count in count_class.items():
-            print(f"{label}: {count}")
 
         X_correct = X_all[correct_indices]
         y_correct = y_all[correct_indices]
         y_pred_correct = y_pred[correct_indices]
+
+        num_classes = len(le.classes_)
+        count_class = {i: (y_correct == i).sum().item() for i in range(num_classes)}
+
+        print("Counts of correctly predicted labels per class:")
+        for label, count in count_class.items():
+            class_name = le.inverse_transform([label])[0]
+            print(f"{class_name} ({label}): {count}")
+
     except Exception as e:
         print(f"Error during model prediction/data extraction: {e}")
         print(traceback.format_exc())
         return
 
     try:
-        X_bg = X_correct.detach().cpu().numpy()
-
-        explainer = shap.GradientExplainer(model, torch.tensor(X_bg, dtype=torch.float32).to(device))
-        shap_vals = explainer.shap_values(X_correct)
-
-        print(f"SHAP values computed for {len(X_correct)} correctly predicted samples.")
-        print(f"Number of SHAP classes: {len(shap_vals)}")
-        print(f"Number of LabelEncoder classes: {len(le.classes_)}")
-    except Exception as e:
-        print(f"Error during SHAP explanation: {e}")
-        print(traceback.format_exc())
-        return
-
-    try:
         df_records = []
-        K = 15  # top/bottom feature count
+        K = 15
 
-        for cls_idx, cls_shap in enumerate(shap_vals):
-            if cls_idx >= len(le.classes_):
-                print(f"Warning: SHAP returned class index {cls_idx} not present in LabelEncoder. Skipping.")
+        X_bg = X_correct.detach().cpu()
+
+        explainer = shap.GradientExplainer(model, X_bg.to(device))
+
+        for cls_idx in range(num_classes):
+            class_correct_indices = (y_pred_correct == cls_idx).nonzero(as_tuple=True)[0]
+
+            if len(class_correct_indices) == 0:
+                print(f"Skipping class {cls_idx} (no correct predictions).")
                 continue
 
-            mean_shap = np.abs(cls_shap).mean(axis=0)
+            X_cls_correct = X_correct[class_correct_indices]
+
+            shap_vals = explainer.shap_values(X_cls_correct)
+
+            mean_shap = shap_vals[cls_idx].mean(axis=0)
 
             top_idx = np.argsort(-mean_shap)[:K]
             bottom_idx = np.argsort(mean_shap)[:K]
@@ -306,9 +301,9 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
             class_name = le.inverse_transform([cls_idx])[0]
 
             for i in top_idx:
-                df_records.append([class_name, feature_names[i], mean_shap[i], 'top'])
+                df_records.append([class_name, feature_names[i], mean_shap[i], 'top_positive'])
             for i in bottom_idx:
-                df_records.append([class_name, feature_names[i], mean_shap[i], 'bottom'])
+                df_records.append([class_name, feature_names[i], mean_shap[i], 'top_negative'])
 
         df = pd.DataFrame(df_records, columns=['class_name', 'gene', 'shap_value', 'rank_type'])
 
@@ -319,6 +314,6 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
         print(f"SHAP results saved to {csv_path}")
 
     except Exception as e:
-        print(f"Error writing SHAP results: {e}")
+        print(f"Error during SHAP explanation or saving results: {e}")
         print(traceback.format_exc())
         return
