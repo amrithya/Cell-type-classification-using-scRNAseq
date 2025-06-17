@@ -42,7 +42,7 @@ parser.add_argument("--pos_embed", type=bool, default=True)
 parser.add_argument("--data_path", type=str, default='./data/Zheng68K.h5ad')
 parser.add_argument("--model_path", type=str, default='./panglao_pretrained.pth')
 parser.add_argument("--ckpt_dir", type=str, default='./ckpts/')
-parser.add_argument("--model_name", type=str, default='finetune')
+parser.add_argument("--model_name", type=str, default='scbert_finetune')
 
 args = parser.parse_args()
 rank = int(os.environ["RANK"])
@@ -75,6 +75,8 @@ seed_all(SEED + torch.distributed.get_rank())
 
 print(f"[Init] Seed: {SEED}, Epochs: {EPOCHS}, Batch size: {BATCH_SIZE}, LR: {LEARNING_RATE}")
 print(f"[Init] Using {world_size} GPUs, local_rank: {local_rank}")
+
+
 
 class SCBERTWrapper(torch.nn.Module):
     """Wrap SCBERT model to expose input at embedding level."""
@@ -203,6 +205,7 @@ class Identity(nn.Module):
             print(f"Shape after Identity: {x.shape}")
             self._printed = True
         return x
+    
 
 try:
     print("Loading data...")
@@ -284,7 +287,17 @@ dist.barrier()
 trigger_times = 0
 max_acc = 0.0
 
-for i in range(1, EPOCHS + 1):
+start_epoch = 1
+latest_ckpt_path = f"/data1/data/corpus/scMODEL/{model_name}_model_Zheng68K.pkl"
+if os.path.exists(latest_ckpt_path):
+    print(f"[RESUME] Loading checkpoint from {latest_ckpt_path}")
+    checkpoint = torch.load(latest_ckpt_path, map_location=device)
+    model.load_state_dict(checkpoint['model_state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+    start_epoch = checkpoint['epoch'] + 1
+
+for i in range(start_epoch, EPOCHS + 1):
     train_loader.sampler.set_epoch(i)
     model.train()
     dist.barrier()
@@ -363,7 +376,8 @@ for i in range(1, EPOCHS + 1):
         if cur_acc > max_acc:
             max_acc = cur_acc
             trigger_times = 0
-            save_ckpt(i, model, optimizer, scheduler, val_loss, model_name, ckpt_dir)
+            save_model_dir = "/data1/data/corpus/scMODEL/"
+            save_ckpt(i, model, optimizer, scheduler, val_loss, model_name, save_model_dir)
         else:
             trigger_times += 1
             if trigger_times > PATIENCE:
