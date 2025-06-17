@@ -151,7 +151,7 @@ if is_master:
     print(f"[Split] Train: {len(train_dataset)}, Validation: {len(val_dataset)}")
 
 model = PerformerLM(
-    num_tokens=CLASS,
+    num_tokens=7,
     dim=200,
     depth=6,
     max_seq_len=SEQ_LEN,
