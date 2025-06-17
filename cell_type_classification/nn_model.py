@@ -3,6 +3,7 @@ import csv
 import copy
 import torch
 import shap
+import traceback
 import argparse
 import numpy as np
 import pandas as pd
@@ -232,8 +233,9 @@ def analyze_lrp_classwise(model, lrp, X_test, y_test, test_correct_indices, gene
 
 
 def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn'):
-    import traceback
+
     print(f"Explaining PyTorch model predictions using SHAP for model {save_name}")
+
     try:
         model.eval()
         test_loader = DataLoader(test_data, batch_size=len(test_data), shuffle=False)
@@ -243,71 +245,66 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
         print(f"Error preparing test data: {e}")
         print(traceback.format_exc())
         return
+
     try:
         with torch.no_grad():
             outputs = model(X_all)
             y_pred = torch.argmax(outputs, dim=1)
+
         correct_mask = (y_pred == y_all)
         correct_indices = correct_mask.nonzero(as_tuple=True)[0]
+
         if len(correct_indices) == 0:
             raise ValueError("No correctly predicted samples in test set.")
-        X_correct = X_all[correct_indices].detach().cpu().numpy()
-        correct_labels = y_all[correct_indices].cpu().numpy()
-        y_pred_np = y_pred[correct_indices].cpu().numpy()
+
+        X_correct = X_all[correct_indices]
+        y_correct = y_all[correct_indices]
+        y_pred_correct = y_pred[correct_indices]
     except Exception as e:
         print(f"Error during model prediction/data extraction: {e}")
         print(traceback.format_exc())
         return
+
     try:
-        backbone = nn.Sequential(
-            model.fc1,
-            model.relu,
-            model.dropout1,
-            model.fc2,
-            model.relu,
-            model.dropout2
-        ).to(device)
-        head = model.fc3.to(device)
-        X_bg = X_correct.copy()
-        hb = backbone(torch.tensor(X_bg, dtype=torch.float32).to(device))
-        hc = backbone(torch.tensor(X_correct, dtype=torch.float32).to(device))
-    except Exception as e:
-        print(f"Error computing hidden representations: {e}")
-        print(traceback.format_exc())
-        return
-    try:
-        explainer = shap.DeepExplainer(head, hb)
-        shap_vals = explainer.shap_values(hc)
+        X_bg = X_correct.detach().cpu().numpy()
+
+        explainer = shap.DeepExplainer(model, torch.tensor(X_bg, dtype=torch.float32).to(device))
+        shap_vals = explainer.shap_values(X_correct)
+
         print(f"SHAP values computed for {len(X_correct)} correctly predicted samples.")
     except Exception as e:
         print(f"Error during SHAP explanation: {e}")
         print(traceback.format_exc())
         return
+
     try:
-        shap_matrix = []
-        for i in range(len(shap_vals)):
-            cls = i
-            for sample_shap in shap_vals[i]:
-                shap_matrix.append((cls, sample_shap))
         df_records = []
-        K = 15
-        for cls in range(len(le.classes_)):
-            class_arr = np.vstack([s for c, s in shap_matrix if c == cls])
-            if class_arr.size == 0:
-                continue
-            mean_shap = class_arr.mean(axis=0)
+        K = 15  
+
+        for cls_idx, cls_shap in enumerate(shap_vals):
+            mean_shap = np.abs(cls_shap).mean(axis=0)
+
             top_idx = np.argsort(-mean_shap)[:K]
             bottom_idx = np.argsort(mean_shap)[:K]
+
+            class_name = le.inverse_transform([cls_idx])[0]
+
             for i in top_idx:
-                df_records.append([le.inverse_transform([cls])[0], feature_names[i], mean_shap[i], 'top'])
+                df_records.append([class_name, feature_names[i], mean_shap[i], 'top'])
             for i in bottom_idx:
-                df_records.append([le.inverse_transform([cls])[0], feature_names[i], mean_shap[i], 'bottom'])
+                df_records.append([class_name, feature_names[i], mean_shap[i], 'bottom'])
+
         df = pd.DataFrame(df_records, columns=['class_name', 'gene', 'shap_value', 'rank_type'])
+
+        os.makedirs('results', exist_ok=True)
         csv_path = os.path.join('results', f"{save_name}_top_bottom15_genes_from_shap.csv")
         df.to_csv(csv_path, index=False)
+
         print(f"SHAP results saved to {csv_path}")
+
     except Exception as e:
         print(f"Error writing SHAP results: {e}")
         print(traceback.format_exc())
         return
+
 
