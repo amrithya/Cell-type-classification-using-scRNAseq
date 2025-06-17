@@ -268,7 +268,7 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
     try:
         X_bg = X_correct.detach().cpu().numpy()
 
-        explainer = shap.DeepExplainer(model, torch.tensor(X_bg, dtype=torch.float32).to(device))
+        explainer = shap.GradientExplainer(model, torch.tensor(X_bg, dtype=torch.float32).to(device))
         shap_vals = explainer.shap_values(X_correct)
 
         print(f"SHAP values computed for {len(X_correct)} correctly predicted samples.")
