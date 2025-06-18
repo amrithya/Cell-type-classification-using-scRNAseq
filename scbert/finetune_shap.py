@@ -12,6 +12,7 @@ from scipy import sparse
 from sklearn.model_selection import train_test_split, ShuffleSplit, StratifiedShuffleSplit, StratifiedKFold
 from sklearn.metrics import accuracy_score, f1_score, confusion_matrix, precision_recall_fscore_support, classification_report
 import torch
+import shap
 from torch import nn
 from torch.optim import Adam, SGD, AdamW
 from torch.nn import functional as F
@@ -63,7 +64,7 @@ CLASS = args.bin_num + 2
 POS_EMBED_USING = args.pos_embed
 
 model_name = args.model_name
-ckpt_dir = args.ckpt_dir
+ckpt_dir = "/data1/data/corpus/scMODEL/bert_model_Zheng68K.pkl"
 
 dist.init_process_group(backend='nccl')
 torch.cuda.set_device(local_rank)
@@ -74,6 +75,11 @@ seed_all(SEED + torch.distributed.get_rank())
 
 print(f"[Init] Seed: {SEED}, Epochs: {EPOCHS}, Batch size: {BATCH_SIZE}, LR: {LEARNING_RATE}")
 print(f"[Init] Using {world_size} GPUs, local_rank: {local_rank}")
+
+def get_unwrapped_model(model_ddp):
+    if hasattr(model_ddp, 'module'):
+        return model_ddp.module
+    return model_ddp
 
 class SCDataset(Dataset):
     def __init__(self, data, label):
@@ -196,7 +202,32 @@ dist.barrier()
 trigger_times = 0
 max_acc = 0.0
 
-for i in range(1, EPOCHS + 1):
+start_epoch = 1
+
+if os.path.exists(ckpt_dir):
+    print(f"[INFO] Found checkpoint at {ckpt_dir}. Loading...")
+    checkpoint = torch.load(ckpt_dir, map_location='cpu')
+    if 'model_state_dict' in checkpoint:
+        model.load_state_dict(checkpoint['model_state_dict'])
+        print("[INFO] Model state loaded.")
+    if 'optimizer_state_dict' in checkpoint:
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        print("[INFO] Optimizer state loaded.")
+    if 'scheduler_state_dict' in checkpoint:
+        scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+        print("[INFO] Scheduler state loaded.")
+    if 'epoch' in checkpoint:
+        saved_epoch = checkpoint['epoch']
+        print(f"[INFO] Checkpoint saved at epoch {saved_epoch}.")
+        if saved_epoch < EPOCHS:
+            start_epoch = saved_epoch + 1
+        else:
+            print("[INFO] Checkpoint epoch >= total epochs, starting from scratch.")
+else:
+    print(f"[INFO] No checkpoint found at {ckpt_dir}, starting training from epoch 1.")
+
+
+for i in range(start_epoch, EPOCHS + 1):
     train_loader.sampler.set_epoch(i)
     model.train()
     dist.barrier()
@@ -274,6 +305,55 @@ for i in range(1, EPOCHS + 1):
             max_acc = cur_acc
             trigger_times = 0
             save_ckpt(i, model, optimizer, scheduler, val_loss, model_name, ckpt_dir)
+        if is_master and (i == EPOCHS or cur_acc > max_acc):
+            model.eval()
+            unwrapped_model = get_unwrapped_model(model)
+
+            val_data = val_dataset.data
+            val_labels = val_dataset.label
+
+            correct_idx = np.where(predictions == truths)[0]
+
+            unique, counts = np.unique(truths[correct_idx], return_counts=True)
+            class_counts = dict(zip(unique, counts))
+
+            correct_data_sparse = val_data[correct_idx]
+            correct_data_np = correct_data_sparse.toarray() if hasattr(correct_data_sparse, "toarray") else np.array(correct_data_sparse)
+
+            cls_token = np.zeros((correct_data_np.shape[0], 1), dtype=int)
+            input_seqs = np.concatenate([correct_data_np, cls_token], axis=1)
+            input_seqs[input_seqs > (CLASS - 2)] = CLASS - 2
+
+            def model_predict(x):
+                with torch.no_grad():
+                    x_t = torch.tensor(x).long().to(device)
+                    logits = unwrapped_model(x_t)
+                    probs = torch.nn.functional.softmax(logits, dim=-1).cpu().numpy()
+                return probs
+
+            background = input_seqs[np.random.choice(input_seqs.shape[0], min(100, input_seqs.shape[0]), replace=False)]
+            explainer = shap.KernelExplainer(model_predict, background)
+            shap_values = explainer.shap_values(input_seqs, nsamples=100)
+
+            gene_names = [f"gene_{i}" for i in range(SEQ_LEN - 1)]
+            top_bottom_genes = []
+            for class_idx in range(CLASS):
+                class_samples_idx = np.where(truths[correct_idx] == class_idx)[0]
+                if len(class_samples_idx) == 0:
+                    continue
+                class_shap_vals = shap_values[class_idx][class_samples_idx, :-1]
+                mean_shap = np.mean(class_shap_vals, axis=0)
+                top_15_idx = np.argsort(mean_shap)[-15:][::-1]
+                bottom_15_idx = np.argsort(mean_shap)[:15]
+                top_genes = [(gene_names[idx], mean_shap[idx]) for idx in top_15_idx]
+                bottom_genes = [(gene_names[idx], mean_shap[idx]) for idx in bottom_15_idx]
+                for gene, val in top_genes:
+                    top_bottom_genes.append([class_idx, 'top', gene, val])
+                    for gene, val in bottom_genes:
+                        top_bottom_genes.append([class_idx, 'bottom', gene, val])
+
+            df_shap = pd.DataFrame(top_bottom_genes, columns=['class', 'rank', 'gene', 'mean_shap'])
+            df_shap.to_csv(f"results/top_bottom15_genes_epoch_{i}.csv", index=False)
         else:
             trigger_times += 1
             if trigger_times > PATIENCE:
