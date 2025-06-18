@@ -293,6 +293,8 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
 
             shap_vals_cls = shap_vals[cls_idx]
             print(type(shap_vals_cls))
+            if isinstance(shap_vals_cls, torch.Tensor):
+                shap_vals_cls = shap_vals_cls.detach().cpu().numpy()
             mean_shap = shap_vals_cls.astype(np.float32).mean(axis=0)
 
             top_idx = np.argsort(-mean_shap)[:K]
