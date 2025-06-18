@@ -13,7 +13,7 @@
 #SBATCH --array=1
 
 
-poetry run python -u xai_model.py 
+poetry run python -u xai_model.py -sh all
 
 echo "All Done at $(date)!"
 wait
