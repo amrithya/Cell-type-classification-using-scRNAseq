@@ -278,6 +278,7 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
         df_records = []
         K = 15
         X_bg = X_correct.detach().cpu()
+        explainer = shap.GradientExplainer(model, X_bg.to(device))
 
         for cls_idx in range(num_classes):
             class_correct_indices = (y_pred_correct == cls_idx).nonzero(as_tuple=True)[0]
@@ -287,33 +288,24 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
                 continue
 
             X_cls_correct = X_correct[class_correct_indices]
-
-            explainer = shap.GradientExplainer(model, X_bg.to(device))
             shap_vals = explainer.shap_values(X_cls_correct)
             
-            print(f"SHAP values structure: {type(shap_vals)}")
-            if isinstance(shap_vals, list):
-                print(f"Number of elements: {len(shap_vals)}")
-                for i, val in enumerate(shap_vals):
-                    if isinstance(val, (np.ndarray, torch.Tensor)):
-                        print(f"Element {i} shape: {val.shape}")
-                    else:
-                        print(f"Element {i} type: {type(val)}")
-            
-            if isinstance(shap_vals, list) and len(shap_vals) > cls_idx:
-                shap_vals_cls = shap_vals[cls_idx]
-            else:
-                print(f"Couldn't find SHAP values for class {cls_idx}")
-                continue
-                
-            if isinstance(shap_vals_cls, torch.Tensor):
-                shap_vals_cls = shap_vals_cls.detach().cpu().numpy()
-                
-            mean_shap = np.mean(shap_vals_cls, axis=0)
+            print(f"SHAP values shape for class {cls_idx}: {np.array(shap_vals).shape}")
 
+            if isinstance(shap_vals, list):
+                shap_vals = np.array(shap_vals)
+            
+            if len(shap_vals.shape) == 3:
+                shap_vals_cls = shap_vals[cls_idx]
+            elif len(shap_vals.shape) == 2:
+                shap_vals_cls = shap_vals
+            else:
+                print(f"Unexpected SHAP values shape: {shap_vals.shape}")
+                continue
+
+            mean_shap = np.mean(shap_vals_cls, axis=0)
             top_idx = np.argsort(-mean_shap)[:K]
             bottom_idx = np.argsort(mean_shap)[:K]
-
             class_name = le.inverse_transform([cls_idx])[0]
 
             for i in top_idx:
