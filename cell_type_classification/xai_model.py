@@ -15,6 +15,7 @@ from xgboost import XGBClassifier
 from scipy.sparse import issparse
 import scipy.sparse
 import csv
+import argparse
 import joblib
 from imblearn.over_sampling import SMOTE
 from sklearn.linear_model import SGDClassifier
@@ -348,9 +349,14 @@ def lime_explain_positive_parallel(clf, model_clf, X_test, y_test, feature_names
 
     print(f"Saved top and bottom {K} genes for all classes to {csv_path}")
 
+cmdline_parser = argparse.ArgumentParser('Training')
 
-models = ['lr', 'rf', 'xgb']
-
+cmdline_parser.add_argument('-x', '--xai',
+                                default="shap",
+                                help='model name',
+                                type=str)
+models = ['lr']
+args, unknowns = cmdline_parser.parse_known_args()
 adata = ad.read_h5ad('/data1/data/corpus/scDATA/Zheng68K.h5ad')  
 X = adata.X.toarray() if scipy.sparse.issparse(adata.X) else adata.X
 feature_names = adata.var_names
@@ -378,7 +384,11 @@ for i, clf in enumerate(models):
         joblib.dump(model_clf, model_path)
         print(f"Model saved to {model_path}")
 
-    #shap_explain_positive(clf, model_clf, X_test, y_test, feature_names, le)
-    lime_explain_positive_parallel(clf, model_clf, X_test, y_test, feature_names, le)
+    if args.xai == "shap":
+        print(f"Running {args.xai} for model :{clf}")
+        shap_explain_positive(clf, model_clf, X_test, y_test, feature_names, le)
+    elif args.xai == "lime":
+        print(f"Running {args.xai} for model :{clf}")
+        lime_explain_positive_parallel(clf, model_clf, X_test, y_test, feature_names, le)
 
 
