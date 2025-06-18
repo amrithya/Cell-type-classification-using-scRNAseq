@@ -290,18 +290,16 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
             X_cls_correct = X_correct[class_correct_indices]
             shap_vals = explainer.shap_values(X_cls_correct)
             
-            print(f"SHAP values shape for class {cls_idx}: {np.array(shap_vals).shape}")
-
             if isinstance(shap_vals, list):
                 shap_vals = np.array(shap_vals)
             
             if len(shap_vals.shape) == 3:
-                shap_vals_cls = shap_vals[cls_idx]
-            elif len(shap_vals.shape) == 2:
-                shap_vals_cls = shap_vals
+                if shap_vals.shape[0] == num_classes:
+                    shap_vals_cls = shap_vals[cls_idx]
+                else:
+                    shap_vals_cls = shap_vals[0]
             else:
-                print(f"Unexpected SHAP values shape: {shap_vals.shape}")
-                continue
+                shap_vals_cls = shap_vals
 
             mean_shap = np.mean(shap_vals_cls, axis=0)
             top_idx = np.argsort(-mean_shap)[:K]
