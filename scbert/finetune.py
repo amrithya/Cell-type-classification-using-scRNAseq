@@ -172,9 +172,9 @@ except Exception as e:
 for param in model.parameters():
     param.requires_grad = False
 for param in model.norm.parameters():
-    param.requires_grad = True
+    param.requires_grad = False
 for param in model.performer.net.layers[-2].parameters():
-    param.requires_grad = True
+    param.requires_grad = False
 
 model.to_out = Identity(dropout=0., h_dim=128, out_dim=label_dict.shape[0])
 model = model.to(device)

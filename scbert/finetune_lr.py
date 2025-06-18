@@ -5,67 +5,62 @@ import argparse
 import json
 import random
 import math
-import joblib
 from functools import reduce
 import numpy as np
 import pandas as pd
 from scipy import sparse
-from sklearn.model_selection import train_test_split, ShuffleSplit, StratifiedShuffleSplit, StratifiedKFold
-from sklearn.metrics import accuracy_score, f1_score, confusion_matrix, precision_recall_fscore_support, classification_report
+from sklearn.model_selection import StratifiedShuffleSplit
+from sklearn.metrics import accuracy_score, f1_score, confusion_matrix, classification_report
+from sklearn.linear_model import LogisticRegression
 import torch
 from torch import nn
-from torch.optim import Adam, SGD, AdamW
-from torch.nn import functional as F
-from torch.optim.lr_scheduler import StepLR, CosineAnnealingWarmRestarts, CyclicLR
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.data.distributed import DistributedSampler
 from torch.nn.parallel import DistributedDataParallel as DDP
 import torch.distributed as dist
 from performer_pytorch import PerformerLM
 import scanpy as sc
-import anndata as ad
-from utils import *
 import pickle as pkl
 from tqdm import tqdm
-import shap
-from sklearn.linear_model import LogisticRegression
 
-# -- utils functions placeholders (you should keep your original utils.py functions here) --
+# -------------------- Argparse --------------------
+parser = argparse.ArgumentParser()
+parser.add_argument("--local_rank", type=int, default=-1)
+parser.add_argument("--bin_num", type=int, default=5)
+parser.add_argument("--gene_num", type=int, default=16906)
+parser.add_argument("--epoch", type=int, default=10)
+parser.add_argument("--seed", type=int, default=2021)
+parser.add_argument("--batch_size", type=int, default=4)
+parser.add_argument("--learning_rate", type=float, default=1e-4)
+parser.add_argument("--grad_acc", type=int, default=60)
+parser.add_argument("--valid_every", type=int, default=1)
+parser.add_argument("--pos_embed", type=bool, default=True)
+parser.add_argument("--data_path", type=str, default='./data/Zheng68K.h5ad')
+parser.add_argument("--model_path", type=str, default='./panglao_pretrained.pth')
+args = parser.parse_args()
+
+rank = int(os.environ["RANK"])
+local_rank = args.local_rank
+torch.cuda.set_device(local_rank)
+device = torch.device("cuda", local_rank)
+world_size = torch.distributed.get_world_size()
+
+dist.init_process_group(backend='nccl')
+
+SEED = args.seed
+EPOCHS = args.epoch
+BATCH_SIZE = args.batch_size
+SEQ_LEN = args.gene_num + 1
+CLASS = args.bin_num + 2
+POS_EMBED_USING = args.pos_embed
+
 def seed_all(seed):
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--local_rank", "--local-rank", type=int, default=-1)
-parser.add_argument("--gene_num", type=int, default=16906)
-parser.add_argument("--seed", type=int, default=2021)
-parser.add_argument("--batch_size", type=int, default=4)
-parser.add_argument("--data_path", type=str, default='./data/Zheng68K.h5ad')
-parser.add_argument("--model_path", type=str, default='./panglao_pretrained.pth')
-parser.add_argument("--model_name", type=str, default='scbert_finetune')
-args = parser.parse_args()
-
-rank = int(os.environ.get("RANK", 0))
-local_rank = args.local_rank
-is_master = (local_rank == 0)
-
-SEED = args.seed
-BATCH_SIZE = args.batch_size
-SEQ_LEN = args.gene_num + 1
-model_name = args.model_name
-
-dist.init_process_group(backend='nccl')
-torch.cuda.set_device(local_rank)
-device = torch.device("cuda", local_rank)
-world_size = dist.get_world_size()
-
-seed_all(SEED + rank)
-
-if is_master:
-    print(f"[Init] Seed: {SEED}, Batch size: {BATCH_SIZE}")
-    print(f"[Init] Using {world_size} GPUs, local_rank: {local_rank}")
+seed_all(SEED + torch.distributed.get_rank())
 
 class SCDataset(Dataset):
     def __init__(self, data, label):
@@ -74,36 +69,30 @@ class SCDataset(Dataset):
         self.label = label
 
     def __getitem__(self, index):
-        full_seq = self.data[index].toarray()[0]
+        rand_start = random.randint(0, self.data.shape[0]-1)
+        full_seq = self.data[rand_start].toarray()[0]
+        full_seq[full_seq > (CLASS - 2)] = CLASS - 2
         full_seq = torch.from_numpy(full_seq).long()
-        full_seq = torch.cat((full_seq, torch.tensor([0]))).to(device)
-        seq_label = self.label[index]
-        return full_seq, seq_label
+        full_seq = torch.cat((full_seq, torch.tensor([0])))
+        return full_seq, self.label[rand_start]
 
     def __len__(self):
         return self.data.shape[0]
 
-try:
-    if is_master:
-        print("Loading data...")
-    data = sc.read_h5ad(args.data_path)
-    label_dict, label = np.unique(np.array(data.obs['celltype']), return_inverse=True)
-    if is_master:
-        with open('label_dict', 'wb') as fp:
-            pkl.dump(label_dict, fp)
-        with open('label', 'wb') as fp:
-            pkl.dump(label, fp)
-    label = torch.from_numpy(label)
-    data = data.X
-except Exception as e:
-    if is_master:
-        print(f"[ERROR] Data loading failed: {e}")
-    exit(1)
+print("Loading data...")
+data = sc.read_h5ad(args.data_path)
+label_dict, label = np.unique(np.array(data.obs['celltype']), return_inverse=True)
+with open('label_dict', 'wb') as fp:
+    pkl.dump(label_dict, fp)
+with open('label', 'wb') as fp:
+    pkl.dump(label, fp)
+label = torch.from_numpy(label)
+data_X = data.X
 
 sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=SEED)
-for index_train, index_val in sss.split(data, label):
-    data_train, label_train = data[index_train], label[index_train]
-    data_val, label_val = data[index_val], label[index_val]
+for index_train, index_val in sss.split(data_X, label):
+    data_train, label_train = data_X[index_train], label[index_train]
+    data_val, label_val = data_X[index_val], label[index_val]
 
 train_dataset = SCDataset(data_train, label_train)
 val_dataset = SCDataset(data_val, label_val)
@@ -115,75 +104,63 @@ train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, sampler=train_sa
 val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, sampler=val_sampler)
 
 model = PerformerLM(
-    num_tokens=7,
+    num_tokens=CLASS,
     dim=200,
     depth=6,
     max_seq_len=SEQ_LEN,
     heads=10,
     local_attn_heads=0,
-    g2v_position_emb=True
+    g2v_position_emb=POS_EMBED_USING
 )
 
-try:
-    if is_master:
-        print("Loading pretrained PerformerLM model...")
-    ckpt = torch.load(args.model_path, map_location='cpu')
-    model.load_state_dict(ckpt['model_state_dict'])
-except Exception as e:
-    if is_master:
-        print(f"[ERROR] Model loading failed: {e}")
-    exit(1)
-
-model = model.to(device)
-model = DDP(model, device_ids=[local_rank], output_device=local_rank)
-model.eval()
+print("Loading pretrained PerformerLM model...")
+ckpt = torch.load(args.model_path, map_location='cpu')
+model.load_state_dict(ckpt['model_state_dict'])
 
 for param in model.parameters():
     param.requires_grad = False
 
-def extract_cls_embeddings(model, dataloader, device):
+model.to_out = nn.Identity()
+model = model.to(device)
+model = DDP(model, device_ids=[local_rank], output_device=local_rank)
+
+def extract_embeddings(model, loader):
+    model.eval()
     embeddings = []
-    labels = []
-    for data, label in tqdm(dataloader, desc="Extracting embeddings"):
-        data = data.to(device)
-        print("Input shape before model:", data.shape)
-        print(data.dtype)
-        with torch.no_grad():
-            out = model(data) 
-        print("Output shape after model:", out.shape)
-        cls_emb = out[:, 0, :].cpu().numpy()
-        embeddings.append(cls_emb)
-        labels.append(label.numpy())
+    labels_all = []
+    conv = nn.Conv1d(200, 1, kernel_size=1).to(device)
+
+    with torch.no_grad():
+        for data, labels in tqdm(loader, desc="Extracting embeddings"):
+            data = data.to(device)
+            hidden = model(data)
+            hidden = hidden.permute(0, 2, 1)
+            emb = conv(hidden).squeeze(1).cpu().numpy()
+            embeddings.append(emb)
+            labels_all.append(labels.cpu().numpy())
+
     embeddings = np.concatenate(embeddings, axis=0)
-    labels = np.concatenate(labels, axis=0)
-    embeddings_tensor = torch.tensor(embeddings).to(device)
-    labels_tensor = torch.tensor(labels).to(device)
-    embeddings_all = distributed_concat(embeddings_tensor, len(dataloader.sampler.dataset), world_size).cpu().numpy()
-    labels_all = distributed_concat(labels_tensor, len(dataloader.sampler.dataset), world_size).cpu().numpy()
-    return embeddings_all, labels_all
+    labels_all = np.concatenate(labels_all, axis=0)
+    return embeddings, labels_all
 
-if is_master:
-    print("[INFO] Extracting embeddings for training set")
-train_embeddings, train_labels = extract_cls_embeddings(model, train_loader, device)
+train_emb, train_y = extract_embeddings(model, train_loader)
+test_emb, test_y = extract_embeddings(model, val_loader)
 
-if is_master:
-    print("[INFO] Extracting embeddings for validation set")
-val_embeddings, val_labels = extract_cls_embeddings(model, val_loader, device)
+os.makedirs('/data1/data/corpus/', exist_ok=True)
+np.save('/data1/data/corpus/train_emb.npy', train_emb)
+np.save('/data1/data/corpus/train_y.npy', train_y)
+np.save('/data1/data/corpus/test_emb.npy', test_emb)
+np.save('/data1/data/corpus/test_y.npy', test_y)
 
-if is_master:
-    print("[INFO] Training LogisticRegression classifier")
-    logreg = LogisticRegression(
-        max_iter=1000, multi_class='multinomial', solver='lbfgs', n_jobs=-1
-    )
-    logreg.fit(train_embeddings, train_labels)
+if local_rank == 0:
+    print("Training Logistic Regression...")
+    clf = LogisticRegression(penalty="l1", C=0.1,solver="liblinear")
+    clf.fit(train_emb, train_y)
 
-    val_preds = logreg.predict(val_embeddings)
-    acc = accuracy_score(val_labels, val_preds)
-    print(f"[LOGREG] Validation Accuracy: {acc:.4f}")
-    print("[LOGREG] Classification Report:")
-    print(classification_report(val_labels, val_preds, digits=4))
+    pred = clf.predict(test_emb)
 
-    os.makedirs('logreg_models', exist_ok=True)
-    logreg_path = os.path.join('logreg_models', f'{model_name}_logreg.pkl')
-    joblib.dump(logreg, logreg_path)
-    print(f"[LOGREG] LogisticRegression model saved to {logreg_path}")
+    acc = accuracy_score(test_y, pred)
+    f1 = f1_score(test_y, pred, average='macro')
+    print(f"Test Accuracy: {acc:.4f}, Macro F1: {f1:.4f}")
+    print(confusion_matrix(test_y, pred))
+    print(classification_report(test_y, pred, target_names=label_dict.tolist(), digits=4))
