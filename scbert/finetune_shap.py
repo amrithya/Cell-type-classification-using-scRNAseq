@@ -304,7 +304,7 @@ for i in range(start_epoch, EPOCHS + 1):
         if cur_acc > max_acc:
             max_acc = cur_acc
             trigger_times = 0
-            save_ckpt(i, model, optimizer, scheduler, val_loss, model_name, ckpt_dir)
+            save_ckpt(i, model, optimizer, scheduler, val_loss, model_name)
         if is_master and (i == EPOCHS or cur_acc > max_acc):
             model.eval()
             unwrapped_model = get_unwrapped_model(model)
