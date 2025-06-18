@@ -289,18 +289,27 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
             X_cls_correct = X_correct[class_correct_indices]
 
             explainer = shap.GradientExplainer(model, X_bg.to(device))
-            shap_vals = explainer.shap_values(X_cls_correct, ranked_outputs=num_classes)
-            print(f"Returned SHAP outputs: {[(rank, v.shape) for rank, v in shap_vals]}")
-            for rank, shap_vals_arr in shap_vals:
-                if rank == cls_idx:
-                    shap_vals_cls = shap_vals_arr
-                    break
-                else:
-                    print(f"Skipping class {cls_idx} (not found in SHAP ranked outputs).")
+            shap_vals = explainer.shap_values(X_cls_correct)
+            
+            print(f"SHAP values structure: {type(shap_vals)}")
+            if isinstance(shap_vals, list):
+                print(f"Number of elements: {len(shap_vals)}")
+                for i, val in enumerate(shap_vals):
+                    if isinstance(val, (np.ndarray, torch.Tensor)):
+                        print(f"Element {i} shape: {val.shape}")
+                    else:
+                        print(f"Element {i} type: {type(val)}")
+            
+            if isinstance(shap_vals, list) and len(shap_vals) > cls_idx:
+                shap_vals_cls = shap_vals[cls_idx]
+            else:
+                print(f"Couldn't find SHAP values for class {cls_idx}")
                 continue
+                
             if isinstance(shap_vals_cls, torch.Tensor):
                 shap_vals_cls = shap_vals_cls.detach().cpu().numpy()
-            mean_shap = shap_vals_cls.astype(np.float32).mean(axis=0)
+                
+            mean_shap = np.mean(shap_vals_cls, axis=0)
 
             top_idx = np.argsort(-mean_shap)[:K]
             bottom_idx = np.argsort(mean_shap)[:K]
