@@ -288,13 +288,11 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
 
             X_cls_correct = X_correct[class_correct_indices]
 
-            def f(x):
-                out = model(x)
-                return out[:, cls_idx]
+            explainer = shap.GradientExplainer(model, X_bg.to(device))
+            shap_vals = explainer.shap_values(X_cls_correct, ranked_outputs=num_classes)
 
-            explainer = shap.GradientExplainer(f, X_bg.to(device))
-            shap_vals = explainer.shap_values(X_cls_correct)
-            mean_shap = shap_vals.mean(axis=0)
+            shap_vals_cls = shap_vals[cls_idx]
+            mean_shap = shap_vals_cls.mean(axis=0)
 
             top_idx = np.argsort(-mean_shap)[:K]
             bottom_idx = np.argsort(mean_shap)[:K]
