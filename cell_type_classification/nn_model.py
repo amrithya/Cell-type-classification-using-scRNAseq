@@ -292,7 +292,8 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
             shap_vals = explainer.shap_values(X_cls_correct, ranked_outputs=num_classes)
 
             shap_vals_cls = shap_vals[cls_idx]
-            mean_shap = shap_vals_cls.astype(np.float32).mean(axis=0)
+            print(type(shap_vals_cls))
+            mean_shap = shap_vals_cls.detach().cpu().numpy().astype(np.float32).mean(axis=0)
 
             top_idx = np.argsort(-mean_shap)[:K]
             bottom_idx = np.argsort(mean_shap)[:K]
