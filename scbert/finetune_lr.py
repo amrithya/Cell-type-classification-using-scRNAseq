@@ -23,7 +23,6 @@ import scanpy as sc
 import pickle as pkl
 from tqdm import tqdm
 
-# -------------------- Argparse --------------------
 parser = argparse.ArgumentParser()
 parser.add_argument("--local_rank", type=int, default=-1)
 parser.add_argument("--bin_num", type=int, default=5)

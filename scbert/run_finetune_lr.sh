@@ -2,7 +2,7 @@
 
 #SBATCH --job-name="scBERT_finetune_lr"
 #SBATCH --partition=gpu
-#SBATCH --gres=gpu:2
+#SBATCH --gres=gpu:1
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=3
@@ -13,7 +13,7 @@
 #SBATCH --array=1
 
 
-poetry run python -m torch.distributed.launch --nproc_per_node=2 finetune_lr.py \
+poetry run python -m torch.distributed.launch --nproc_per_node=1 finetune_lr.py \
     --data_path "/data1/data/corpus/scDATA/Zheng68K.h5ad" \
     --model_path "/data1/data/corpus/scMODEL/panglao_pretrain.pth"
 
