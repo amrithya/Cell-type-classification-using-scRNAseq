@@ -290,9 +290,14 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
 
             explainer = shap.GradientExplainer(model, X_bg.to(device))
             shap_vals = explainer.shap_values(X_cls_correct, ranked_outputs=num_classes)
-
-            shap_vals_cls = shap_vals[cls_idx]
-            print(type(shap_vals_cls))
+            print(f"Returned SHAP outputs: {[(rank, v.shape) for rank, v in shap_vals]}")
+            for rank, shap_vals_arr in shap_vals:
+                if rank == cls_idx:
+                    shap_vals_cls = shap_vals_arr
+                    break
+                else:
+                    print(f"Skipping class {cls_idx} (not found in SHAP ranked outputs).")
+                continue
             if isinstance(shap_vals_cls, torch.Tensor):
                 shap_vals_cls = shap_vals_cls.detach().cpu().numpy()
             mean_shap = shap_vals_cls.astype(np.float32).mean(axis=0)
