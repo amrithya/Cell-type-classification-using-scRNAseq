@@ -277,10 +277,7 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
     try:
         df_records = []
         K = 15
-
         X_bg = X_correct.detach().cpu()
-
-        explainer = shap.GradientExplainer(model, X_bg.to(device))
 
         for cls_idx in range(num_classes):
             class_correct_indices = (y_pred_correct == cls_idx).nonzero(as_tuple=True)[0]
@@ -291,9 +288,13 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
 
             X_cls_correct = X_correct[class_correct_indices]
 
-            shap_vals = explainer.shap_values(X_cls_correct)
+            def f(x):
+                out = model(x)
+                return out[:, cls_idx]
 
-            mean_shap = shap_vals[cls_idx].mean(axis=0)
+            explainer = shap.GradientExplainer(f, X_bg.to(device))
+            shap_vals = explainer.shap_values(X_cls_correct)
+            mean_shap = shap_vals.mean(axis=0)
 
             top_idx = np.argsort(-mean_shap)[:K]
             bottom_idx = np.argsort(mean_shap)[:K]
@@ -306,11 +307,9 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
                 df_records.append([class_name, feature_names[i], mean_shap[i], 'top_negative'])
 
         df = pd.DataFrame(df_records, columns=['class_name', 'gene', 'shap_value', 'rank_type'])
-
         os.makedirs('results', exist_ok=True)
         csv_path = os.path.join('results', f"{save_name}_top_bottom15_genes_from_shap.csv")
         df.to_csv(csv_path, index=False)
-
         print(f"SHAP results saved to {csv_path}")
 
     except Exception as e:
