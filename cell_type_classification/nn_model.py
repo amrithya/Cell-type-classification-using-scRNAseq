@@ -458,10 +458,16 @@ def shap_explain_nn(model, train_data, test_data, gene_names, le, device):
     model.eval()
     with torch.no_grad():
         output = model(test_inputs)
-    print(f"Output shape: {output.shape}")
+        preds = torch.argmax(output, dim=1)
+
+    correct_mask = preds == test_labels
+    correct_inputs = test_inputs[correct_mask]
+    correct_labels = test_labels[correct_mask]
+
+    print(f"Correct predictions: {correct_inputs.shape[0]} out of {test_inputs.shape[0]}")
 
     explainer = shap.GradientExplainer(model, background)
-    shap_values = explainer.shap_values(test_inputs)
+    shap_values = explainer.shap_values(correct_inputs)
 
     if isinstance(shap_values, list):
         sv_tensor = torch.stack([torch.tensor(sv).permute(1, 0) for sv in shap_values])
