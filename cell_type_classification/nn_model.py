@@ -391,8 +391,9 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
             else:
                 probs = torch.nn.functional.softmax(out, dim=1)
         return probs.cpu().numpy()
-
-    explainer = shap.DeepExplainer(model_forward, background_np)
+    
+    background_np = background.cpu().numpy()
+    explainer = shap.DeepExplainer(model, background_np)
     shap_values = explainer.shap_values(samples_np)
 
     top_k = 15
