@@ -191,13 +191,7 @@ def train_gru(device, train_data, test_data, lr_rate, weights, input_size, outpu
 
     model = GRUNet(input_size, hidden_size, output_size, dropout_rate).to(device)
 
-    if os.path.exists(save_path):
-        checkpoint = torch.load(save_path, map_location=device)
-        model.load_state_dict(checkpoint['model_state_dict'])
-        print(f"Loaded existing model from {save_path}")
-        model.eval()
-
-        def evaluate(loader):
+    def evaluate(loader):
             correct, total = 0, 0
             correct_indices = []
             sample_index = 0
@@ -216,6 +210,12 @@ def train_gru(device, train_data, test_data, lr_rate, weights, input_size, outpu
                     sample_index += labels.size(0)
             accuracy = correct / total * 100
             return accuracy, correct_indices
+
+    if os.path.exists(save_path):
+        checkpoint = torch.load(save_path, map_location=device)
+        model.load_state_dict(checkpoint['model_state_dict'])
+        print(f"Loaded existing model from {save_path}")
+        model.eval()
 
         train_acc, _ = evaluate(train_loader)
         test_acc, test_correct_indices = evaluate(test_loader)
