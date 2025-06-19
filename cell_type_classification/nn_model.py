@@ -398,9 +398,13 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
 
     for target_class in range(num_classes):
         print(f"Explaining class {target_class}...")
-
+        
         wrapped_model = ClassLogitWrapper(model, target_class).to(device)
-
+        sample_output = wrapped_model(X_tensor)
+        i = 0
+        while i == 0:
+            print("wrapped_model output shape:", sample_output.shape)
+            i += 1
         explainer = shap.GradientExplainer(wrapped_model, X_tensor)
         shap_values = explainer.shap_values(X_tensor)
 
