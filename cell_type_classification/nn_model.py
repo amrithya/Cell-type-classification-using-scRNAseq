@@ -235,94 +235,66 @@ def analyze_lrp_classwise(model, lrp, X_test, y_test, test_correct_indices, gene
 def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn'):
     print(f"Explaining PyTorch model predictions using SHAP for model {save_name}")
     
-    test_loader = DataLoader(test_data, batch_size=len(test_data), shuffle=False)
-    X_test, y_test = next(iter(test_loader))
-    X_test, y_test = X_test.to(device), y_test.to(device)
-    
-    model.eval()
-    with torch.no_grad():
-        outputs = model(X_test)
-        _, predicted = torch.max(outputs, 1)
-        correct_mask = (predicted == y_test)
-        X_correct = X_test[correct_mask]
-        y_correct = y_test[correct_mask]
-    
-    num_samples = len(X_correct)
-    print(f"Using all {num_samples} correctly predicted samples for SHAP analysis")
-    
-    # Use all samples for background
-    background = X_correct
-    explainer = shap.DeepExplainer(model, background)
-    
-    # Calculate SHAP values with adaptive batch sizing
-    batch_size = 32  # Start with smaller batch size
-    max_attempts = 3
-    shap_values = []
-    
-    for i in range(0, num_samples, batch_size):
-        current_batch = X_correct[i:i+batch_size]
-        attempts = 0
-        success = False
-        
-        while attempts < max_attempts and not success:
-            try:
-                batch_shap = explainer.shap_values(current_batch)
-                shap_values.append(batch_shap)
-                print(f"Processed {min(i+batch_size, num_samples)}/{num_samples} samples")
-                success = True
-            except RuntimeError as e:
-                attempts += 1
-                if "dimension" in str(e) or "size" in str(e):
-                    new_size = max(1, batch_size // 2)
-                    print(f"Reducing batch size from {batch_size} to {new_size} due to dimension mismatch")
-                    batch_size = new_size
-                    current_batch = X_correct[i:i+batch_size]
-                else:
-                    raise e
-        
-        if not success:
-            raise RuntimeError(f"Failed to process batch starting at index {i} after {max_attempts} attempts")
-    
-    # Combine results
-    shap_values = [np.concatenate([s[i] for s in shap_values], axis=0) 
-                  for i in range(len(shap_values[0]))]
-    
-    # Save results (same as before)
-    X_shap = X_correct.cpu().numpy()
-    y_correct = y_correct.cpu().numpy()
-    
     base_dir = os.path.dirname(os.path.abspath(__file__))
     results_dir = os.path.join(base_dir, 'results')
     os.makedirs(results_dir, exist_ok=True)
+    results_file = os.path.join(results_dir, f"{save_name}_top_bottom15_genes_all_classes_from_shap.csv")
     
-    num_features = 15
+    X_test = test_data.tensors[0].cpu().numpy()
+    y_test = test_data.tensors[1].cpu().numpy()
+
+    model.eval()
+    X_tensor = torch.tensor(X_test, dtype=torch.float32).to(device)
+
+    with torch.no_grad():
+        outputs = model(X_tensor)
+        _, predicted = torch.max(outputs, 1)
+    correct_mask = (predicted.cpu().numpy() == y_test)
+    X_correct = X_test[correct_mask]
+    y_correct = y_test[correct_mask]
+    print(f"Number of correctly predicted test samples: {X_correct.shape[0]}")
+
+    explainer = shap.DeepExplainer(model, torch.tensor(X_correct, dtype=torch.float32).to(device))
+    shap_values = explainer.shap_values(torch.tensor(X_correct, dtype=torch.float32).to(device))
+
+    num_classes = len(shap_values)
+    class_names = le.inverse_transform(np.arange(num_classes))
+    feature_dim = len(feature_names)
+
+    class_relevance = np.zeros((num_classes, feature_dim))
+    class_counts = np.zeros(num_classes, dtype=int)
+
+    for i in range(X_correct.shape[0]):
+        label = y_correct[i]
+        class_relevance[label] += shap_values[label][i]
+        class_counts[label] += 1
+
+    for c in range(num_classes):
+        if class_counts[c] > 0:
+            class_relevance[c] /= class_counts[c]
+
     records = []
-    
-    for i, class_name in enumerate(le.classes_):
-        mean_shap = np.mean(shap_values[i], axis=0)
-        top_indices = np.argsort(-mean_shap)[:num_features]
-        bottom_indices = np.argsort(mean_shap)[:num_features]
+    for c in range(num_classes):
+        relevance = class_relevance[c]
+        top_indices = np.argsort(relevance)[-15:][::-1]
+        bottom_indices = np.argsort(relevance)[:15]
         
-        for rank, idx in enumerate(top_indices):
+        top_genes = [feature_names[i] for i in top_indices]
+        bottom_genes = [feature_names[i] for i in bottom_indices]
+        class_name = class_names[c]
+
+        for i in range(15):
             records.append({
-                'class': class_name,
-                'rank': rank + 1,
-                'feature': feature_names[idx],
-                'mean_shap': mean_shap[idx],
-                'impact_type': 'positive'
+                "class": class_name,
+                "rank": i + 1,
+                "top_gene": top_genes[i],
+                "top_score": relevance[top_indices[i]],
+                "bottom_gene": bottom_genes[i],
+                "bottom_score": relevance[bottom_indices[i]]
             })
-        
-        for rank, idx in enumerate(bottom_indices):
-            records.append({
-                'class': class_name,
-                'rank': rank + 1,
-                'feature': feature_names[idx],
-                'mean_shap': mean_shap[idx],
-                'impact_type': 'negative'
-            })
-    
+
     df = pd.DataFrame(records)
-    csv_path = os.path.join(results_dir, f"{save_name}_shap_top_bottom_features.csv")
-    df.to_csv(csv_path, index=False)
-    
-    print(f"SHAP analysis completed. Top and bottom features saved to {csv_path}")
+    if os.path.exists(results_file):
+        os.remove(results_file)
+    df.to_csv(results_file, index=False)
+    print(f"Saved SHAP results to {results_file}")
