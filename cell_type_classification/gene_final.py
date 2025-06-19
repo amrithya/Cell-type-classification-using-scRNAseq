@@ -113,8 +113,8 @@ if __name__ == "__main__":
     if args.model == "nn":
         print("Preprocessing data for nn")
         train_data, test_data, weights,le, input_size, output_size  = h.preprocess_data_nn(device, X_train, y_train, X_test, y_test,le)
-        hidden_sizes = [128]
-        lr_rates = [0.001]
+        hidden_sizes = [64, 128, 256, 512]
+        lr_rates = [0.1, 0.01, 0.001]
         dropout_rates = [0.3,0.5,0.7]
         results = []
         for hidden_size in hidden_sizes:

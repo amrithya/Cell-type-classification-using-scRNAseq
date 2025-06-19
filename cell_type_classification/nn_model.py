@@ -187,7 +187,20 @@ def train_gru(device, train_data, test_data, lr_rate, weights, input_size, outpu
             return out
 
     num_epochs = 10
-    save_path = f"/data1/data/corpus/scMODEL/shap_gru_model_Zheng68K_{dropout_rate}.pth"
+
+    def save_path(input_size, hidden_size, lr_rate, dropout_rate):
+        save_path = f"/data1/data/corpus/scMODEL/shap_gru_model_Zheng68K_{dropout_rate}.pth"
+        if os.path.exists(save_path):
+            checkpoint = torch.load(save_path, map_location=device)
+            model.load_state_dict(checkpoint['model_state_dict'])
+            print(f"Loaded existing model from {save_path}")
+            model.eval()
+
+            train_acc, _ = evaluate(train_loader)
+            test_acc, test_correct_indices = evaluate(test_loader)
+
+            print(f"Input size {input_size}, Hidden size {hidden_size}, learning rate {lr_rate}, dropout {dropout_rate} => Train Accuracy: {train_acc:.2f}% :: Test Accuracy: {test_acc:.2f}%")
+            return model, test_acc, train_acc, test_correct_indices
 
     model = GRUNet(input_size, hidden_size, output_size, dropout_rate).to(device)
 
@@ -211,18 +224,9 @@ def train_gru(device, train_data, test_data, lr_rate, weights, input_size, outpu
             accuracy = correct / total * 100
             return accuracy, correct_indices
 
-    if os.path.exists(save_path):
-        checkpoint = torch.load(save_path, map_location=device)
-        model.load_state_dict(checkpoint['model_state_dict'])
-        print(f"Loaded existing model from {save_path}")
-        model.eval()
-
-        train_acc, _ = evaluate(train_loader)
-        test_acc, test_correct_indices = evaluate(test_loader)
-
-        print(f"Input size {input_size}, Hidden size {hidden_size}, learning rate {lr_rate}, dropout {dropout_rate} => Train Accuracy: {train_acc:.2f}% :: Test Accuracy: {test_acc:.2f}%")
-        return model, test_acc, train_acc, test_correct_indices
-
+    save = False
+    if save == True:
+        model, test_acc, epoch_accuracy, correct_indices = save_path(input_size, hidden_size, lr_rate, dropout_rate)
     else:
         weights = weights.to(device)
         criterion = nn.CrossEntropyLoss(weight=weights)
