@@ -14,7 +14,7 @@
 
 echo "Running gene_final.py!"
 
-poetry run python -u gene_final.py -m nn -c 
+poetry run python -u gene_final.py -m nn_gru -c 
 
 echo "All Done at $(date)!"
 wait

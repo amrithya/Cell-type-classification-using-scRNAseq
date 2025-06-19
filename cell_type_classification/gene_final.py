@@ -113,6 +113,26 @@ if __name__ == "__main__":
     if args.model == "nn":
         print("Preprocessing data for nn")
         train_data, test_data, weights,le, input_size, output_size  = h.preprocess_data_nn(device, X_train, y_train, X_test, y_test,le)
+        hidden_sizes = [128]
+        lr_rates = [0.001]
+        dropout_rates = [0.2]
+        results = []
+        for hidden_size in hidden_sizes:
+            for dropout in dropout_rates:
+                for lr in lr_rates:
+                    model, test_accuracy, train_accuracy, test_correct_indices = nnm.train_nn(device, train_data, test_data, lr, weights, input_size, output_size, dropout, hidden_size)
+                    results.append((hidden_size, lr, dropout, train_accuracy, test_accuracy))
+                    nnm.shap_explain_nn(model, test_data, gene_names, le, device=device)
+                    #lrp = nnm.LRP(model)
+                    #nnm.analyze_lrp_classwise(model, lrp, X_test, y_test, test_correct_indices, gene_names, le, device)
+        
+        print("\nSummary of Results:")
+        for hidden_size, lr, dropout, train_acc, acc in results:
+            print(f"Hidden: {hidden_size}, LR: {lr}, Dropout: {dropout} => Train Accuracy: {train_acc:.2f}, Test Accuracy: {acc:.2f}%")
+
+    elif args.model == "nn_gru":
+        print("Preprocessing data for nn")
+        train_data, test_data, weights,le, input_size, output_size  = h.preprocess_data_nn(device, X_train, y_train, X_test, y_test,le)
         hidden_sizes = [64, 128, 256, 512]
         lr_rates = [0.1, 0.01, 0.001]
         dropout_rates = [0.3,0.5,0.7]
