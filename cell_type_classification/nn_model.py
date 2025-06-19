@@ -348,15 +348,30 @@ def analyze_lrp_classwise(model, lrp, X_test, y_test, test_correct_indices, gene
 
 
 def shap_explain_nn(model, train_data, test_data, device):
-    background = torch.stack([train_data[i][0] for i in range(5)]).to(device)
-    test_inputs = torch.stack([test_data[i][0] for i in range(5)]).to(device)
-    print(f"Background shape: {background.shape}")
-    print(f"Test inputs shape: {test_inputs.shape}")
-
     model.eval()
+
+    background = torch.stack([train_data[i][0] for i in range(len(train_data))]).to(device)
+    print(f"Background shape: {background.shape}")
+
+    test_inputs_all = torch.stack([test_data[i][0] for i in range(len(test_data))]).to(device)
+    test_labels_all = torch.tensor([test_data[i][1] for i in range(len(test_data))]).to(device)
+
     with torch.no_grad():
-        output = model(test_inputs)
-    print(f"Output shape: {output.shape}")
+        outputs_all = model(test_inputs_all)
+        predicted_classes = outputs_all.argmax(dim=1)
+
+    correct_mask = (predicted_classes == test_labels_all)
+    correct_indices = correct_mask.nonzero(as_tuple=True)[0]
+
+    if len(correct_indices) == 0:
+        print("No correctly predicted samples found in test data.")
+        return
+
+    test_inputs = test_inputs_all[correct_indices]
+    test_labels = test_labels_all[correct_indices]
+
+    print(f"Correctly predicted test inputs shape: {test_inputs.shape}")
+    print(f"Correctly predicted test labels shape: {test_labels.shape}")
 
     explainer = shap.GradientExplainer(model, background)
     shap_values = explainer.shap_values(test_inputs)
@@ -377,5 +392,6 @@ def shap_explain_nn(model, train_data, test_data, device):
     else:
         sv_t = torch.tensor(shap_values)
         print(f"SHAP values shape: {sv_t.shape}")
-        shap_mean = sv_t.abs().mean(dim=1)
+        shap_mean = sv_t.abs().mean(dim=0)
         print(f"Mean SHAP values shape: {shap_mean.shape}")
+
