@@ -384,7 +384,6 @@ def shap_explain_nn(model, train_data, test_data, gene_names, le, device):
     model.eval()
 
     background = torch.stack([train_data[i][0] for i in range(len(train_data))]).to(device)
-
     test_inputs_all = []
     test_labels_all = []
     seen_classes = set()
@@ -398,9 +397,6 @@ def shap_explain_nn(model, train_data, test_data, gene_names, le, device):
             break
     test_inputs_all = torch.stack(test_inputs_all).to(device)
     test_labels_all = torch.tensor(test_labels_all).to(device)
-
-    print(f"Number of test samples used for SHAP: {len(test_inputs_all)}")
-    print(f"Number of test labels used for SHAP: {len(test_labels_all)}")
 
     with torch.no_grad():
         outputs_all = model(test_inputs_all)
@@ -416,10 +412,11 @@ def shap_explain_nn(model, train_data, test_data, gene_names, le, device):
     test_inputs = test_inputs_all[correct_indices]
     test_labels = test_labels_all[correct_indices]
 
+    print(f"Background shape: {background.shape}")
+    print(f"Test input shape: {test_inputs.shape}")
+
     explainer = shap.GradientExplainer(model, background)
     shap_values = explainer.shap_values(test_inputs)
-
-    K = 15
 
     if isinstance(shap_values, list):
         sv_tensor = torch.stack([torch.tensor(sv).permute(1, 0) for sv in shap_values])
@@ -431,9 +428,10 @@ def shap_explain_nn(model, train_data, test_data, gene_names, le, device):
         shap_mean_np = shap_mean.cpu().numpy()
         shap_mean_np = shap_mean_np.reshape(1, -1)
 
+    print(f"shap_mean_np shape: {shap_mean_np.shape}, gene_names length: {len(gene_names)}")
+
     base_dir = os.path.dirname(os.path.abspath(__file__))
     results_dir = os.path.join(base_dir, 'results')
     os.makedirs(results_dir, exist_ok=True)
 
-    print(f"shap_mean_np shape: {shap_mean_np.shape}, gene_names length: {len(gene_names)}")
-    save_shap_top_bottom_csv(results_dir, le, shap_mean_np, gene_names, K=K)
+    save_shap_top_bottom_csv(results_dir, le, shap_mean_np, gene_names, K=15)
