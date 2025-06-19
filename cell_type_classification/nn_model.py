@@ -347,91 +347,36 @@ def analyze_lrp_classwise(model, lrp, X_test, y_test, test_correct_indices, gene
     df.to_csv(results_file, mode='a', header=not os.path.exists(results_file), index=False)
 
 
-
-def save_shap_top_bottom_csv(results_dir, le, shap_mean_array, gene_names, K=15):
-    csv_path = os.path.join(results_dir, "nn_top_bottom15_genes_all_classes_from_shap_matrix.csv")
-
-    with open(csv_path, mode='w', newline='') as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow(['class_name', 'gene', 'shap_value', 'rank_type'])
-
-        for cls_idx, class_name in enumerate(le.classes_):
-            mean_shap_cls = shap_mean_array[cls_idx]
-
-            if len(mean_shap_cls) != len(gene_names):
-                print(f"Warning: SHAP mean shape {mean_shap_cls.shape} does not match number of genes {len(gene_names)}")
-                continue
-
-            top_idx = mean_shap_cls.argsort()[-K:][::-1]
-            bottom_idx = mean_shap_cls.argsort()[:K]
-
-            top_features = [gene_names[i] for i in top_idx]
-            top_values = mean_shap_cls[top_idx]
-
-            bottom_features = [gene_names[i] for i in bottom_idx]
-            bottom_values = mean_shap_cls[bottom_idx]
-
-            for gene, val in zip(top_features, top_values):
-                writer.writerow([class_name, gene, f"{val:.4f}", 'top'])
-
-            for gene, val in zip(bottom_features, bottom_values):
-                writer.writerow([class_name, gene, f"{val:.4f}", 'bottom'])
-
-    print(f"Saved top and bottom {K} genes for all classes to {csv_path}")
-
-
-def shap_explain_nn(model, train_data, test_data, gene_names, le, device):
-    model.eval()
-
-    background = torch.stack([train_data[i][0] for i in range(len(train_data))]).to(device)
-    test_inputs_all = []
-    test_labels_all = []
-    seen_classes = set()
-    for i in range(len(test_data)):
-        label = int(test_data[i][1])
-        if label not in seen_classes:
-            test_inputs_all.append(test_data[i][0])
-            test_labels_all.append(label)
-            seen_classes.add(label)
-        if len(seen_classes) == len(le.classes_):
-            break
-    test_inputs_all = torch.stack(test_inputs_all).to(device)
-    test_labels_all = torch.tensor(test_labels_all).to(device)
-
-    with torch.no_grad():
-        outputs_all = model(test_inputs_all)
-        predicted_classes = outputs_all.argmax(dim=1)
-
-    correct_mask = (predicted_classes == test_labels_all)
-    correct_indices = correct_mask.nonzero(as_tuple=True)[0]
-
-    if len(correct_indices) == 0:
-        print("No correctly predicted samples found in test data.")
-        return
-
-    test_inputs = test_inputs_all[correct_indices]
-    test_labels = test_labels_all[correct_indices]
-
+def shap_explain_nn(model, train_data, test_data, device):
+    
+    background = torch.stack([train_data[i][0] for i in range(5)]).to(device)
+    test_inputs = torch.stack([test_data[i][0] for i in range(5)]).to(device)
     print(f"Background shape: {background.shape}")
-    print(f"Test input shape: {test_inputs.shape}")
+    print(f"Test inputs shape: {test_inputs.shape}")
+
+    model.eval()
+    with torch.no_grad():
+        output = model(test_inputs)
+    print(f"Output shape: {output.shape}")
 
     explainer = shap.GradientExplainer(model, background)
     shap_values = explainer.shap_values(test_inputs)
 
+    print(f"Type of shap_values: {type(shap_values)}")
+    print(f"Length of shap_values: {len(shap_values)}")
+
     if isinstance(shap_values, list):
+        for i, sv in enumerate(shap_values):
+            sv_t = torch.tensor(sv)
+            print(f"Class {i} SHAP shape: {sv_t.shape}")
+        
         sv_tensor = torch.stack([torch.tensor(sv).permute(1, 0) for sv in shap_values])
-        shap_mean = sv_tensor.mean(dim=2)
-        shap_mean_np = shap_mean.cpu().numpy()
+        print(f"Stacked SHAP values shape: {sv_tensor.shape}")
+
+        shap_mean = sv_tensor.abs().mean(dim=2)
+        print(f"Mean SHAP values shape: {shap_mean.shape}")
     else:
         sv_t = torch.tensor(shap_values)
-        shap_mean = sv_t.mean(dim=0)
-        shap_mean_np = shap_mean.cpu().numpy()
-        shap_mean_np = shap_mean_np.reshape(1, -1)
-
-    print(f"shap_mean_np shape: {shap_mean_np.shape}, gene_names length: {len(gene_names)}")
-
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    results_dir = os.path.join(base_dir, 'results')
-    os.makedirs(results_dir, exist_ok=True)
-
-    save_shap_top_bottom_csv(results_dir, le, shap_mean_np, gene_names, K=15)
+        print(f"SHAP values shape: {sv_t.shape}")
+        shap_mean = sv_t.mean(dim=1)
+        print(f"Mean SHAP values shape: {shap_mean.shape}")
