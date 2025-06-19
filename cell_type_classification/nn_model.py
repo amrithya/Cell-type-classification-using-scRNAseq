@@ -232,7 +232,6 @@ def analyze_lrp_classwise(model, lrp, X_test, y_test, test_correct_indices, gene
     df.to_csv(results_file, mode='a', header=not os.path.exists(results_file), index=False)
 
 
-
 def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn'):
     print(f"Explaining PyTorch model predictions using SHAP for model {save_name}")
     
@@ -249,32 +248,22 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
         y_correct = y_test[correct_mask]
     
     num_samples = len(X_correct)
-    print(f"Using {num_samples} correctly predicted samples for SHAP analysis")
+    print(f"Using all {num_samples} correctly predicted samples for SHAP analysis")
     
-    if num_samples <= 1000:
-        background = X_correct
-    else:
-        background = X_correct[:500]
-        print(f"Using subset of {len(background)} samples as background")
-    
+    background = X_correct
     explainer = shap.DeepExplainer(model, background)
     
-    if num_samples > 1000:
-        print("Calculating SHAP values in batches...")
-        batch_size = 500
-        shap_values = []
-        for i in range(0, num_samples, batch_size):
-            batch = X_correct[i:i+batch_size]
-            batch_shap = explainer.shap_values(batch)
-            shap_values.append(batch_shap)
-            print(f"Processed {min(i+batch_size, num_samples)}/{num_samples} samples")
-        
-        shap_values = [torch.cat([s[i] for s in shap_values], dim=0) 
-                      for i in range(len(shap_values[0]))]
-        shap_values = [shap_val.cpu().numpy() for shap_val in shap_values]
-    else:
-        shap_values = explainer.shap_values(X_correct)
-        shap_values = [shap_val.cpu().numpy() for shap_val in shap_values]
+    print("Calculating SHAP values...")
+    batch_size = 64  # Conservative batch size to prevent memory issues
+    shap_values = []
+    for i in range(0, num_samples, batch_size):
+        batch = X_correct[i:i+batch_size]
+        batch_shap = explainer.shap_values(batch)
+        shap_values.append(batch_shap)
+        print(f"Processed {min(i+batch_size, num_samples)}/{num_samples} samples")
+    
+    shap_values = [np.concatenate([s[i] for s in shap_values], axis=0) 
+                 for i in range(len(shap_values[0]))]
     
     X_shap = X_correct.cpu().numpy()
     y_correct = y_correct.cpu().numpy()
@@ -282,7 +271,7 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
     base_dir = os.path.dirname(os.path.abspath(__file__))
     results_dir = os.path.join(base_dir, 'results')
     os.makedirs(results_dir, exist_ok=True)
-        
+    
     num_features = 15
     records = []
     
