@@ -139,9 +139,9 @@ def extract_embeddings(model, loader):
             hidden = model(data)
             hidden = hidden.permute(0, 2, 1)
             emb = conv(hidden)
-            print(f"Conv output shape: {emb.shape}") # ([4, 1, 16907])
+            # print(f"Conv output shape: {emb.shape}") # ([4, 1, 16907])
             emb = emb.squeeze(1).cpu().numpy()
-            print(f"Final embedding batch shape: {emb.shape}") # ([4, 16907])
+            # print(f"Final embedding batch shape: {emb.shape}") # ([4, 16907])
             embeddings.append(emb)
             labels_all.append(labels.cpu().numpy())
 
@@ -171,7 +171,7 @@ else:
     print(f"Train batches: {len(train_loader)}, Validation batches: {len(val_loader)}")
     train_emb, train_y = extract_embeddings(model, train_loader)
     test_emb, test_y = extract_embeddings(model, val_loader)
-
+    
     np.save(train_emb_path, train_emb)
     np.save(train_y_path, train_y)
     np.save(test_emb_path, test_emb)
