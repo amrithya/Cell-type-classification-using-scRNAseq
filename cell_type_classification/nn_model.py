@@ -250,21 +250,44 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
     num_samples = len(X_correct)
     print(f"Using all {num_samples} correctly predicted samples for SHAP analysis")
     
+    # Use all samples for background
     background = X_correct
     explainer = shap.DeepExplainer(model, background)
     
-    print("Calculating SHAP values...")
-    batch_size = 64  # Conservative batch size to prevent memory issues
+    # Calculate SHAP values with adaptive batch sizing
+    batch_size = 32  # Start with smaller batch size
+    max_attempts = 3
     shap_values = []
+    
     for i in range(0, num_samples, batch_size):
-        batch = X_correct[i:i+batch_size]
-        batch_shap = explainer.shap_values(batch)
-        shap_values.append(batch_shap)
-        print(f"Processed {min(i+batch_size, num_samples)}/{num_samples} samples")
+        current_batch = X_correct[i:i+batch_size]
+        attempts = 0
+        success = False
+        
+        while attempts < max_attempts and not success:
+            try:
+                batch_shap = explainer.shap_values(current_batch)
+                shap_values.append(batch_shap)
+                print(f"Processed {min(i+batch_size, num_samples)}/{num_samples} samples")
+                success = True
+            except RuntimeError as e:
+                attempts += 1
+                if "dimension" in str(e) or "size" in str(e):
+                    new_size = max(1, batch_size // 2)
+                    print(f"Reducing batch size from {batch_size} to {new_size} due to dimension mismatch")
+                    batch_size = new_size
+                    current_batch = X_correct[i:i+batch_size]
+                else:
+                    raise e
+        
+        if not success:
+            raise RuntimeError(f"Failed to process batch starting at index {i} after {max_attempts} attempts")
     
+    # Combine results
     shap_values = [np.concatenate([s[i] for s in shap_values], axis=0) 
-                 for i in range(len(shap_values[0]))]
+                  for i in range(len(shap_values[0]))]
     
+    # Save results (same as before)
     X_shap = X_correct.cpu().numpy()
     y_correct = y_correct.cpu().numpy()
     
