@@ -156,16 +156,16 @@ def train_nn(device, train_data, test_data, lr_rate, weights, input_size, output
                 sample_index += labels.size(0)
         test_accuracy = correct / total * 100
 
-        # torch.save({
-        #     'model_state_dict': model.state_dict(),
-        #     'input_size': input_size,
-        #     'hidden_size': hidden_size,
-        #     'output_size': output_size,
-        #     'dropout_rate': dropout_rate,
-        #     'lr_rate': lr_rate,
-        #     'weights': weights.cpu(),
-        # }, save_path)
-        # print(f"Model saved to {save_path}")
+        torch.save({
+            'model_state_dict': model.state_dict(),
+            'input_size': input_size,
+            'hidden_size': hidden_size,
+            'output_size': output_size,
+            'dropout_rate': dropout_rate,
+            'lr_rate': lr_rate,
+            'weights': weights.cpu(),
+        }, save_path)
+        print(f"Model saved to {save_path}")
         print(f"Input size {input_size}, Hidden size {hidden_size}, learning rate {lr_rate}, dropout {dropout_rate}=> Train Accuracy:{epoch_accuracy:.2f} :: Test Accuracy: {test_accuracy:.2f}%")
         return model, test_accuracy, epoch_accuracy, correct_indices
     
@@ -261,16 +261,17 @@ def train_gru(device, train_data, test_data, lr_rate, weights, input_size, outpu
         model.eval()
         test_acc, correct_indices = evaluate(test_loader)
 
-        torch.save({
-            'model_state_dict': model.state_dict(),
-            'input_size': input_size,
-            'hidden_size': hidden_size,
-            'output_size': output_size,
-            'dropout_rate': dropout_rate,
-            'lr_rate': lr_rate,
-            'weights': weights.cpu(),
-        }, save_path)
-        print(f"Model saved to {save_path}")
+        # torch.save({
+        #     'model_state_dict': model.state_dict(),
+        #     'input_size': input_size,
+        #     'hidden_size': hidden_size,
+        #     'output_size': output_size,
+        #     'dropout_rate': dropout_rate,
+        #     'lr_rate': lr_rate,
+        #     'weights': weights.cpu(),
+        # }, save_path)
+        # print(f"Model saved to {save_path}")
+        
         print(f"Input size {input_size}, Hidden size {hidden_size}, learning rate {lr_rate}, dropout {dropout_rate} => Train Accuracy: {epoch_accuracy:.2f}% :: Test Accuracy: {test_acc:.2f}%")
 
         return model, test_acc, epoch_accuracy, correct_indices
