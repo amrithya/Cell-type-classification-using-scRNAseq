@@ -399,5 +399,5 @@ def shap_explain_nn(model, train_data, test_data, device):
     else:
         sv_t = torch.tensor(shap_values)
         print(f"SHAP values shape: {sv_t.shape}")
-        shap_mean = sv_t.mean(dim=1)
+        shap_mean = sv_t.mean(dim=0)
         print(f"Mean SHAP values shape: {shap_mean.shape}")
