@@ -223,7 +223,7 @@ def train_gru(device, train_data, test_data, lr_rate, weights, input_size, outpu
     model = GRUNet(input_size, hidden_size, output_size, dropout_rate).to(device)
     weights = weights.to(device)
     criterion = nn.CrossEntropyLoss(weight=weights)
-    optimizer = optim.Adam(model.parameters(), lr=lr_rate, weight_decay=1e-4)
+    optimizer = optim.Adam(model.parameters(), lr=lr_rate, weight_decay=1e-2)
 
     num_epochs = 25
     patience = 10
