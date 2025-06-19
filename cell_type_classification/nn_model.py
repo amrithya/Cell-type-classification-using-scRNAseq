@@ -348,7 +348,7 @@ def analyze_lrp_classwise(model, lrp, X_test, y_test, test_correct_indices, gene
 
 
 def shap_explain_nn(model, train_data, test_data, device):
-    
+
     background = torch.stack([train_data[i][0] for i in range(5)]).to(device)
     test_inputs = torch.stack([test_data[i][0] for i in range(5)]).to(device)
     print(f"Background shape: {background.shape}")
@@ -357,8 +357,9 @@ def shap_explain_nn(model, train_data, test_data, device):
     with torch.no_grad():
         output = model(test_inputs)
     print(f"Output shape: {output.shape}")
-    explainer = shap.DeepExplainer(model, background)
+    explainer = shap.GradientExplainer(model, background)
     shap_values = explainer.shap_values(test_inputs)
-    print(f"SHAP values shape: {shap_values[0].shape}")
-    shap_mean = torch.stack([torch.mean(class_shap, dim=0) for class_shap in shap_values])
+    print(f"Number of classes (SHAP outputs): {len(shap_values)}")
+    print(f"SHAP values shape (first class): {torch.tensor(shap_values[0]).shape}")
+    shap_mean = torch.stack([torch.tensor(sv).mean(dim=0) for sv in shap_values])
     print(f"Mean SHAP values shape: {shap_mean.shape}")
