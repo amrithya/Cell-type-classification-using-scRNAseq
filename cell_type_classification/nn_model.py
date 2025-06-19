@@ -187,7 +187,7 @@ def train_gru(device, train_data, test_data, lr_rate, weights, input_size, outpu
             return out
 
     num_epochs = 10
-    save_path = f"/data1/data/corpus/scMODEL/shap_gru_model_Zheng68K_{lr_rate}.pth"
+    save_path = f"/data1/data/corpus/scMODEL/shap_gru_model_Zheng68K_{dropout_rate}.pth"
 
     model = GRUNet(input_size, hidden_size, output_size, dropout_rate).to(device)
 
