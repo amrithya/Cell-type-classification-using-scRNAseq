@@ -271,7 +271,7 @@ def train_gru(device, train_data, test_data, lr_rate, weights, input_size, outpu
         #     'weights': weights.cpu(),
         # }, save_path)
         # print(f"Model saved to {save_path}")
-        
+
         print(f"Input size {input_size}, Hidden size {hidden_size}, learning rate {lr_rate}, dropout {dropout_rate} => Train Accuracy: {epoch_accuracy:.2f}% :: Test Accuracy: {test_acc:.2f}%")
 
         return model, test_acc, epoch_accuracy, correct_indices
@@ -356,20 +356,32 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
         X_tensor_all = torch.tensor(X_test, dtype=torch.float32).to(device)
         outputs = model(X_tensor_all)
         _, predicted = torch.max(outputs, 1)
+    
     correct_mask = (predicted.cpu().numpy() == y_test)
     X_correct = X_test[correct_mask]
     y_correct = y_test[correct_mask]
+    
     print(f"Number of correctly predicted test samples: {X_correct.shape[0]}")
+    
+    if X_correct.shape[0] > 10:
+        X_correct = X_correct[:10]
+        y_correct = y_correct[:10]
 
     X_tensor = torch.tensor(X_correct, dtype=torch.float32).to(device)
-    explainer = shap.GradientExplainer(model, X_tensor)
 
+    explainer = shap.GradientExplainer(model, X_tensor)
     shap_values = explainer.shap_values(X_tensor)
 
     num_classes = len(shap_values)
-    class_names = le.inverse_transform(np.arange(num_classes))
-    feature_dim = len(feature_names)
+    print(f"SHAP returned {num_classes} classes")
 
+    if num_classes <= len(le.classes_):
+        class_names = le.inverse_transform(np.arange(num_classes))
+    else:
+        class_names = [f"class_{i}" for i in range(num_classes)]
+        print("Warning: SHAP returned more classes than in label encoder, using generic class names.")
+
+    feature_dim = len(feature_names)
     class_relevance = np.zeros((num_classes, feature_dim))
     class_counts = np.zeros(num_classes, dtype=int)
 
@@ -387,7 +399,7 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
         relevance = class_relevance[c]
         top_indices = np.argsort(relevance)[-15:][::-1]
         bottom_indices = np.argsort(relevance)[:15]
-        
+
         top_genes = [feature_names[i] for i in top_indices]
         bottom_genes = [feature_names[i] for i in bottom_indices]
         class_name = class_names[c]
@@ -403,6 +415,7 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
             })
 
     df = pd.DataFrame(records)
+
     if os.path.exists(results_file):
         os.remove(results_file)
     df.to_csv(results_file, index=False)

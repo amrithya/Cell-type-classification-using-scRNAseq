@@ -139,9 +139,9 @@ def extract_embeddings(model, loader):
             hidden = model(data)
             hidden = hidden.permute(0, 2, 1)
             emb = conv(hidden)
-            print(f"Conv output shape: {emb.shape}")
+            print(f"Conv output shape: {emb.shape}") # ([4, 1, 16907])
             emb = emb.squeeze(1).cpu().numpy()
-            print(f"Final embedding batch shape: {emb.shape}")
+            print(f"Final embedding batch shape: {emb.shape}") # ([4, 16907])
             embeddings.append(emb)
             labels_all.append(labels.cpu().numpy())
 
