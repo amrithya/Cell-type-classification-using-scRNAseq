@@ -42,7 +42,7 @@ parser.add_argument("--model_name", type=str, default='finetune')
 args = parser.parse_args()
 
 rank = int(os.environ["RANK"])
-local_rank = -1
+local_rank = args.local_rank
 torch.cuda.set_device(local_rank)
 device = torch.device("cuda", local_rank)
 world_size = torch.distributed.get_world_size()
