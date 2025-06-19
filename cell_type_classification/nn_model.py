@@ -352,34 +352,17 @@ def shap_explain_nn(model, train_data, test_data, gene_names, le, device):
     results_dir = os.path.join(base_dir, 'results')
     os.makedirs(results_dir, exist_ok=True)
     
-    csv_path = os.path.join(results_dir, "dummy_top_bottom_shap_values.csv")
+    csv_path = os.path.join(results_dir, "nn_top_bottom_shap_values.csv")
     if os.path.exists(csv_path):
         os.remove(csv_path)
 
-    background = torch.stack([train_data[i][0] for i in range(5)]).to(device)
+    background = torch.stack([train_data[i][0] for i in range(len(train_data))]).to(device)
 
-    num_classes = len(le.classes_)
-    seen_classes = set()
-    selected_inputs = []
-    selected_labels = []
-
-    for i in range(len(test_data)):
-        input_i, label_i = test_data[i]
-        label_i = label_i.item() if torch.is_tensor(label_i) else label_i
-
-        if label_i not in seen_classes:
-            selected_inputs.append(input_i)
-            selected_labels.append(label_i)
-            seen_classes.add(label_i)
-
-        if len(seen_classes) == num_classes:
-            break
-
-    test_inputs = torch.stack(selected_inputs).to(device)
-    test_labels = torch.tensor(selected_labels).to(device)
+    test_inputs = torch.stack([test_data[i][0] for i in range(len(test_data))]).to(device)
+    test_labels = torch.tensor([test_data[i][1].item() if torch.is_tensor(test_data[i][1]) else test_data[i][1] for i in range(len(test_data))]).to(device)
 
     print(f"Background shape: {background.shape}")
-    print(f"test_inputs.shape: {test_inputs.shape}")
+    print(f"test_inputs shape: {test_inputs.shape}")
     print(f"test_labels: {test_labels}")
 
     model.eval()
@@ -403,9 +386,12 @@ def shap_explain_nn(model, train_data, test_data, gene_names, le, device):
 
     shap_mean_np = shap_mean.cpu().numpy()
 
+    num_classes = len(le.classes_)
     records = []
+
     for class_idx in range(num_classes):
         class_name = le.inverse_transform([class_idx])[0]
+
         if shap_mean_np.shape[0] == num_classes:
             class_shap_values = shap_mean_np[class_idx, :]
         else:
@@ -418,7 +404,6 @@ def shap_explain_nn(model, train_data, test_data, gene_names, le, device):
         for i in bottom_idx:
             records.append({
                 'class': class_name,
-                'feature_idx': i,
                 'gene_name': gene_names[i],
                 'shap_value': class_shap_values[i],
                 'rank': 'bottom'
@@ -426,12 +411,12 @@ def shap_explain_nn(model, train_data, test_data, gene_names, le, device):
         for i in top_idx:
             records.append({
                 'class': class_name,
-                'feature_idx': i,
                 'gene_name': gene_names[i],
                 'shap_value': class_shap_values[i],
                 'rank': 'top'
             })
 
     df = pd.DataFrame(records)
+    print(f"Shap values DataFrame shape: {df.shape}")
     df.to_csv(csv_path, index=False)
     print(f"Saved top/bottom SHAP values to {csv_path}")
