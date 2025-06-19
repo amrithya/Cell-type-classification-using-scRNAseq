@@ -50,7 +50,7 @@ class ClassLogitWrapper(torch.nn.Module):
 
     def forward(self, x):
         out = self.model(x)
-        return out[:, self.target_class]
+        return out[:, self.target_class].unsqueeze(1)
 
 def train_nn(device, train_data, test_data, lr_rate, weights, input_size, output_size, dropout_rate, hidden_size):
     batch_size = 64
