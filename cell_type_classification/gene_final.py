@@ -120,7 +120,7 @@ if __name__ == "__main__":
         for hidden_size in hidden_sizes:
             for dropout in dropout_rates:
                 for lr in lr_rates:
-                    model, test_accuracy, train_accuracy, test_correct_indices = nnm.train_nn(device, train_data, test_data, lr, weights, input_size, output_size, dropout, hidden_size)
+                    model, test_accuracy, train_accuracy, test_correct_indices = nnm.train_gru(device, train_data, test_data, lr, weights, input_size, output_size, dropout, hidden_size)
                     results.append((hidden_size, lr, dropout, train_accuracy, test_accuracy))
                     nnm.shap_explain_nn(model, test_data, gene_names, le, device=device)
                     #lrp = nnm.LRP(model)
