@@ -16,7 +16,7 @@
 poetry run python -m torch.distributed.launch --nproc_per_node=2 finetune_lr.py \
     --force_extract \
     --data_path "/data1/data/corpus/scDATA/Zheng68K.h5ad" \
-    --model_path "/data1/data/corpus/scMODEL/panglao_pretrain.pth" \\
+    --model_path "/data1/data/corpus/scMODEL/panglao_pretrain.pth"
     
 
 echo "All Done at $(date)!"
