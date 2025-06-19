@@ -348,11 +348,32 @@ def analyze_lrp_classwise(model, lrp, X_test, y_test, test_correct_indices, gene
 
 
 def shap_explain_nn(model, train_data, test_data, device):
-    
+
     background = torch.stack([train_data[i][0] for i in range(5)]).to(device)
-    test_inputs = torch.stack([test_data[i][0] for i in range(5)]).to(device)
+    
+    num_classes = 11
+    seen_classes = set()
+    selected_inputs = []
+    selected_labels = []
+
+    for i in range(len(test_data)):
+        input_i, label_i = test_data[i]
+        label_i = label_i.item() if torch.is_tensor(label_i) else label_i
+    
+        if label_i not in seen_classes:
+            selected_inputs.append(input_i)
+            selected_labels.append(label_i)
+            seen_classes.add(label_i)
+    
+        if len(seen_classes) == num_classes:
+            break
+
+    test_inputs = torch.stack(selected_inputs).to(device)
+    test_labels = torch.tensor(selected_labels).to(device)
+
     print(f"Background shape: {background.shape}")
-    print(f"Test inputs shape: {test_inputs.shape}")
+    print(f"test_inputs.shape: {test_inputs.shape}")
+    print(f"test_labels: {test_labels}")
 
     model.eval()
     with torch.no_grad():
@@ -363,7 +384,7 @@ def shap_explain_nn(model, train_data, test_data, device):
     shap_values = explainer.shap_values(test_inputs)
 
     print(f"Type of shap_values: {type(shap_values)}")
-    print(f"Length of shap_values: {len(shap_values)}")
+    print(f"Length of shap_values: {shap_values.shape}")
 
     if isinstance(shap_values, list):
         for i, sv in enumerate(shap_values):
@@ -373,7 +394,7 @@ def shap_explain_nn(model, train_data, test_data, device):
         sv_tensor = torch.stack([torch.tensor(sv).permute(1, 0) for sv in shap_values])
         print(f"Stacked SHAP values shape: {sv_tensor.shape}")
 
-        shap_mean = sv_tensor.abs().mean(dim=2)
+        shap_mean = sv_tensor.mean(dim=2)
         print(f"Mean SHAP values shape: {shap_mean.shape}")
     else:
         sv_t = torch.tensor(shap_values)
