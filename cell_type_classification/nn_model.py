@@ -42,6 +42,16 @@ class LRP:
         return relevance.detach()
     __call__ = relprop
 
+class ClassLogitWrapper(torch.nn.Module):
+    def __init__(self, model, target_class):
+        super().__init__()
+        self.model = model
+        self.target_class = target_class
+
+    def forward(self, x):
+        logits = self.model(x)
+        class_logits = logits[:, self.target_class]
+        return class_logits.unsqueeze(1)
 
 def train_nn(device, train_data, test_data, lr_rate, weights, input_size, output_size, dropout_rate, hidden_size):
     batch_size = 64
@@ -337,24 +347,28 @@ def analyze_lrp_classwise(model, lrp, X_test, y_test, test_correct_indices, gene
     df.to_csv(results_file, mode='a', header=not os.path.exists(results_file), index=False)
 
 
-def shap_explain_nn(model, test_data, test_labels, feature_names, le, device, save_name='nn'):
+def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn'):
     model.eval()
     model.to(device)
-    test_data = test_data.to(device)
-    test_labels = test_labels.to(device)
+
+    X_test = test_data.tensors[0].cpu().numpy()
+    y_test = test_data.tensors[1].cpu().numpy()
+
+    X_tensor = torch.tensor(X_test, dtype=torch.float32).to(device)
+    y_tensor = torch.tensor(y_test).to(device)
 
     with torch.no_grad():
-        outputs = model(test_data)
+        outputs = model(X_tensor)
         if outputs.dim() == 1 or outputs.shape[1] == 1:
             preds = (torch.sigmoid(outputs) > 0.5).long().squeeze()
         else:
             preds = torch.argmax(outputs, dim=1)
 
-    correct_mask = (preds == test_labels)
-    correct_samples = test_data[correct_mask][:10]
-    correct_labels = test_labels[correct_mask][:10]
+    correct_mask = (preds == y_tensor)
+    correct_samples = X_tensor[correct_mask][:10]
+    correct_labels = y_tensor[correct_mask][:10]
 
-    total = len(test_labels)
+    total = len(y_tensor)
     correct = correct_mask.sum().item()
     print(f"Total samples: {total}")
     print(f"Correctly predicted samples: {correct} ({correct/total:.2%})")
