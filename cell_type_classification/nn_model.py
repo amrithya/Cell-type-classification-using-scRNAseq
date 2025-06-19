@@ -347,7 +347,7 @@ def analyze_lrp_classwise(model, lrp, X_test, y_test, test_correct_indices, gene
     df.to_csv(results_file, mode='a', header=not os.path.exists(results_file), index=False)
 
 
-def shap_explain_nn(model, train_data, test_data, le, device, save_name='nn'):
+def shap_explain_nn(model, train_data, test_data, device):
     
     background = torch.stack([train_data[i][0] for i in range(5)]).to(device)
     test_inputs = torch.stack([test_data[i][0] for i in range(5)]).to(device)
