@@ -359,6 +359,13 @@ def shap_explain_nn(model, train_data, test_data, device):
     print(f"Output shape: {output.shape}")
     explainer = shap.GradientExplainer(model, background)
     shap_values = explainer.shap_values(test_inputs)
+    for i, sv in enumerate(shap_values):
+        print(f"Class {i} SHAP shape: {torch.tensor(sv).shape}")
+        
+    print(f"Type of shap_values: {type(shap_values)}")
+    print(f"Length of shap_values: {len(shap_values)}")
+    print(f"Type/shape of first element: {type(shap_values[0])}, {torch.tensor(shap_values[0]).shape}")
+
     print(f"Number of classes (SHAP outputs): {len(shap_values)}")
     print(f"SHAP values shape (first class): {torch.tensor(shap_values[0]).shape}")
     shap_mean = torch.stack([torch.tensor(sv).mean(dim=0) for sv in shap_values])
