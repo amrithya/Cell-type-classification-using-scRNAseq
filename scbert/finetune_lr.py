@@ -24,7 +24,7 @@ import pickle as pkl
 from tqdm import tqdm
 
 parser = argparse.ArgumentParser()
-#parser.add_argument("--local_rank", type=int, default=-1)
+parser.add_argument("--local_rank", "--local-rank", type=int, default=-1)
 parser.add_argument("--bin_num", type=int, default=5)
 parser.add_argument("--gene_num", type=int, default=16906)
 parser.add_argument("--epoch", type=int, default=10)
@@ -36,6 +36,9 @@ parser.add_argument("--valid_every", type=int, default=1)
 parser.add_argument("--pos_embed", type=bool, default=True)
 parser.add_argument("--data_path", type=str, default='./data/Zheng68K.h5ad')
 parser.add_argument("--model_path", type=str, default='./panglao_pretrained.pth')
+parser.add_argument("--ckpt_dir", type=str, default='./ckpts/')
+parser.add_argument("--model_name", type=str, default='finetune')
+
 args = parser.parse_args()
 
 rank = int(os.environ["RANK"])
