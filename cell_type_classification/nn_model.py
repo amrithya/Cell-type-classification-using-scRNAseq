@@ -186,95 +186,92 @@ def train_gru(device, train_data, test_data, lr_rate, weights, input_size, outpu
             out = self.fc(out)
             return out
 
-    num_epochs = 10
-
-    def save_path(input_size, hidden_size, lr_rate, dropout_rate):
-        save_path = "/data1/data/corpus/scMODEL/shap_gru_model_Zheng68K.pth"
-        if os.path.exists(save_path):
-            checkpoint = torch.load(save_path, map_location=device)
-            model.load_state_dict(checkpoint['model_state_dict'])
-            print(f"Loaded existing model from {save_path}")
-            model.eval()
-
-            train_acc, _ = evaluate(train_loader)
-            test_acc, test_correct_indices = evaluate(test_loader)
-
-            print(f"Input size {input_size}, Hidden size {hidden_size}, learning rate {lr_rate}, dropout {dropout_rate} => Train Accuracy: {train_acc:.2f}% :: Test Accuracy: {test_acc:.2f}%")
-            return model, test_acc, train_acc, test_correct_indices
-
-    model = GRUNet(input_size, hidden_size, output_size, dropout_rate).to(device)
-
     def evaluate(loader):
-            correct, total = 0, 0
-            correct_indices = []
-            sample_index = 0
-            with torch.no_grad():
-                for inputs, labels in loader:
-                    inputs, labels = inputs.to(device), labels.to(device)
-                    if inputs.dim() == 2:
-                        inputs = inputs.unsqueeze(1)
-                    outputs = model(inputs)
-                    _, predicted = torch.max(outputs, 1)
-                    correct_mask = (predicted == labels)
-                    correct += correct_mask.sum().item()
-                    total += labels.size(0)
-                    batch_indices = torch.arange(sample_index, sample_index + labels.size(0))[correct_mask.cpu()]
-                    correct_indices.extend(batch_indices.tolist())
-                    sample_index += labels.size(0)
-            accuracy = correct / total * 100
-            return accuracy, correct_indices
-
-    save = False
-    if save == True:
-        model, test_acc, epoch_accuracy, correct_indices = save_path(input_size, hidden_size, lr_rate, dropout_rate)
-    else:
-        weights = weights.to(device)
-        criterion = nn.CrossEntropyLoss(weight=weights)
-        optimizer = optim.Adam(model.parameters(), lr=lr_rate, weight_decay=1e-4)
-
-        print(f"\nTraining with Hidden size: {hidden_size}, learning rate: {lr_rate}, dropout rate: {dropout_rate}")
-        l1_lambda = 1e-5
-        for epoch in range(num_epochs):
-            model.train()
-            running_loss = 0.0
-            correct = 0
-            total = 0
-            for inputs, labels in train_loader:
+        correct, total = 0, 0
+        correct_indices = []
+        sample_index = 0
+        total_loss = 0
+        with torch.no_grad():
+            for inputs, labels in loader:
                 inputs, labels = inputs.to(device), labels.to(device)
                 if inputs.dim() == 2:
                     inputs = inputs.unsqueeze(1)
-                optimizer.zero_grad()
                 outputs = model(inputs)
                 loss = criterion(outputs, labels)
-                l1_norm = sum(p.abs().sum() for p in model.parameters())
-                loss = loss + l1_lambda * l1_norm
-                loss.backward()
-                optimizer.step()
-                running_loss += loss.item()
+                total_loss += loss.item()
                 _, predicted = torch.max(outputs, 1)
-                correct += (predicted == labels).sum().item()
+                correct_mask = (predicted == labels)
+                correct += correct_mask.sum().item()
                 total += labels.size(0)
-            epoch_loss = running_loss / len(train_loader)
-            epoch_accuracy = correct / total * 100
-            print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {epoch_loss:.4f}, Accuracy: {epoch_accuracy:.2f}%")
+                batch_indices = torch.arange(sample_index, sample_index + labels.size(0))[correct_mask.cpu()]
+                correct_indices.extend(batch_indices.tolist())
+                sample_index += labels.size(0)
+        accuracy = correct / total * 100
+        avg_loss = total_loss / len(loader)
+        return accuracy, correct_indices, avg_loss
+
+    model = GRUNet(input_size, hidden_size, output_size, dropout_rate).to(device)
+    weights = weights.to(device)
+    criterion = nn.CrossEntropyLoss(weight=weights)
+    optimizer = optim.Adam(model.parameters(), lr=lr_rate, weight_decay=1e-4)
+
+    num_epochs = 25
+    patience = 10
+    best_val_loss = float('inf')
+    best_model_state = None
+    epochs_no_improve = 0
+
+    l1_lambda = 1e-5
+
+    print(f"\nTraining with Hidden size: {hidden_size}, learning rate: {lr_rate}, dropout rate: {dropout_rate}")
+
+    for epoch in range(num_epochs):
+        model.train()
+        running_loss = 0.0
+        correct = 0
+        total = 0
+
+        for inputs, labels in train_loader:
+            inputs, labels = inputs.to(device), labels.to(device)
+            if inputs.dim() == 2:
+                inputs = inputs.unsqueeze(1)
+            optimizer.zero_grad()
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
+            l1_norm = sum(p.abs().sum() for p in model.parameters())
+            loss = loss + l1_lambda * l1_norm
+            loss.backward()
+            optimizer.step()
+            running_loss += loss.item()
+            _, predicted = torch.max(outputs, 1)
+            correct += (predicted == labels).sum().item()
+            total += labels.size(0)
+
+        epoch_loss = running_loss / len(train_loader)
+        epoch_accuracy = correct / total * 100
 
         model.eval()
-        test_acc, correct_indices = evaluate(test_loader)
+        val_acc, correct_indices, val_loss = evaluate(test_loader)
 
-        # torch.save({
-        #     'model_state_dict': model.state_dict(),
-        #     'input_size': input_size,
-        #     'hidden_size': hidden_size,
-        #     'output_size': output_size,
-        #     'dropout_rate': dropout_rate,
-        #     'lr_rate': lr_rate,
-        #     'weights': weights.cpu(),
-        # }, save_path)
-        # print(f"Model saved to {save_path}")
+        print(f"Epoch [{epoch+1}/{num_epochs}], Train Loss: {epoch_loss:.4f}, Train Acc: {epoch_accuracy:.2f}%, Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.2f}%")
 
-        print(f"Input size {input_size}, Hidden size {hidden_size}, learning rate {lr_rate}, dropout {dropout_rate} => Train Accuracy: {epoch_accuracy:.2f}% :: Test Accuracy: {test_acc:.2f}%")
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
+            best_model_state = model.state_dict()
+            epochs_no_improve = 0
+        else:
+            epochs_no_improve += 1
+            if epochs_no_improve >= patience:
+                print(f"Early stopping triggered after {epoch+1} epochs.")
+                break
 
-        return model, test_acc, epoch_accuracy, correct_indices
+    if best_model_state is not None:
+        model.load_state_dict(best_model_state)
+
+    final_acc, final_correct_indices, _ = evaluate(test_loader)
+    print(f"Final Test Accuracy after early stopping: {final_acc:.2f}%")
+
+    return model, final_acc, epoch_accuracy, final_correct_indices
 
 
 def analyze_lrp_classwise(model, lrp, X_test, y_test, test_correct_indices, gene_names, le, device):
