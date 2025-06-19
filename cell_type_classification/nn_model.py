@@ -348,25 +348,34 @@ def analyze_lrp_classwise(model, lrp, X_test, y_test, test_correct_indices, gene
 
 
 def shap_explain_nn(model, train_data, test_data, device):
-
     background = torch.stack([train_data[i][0] for i in range(5)]).to(device)
     test_inputs = torch.stack([test_data[i][0] for i in range(5)]).to(device)
     print(f"Background shape: {background.shape}")
     print(f"Test inputs shape: {test_inputs.shape}")
+
     model.eval()
     with torch.no_grad():
         output = model(test_inputs)
     print(f"Output shape: {output.shape}")
+
     explainer = shap.GradientExplainer(model, background)
     shap_values = explainer.shap_values(test_inputs)
-    for i, sv in enumerate(shap_values):
-        print(f"Class {i} SHAP shape: {torch.tensor(sv).shape}")
-        
+
     print(f"Type of shap_values: {type(shap_values)}")
     print(f"Length of shap_values: {len(shap_values)}")
-    print(f"Type/shape of first element: {type(shap_values[0])}, {torch.tensor(shap_values[0]).shape}")
 
-    print(f"Number of classes (SHAP outputs): {len(shap_values)}")
-    print(f"SHAP values shape (first class): {torch.tensor(shap_values[0]).shape}")
-    shap_mean = torch.stack([torch.tensor(sv).mean(dim=0) for sv in shap_values])
-    print(f"Mean SHAP values shape: {shap_mean.shape}")
+    if isinstance(shap_values, list):
+        for i, sv in enumerate(shap_values):
+            sv_t = torch.tensor(sv)
+            print(f"Class {i} SHAP shape: {sv_t.shape}")
+        
+        sv_tensor = torch.stack([torch.tensor(sv).permute(1, 0) for sv in shap_values])
+        print(f"Stacked SHAP values shape: {sv_tensor.shape}")
+
+        shap_mean = sv_tensor.abs().mean(dim=2)
+        print(f"Mean SHAP values shape: {shap_mean.shape}")
+    else:
+        sv_t = torch.tensor(shap_values)
+        print(f"SHAP values shape: {sv_t.shape}")
+        shap_mean = sv_t.abs().mean(dim=1)
+        print(f"Mean SHAP values shape: {shap_mean.shape}")
