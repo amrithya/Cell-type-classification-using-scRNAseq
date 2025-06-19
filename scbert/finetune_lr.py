@@ -24,7 +24,7 @@ import pickle as pkl
 from tqdm import tqdm
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--local_rank", type=int, default=-1)
+#parser.add_argument("--local_rank", type=int, default=-1)
 parser.add_argument("--bin_num", type=int, default=5)
 parser.add_argument("--gene_num", type=int, default=16906)
 parser.add_argument("--epoch", type=int, default=10)
@@ -39,7 +39,7 @@ parser.add_argument("--model_path", type=str, default='./panglao_pretrained.pth'
 args = parser.parse_args()
 
 rank = int(os.environ["RANK"])
-local_rank = args.local_rank
+local_rank = -1
 torch.cuda.set_device(local_rank)
 device = torch.device("cuda", local_rank)
 world_size = torch.distributed.get_world_size()
