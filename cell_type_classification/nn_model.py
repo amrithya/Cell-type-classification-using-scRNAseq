@@ -347,7 +347,8 @@ def analyze_lrp_classwise(model, lrp, X_test, y_test, test_correct_indices, gene
     df.to_csv(results_file, mode='a', header=not os.path.exists(results_file), index=False)
 
 
-def shap_explain_nn(model, train_data, test_data, device):
+
+def shap_explain_nn(model, train_data, test_data, gene_names, le, device):
     model.eval()
 
     background = torch.stack([train_data[i][0] for i in range(len(train_data))]).to(device)
@@ -379,19 +380,65 @@ def shap_explain_nn(model, train_data, test_data, device):
     print(f"Type of shap_values: {type(shap_values)}")
     print(f"Length of shap_values: {len(shap_values)}")
 
-    if isinstance(shap_values, list):
-        for i, sv in enumerate(shap_values):
-            sv_t = torch.tensor(sv)
-            print(f"Class {i} SHAP shape: {sv_t.shape}")
-        
-        sv_tensor = torch.stack([torch.tensor(sv).permute(1, 0) for sv in shap_values])
-        print(f"Stacked SHAP values shape: {sv_tensor.shape}")
+    results = []
 
+    if isinstance(shap_values, list):
+        sv_tensor = torch.stack([torch.tensor(sv).permute(1, 0) for sv in shap_values])
         shap_mean = sv_tensor.abs().mean(dim=2)
-        print(f"Mean SHAP values shape: {shap_mean.shape}")
+
+        for class_idx, class_name in enumerate(le.classes_):
+            class_shap_mean = shap_mean[class_idx]
+            class_shap_np = class_shap_mean.cpu().numpy()
+
+            top15_idx = class_shap_np.argsort()[-15:][::-1]
+            bottom15_idx = class_shap_np.argsort()[:15]
+
+            for idx in top15_idx:
+                results.append({
+                    "Class": class_name,
+                    "Gene": gene_names[idx],
+                    "SHAP_Mean_Abs": class_shap_np[idx],
+                    "Rank": "Top"
+                })
+            for idx in bottom15_idx:
+                results.append({
+                    "Class": class_name,
+                    "Gene": gene_names[idx],
+                    "SHAP_Mean_Abs": class_shap_np[idx],
+                    "Rank": "Bottom"
+                })
+
     else:
         sv_t = torch.tensor(shap_values)
-        print(f"SHAP values shape: {sv_t.shape}")
         shap_mean = sv_t.abs().mean(dim=0)
-        print(f"Mean SHAP values shape: {shap_mean.shape}")
+        shap_mean_np = shap_mean.cpu().numpy()
+
+        class_name = le.classes_[0]
+        top15_idx = shap_mean_np.argsort()[-15:][::-1]
+        bottom15_idx = shap_mean_np.argsort()[:15]
+
+        for idx in top15_idx:
+            results.append({
+                "Class": class_name,
+                "Gene": gene_names[idx],
+                "SHAP_Mean_Abs": shap_mean_np[idx],
+                "Rank": "Top"
+            })
+        for idx in bottom15_idx:
+            results.append({
+                "Class": class_name,
+                "Gene": gene_names[idx],
+                "SHAP_Mean_Abs": shap_mean_np[idx],
+                "Rank": "Bottom"
+            })
+
+    df = pd.DataFrame(results)
+
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    results_dir = os.path.join(base_dir, 'results')
+    os.makedirs(results_dir, exist_ok=True)
+
+    results_file = os.path.join(results_dir, "nn_top_bottom15_genes_all_classes_from_shap.csv")
+    df.to_csv(results_file, index=False)
+    print(f"Saved SHAP top/bottom gene results to {results_file}")  
 
