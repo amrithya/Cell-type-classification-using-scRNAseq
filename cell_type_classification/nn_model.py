@@ -418,8 +418,8 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
         mean_shap = np.mean(shap_vals, axis=0)
         print("mean_shap shape:", mean_shap.shape)
 
-        top_indices = np.argsort(mean_shap)[-15:][::-1]
-        bottom_indices = np.argsort(mean_shap)[:15]
+        top_indices = np.argsort(shap_vals)[-15:][::-1]
+        bottom_indices = np.argsort(shap_vals)[:15]
         print("top_indices shape:", top_indices.shape)
         print("bottom_indices shape:", bottom_indices.shape)
 
