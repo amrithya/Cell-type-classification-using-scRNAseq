@@ -42,6 +42,16 @@ class LRP:
         return relevance.detach()
     __call__ = relprop
 
+class ClassLogitWrapper(torch.nn.Module):
+    def __init__(self, model, target_class):
+        super().__init__()
+        self.model = model
+        self.target_class = target_class
+
+    def forward(self, x):
+        out = self.model(x)
+        return out[:, self.target_class]
+
 def train_nn(device, train_data, test_data, lr_rate, weights, input_size, output_size, dropout_rate, hidden_size):
     batch_size = 64
     train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
@@ -337,7 +347,7 @@ def analyze_lrp_classwise(model, lrp, X_test, y_test, test_correct_indices, gene
 
 
 def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn'):
-    print(f"Explaining PyTorch model predictions using SHAP for model {save_name}")
+    print(f"Explaining PyTorch model predictions using SHAP (GradientExplainer) for model {save_name}")
     
     base_dir = os.path.dirname(os.path.abspath(__file__))
     results_dir = os.path.join(base_dir, 'results')
@@ -353,62 +363,55 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
         X_tensor_all = torch.tensor(X_test, dtype=torch.float32).to(device)
         outputs = model(X_tensor_all)
         _, predicted = torch.max(outputs, 1)
-    
+
     correct_mask = (predicted.cpu().numpy() == y_test)
     X_correct = X_test[correct_mask]
     y_correct = y_test[correct_mask]
-    
+
     print(f"Number of correctly predicted test samples: {X_correct.shape[0]}")
-    
+
     if X_correct.shape[0] > 10:
         X_correct = X_correct[:10]
         y_correct = y_correct[:10]
 
     X_tensor = torch.tensor(X_correct, dtype=torch.float32).to(device)
 
-    explainer = shap.DeepExplainer(model, X_tensor)
-    shap_values = explainer.shap_values(X_tensor)
-
-    num_classes = len(shap_values)
-    print(f"SHAP returned {num_classes} classes")
-
-    if num_classes <= len(le.classes_):
-        class_names = le.inverse_transform(np.arange(num_classes))
-    else:
-        class_names = [f"class_{i}" for i in range(num_classes)]
-        print("Warning: SHAP returned more classes than in label encoder, using generic class names.")
-
+    num_classes = model(X_tensor).shape[1]
     feature_dim = len(feature_names)
-    class_relevance = np.zeros((num_classes, feature_dim))
-    class_counts = np.zeros(num_classes, dtype=int)
-
-    for i in range(X_correct.shape[0]):
-        label = y_correct[i]
-        class_relevance[label] += shap_values[label][i]
-        class_counts[label] += 1
-
-    for c in range(num_classes):
-        if class_counts[c] > 0:
-            class_relevance[c] /= class_counts[c]
 
     records = []
-    for c in range(num_classes):
-        relevance = class_relevance[c]
-        top_indices = np.argsort(relevance)[-15:][::-1]
-        bottom_indices = np.argsort(relevance)[:15]
+
+    for target_class in range(num_classes):
+        print(f"Explaining class {target_class}...")
+
+        wrapped_model = ClassLogitWrapper(model, target_class).to(device)
+
+        explainer = shap.GradientExplainer(wrapped_model, X_tensor)
+        shap_values = explainer.shap_values(X_tensor)
+
+        shap_vals = shap_values[0]
+
+        mean_shap = np.mean(shap_vals, axis=0)  # (n_features,)
+
+        top_indices = np.argsort(mean_shap)[-15:][::-1]
+        bottom_indices = np.argsort(mean_shap)[:15]
 
         top_genes = [feature_names[i] for i in top_indices]
         bottom_genes = [feature_names[i] for i in bottom_indices]
-        class_name = class_names[c]
+
+        if target_class < len(le.classes_):
+            class_name = le.inverse_transform([target_class])[0]
+        else:
+            class_name = f"class_{target_class}"
 
         for i in range(15):
             records.append({
                 "class": class_name,
                 "rank": i + 1,
                 "top_gene": top_genes[i],
-                "top_score": relevance[top_indices[i]],
+                "top_score": mean_shap[top_indices[i]],
                 "bottom_gene": bottom_genes[i],
-                "bottom_score": relevance[bottom_indices[i]]
+                "bottom_score": mean_shap[bottom_indices[i]]
             })
 
     df = pd.DataFrame(records)
