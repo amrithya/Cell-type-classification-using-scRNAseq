@@ -369,7 +369,7 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
 
     X_tensor = torch.tensor(X_correct, dtype=torch.float32).to(device)
 
-    explainer = shap.GradientExplainer(model, X_tensor)
+    explainer = shap.DeepExplainer(model, X_tensor)
     shap_values = explainer.shap_values(X_tensor)
 
     num_classes = len(shap_values)
