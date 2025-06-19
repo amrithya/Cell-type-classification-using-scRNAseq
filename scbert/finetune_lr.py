@@ -124,7 +124,7 @@ for param in model.parameters():
 
 model.to_out = nn.Identity()
 model = model.to(device)
-model = DDP(model, device_ids=[local_rank], output_device=local_rank)
+#model = DDP(model, device_ids=[local_rank], output_device=local_rank)
 
 def extract_embeddings(model, loader):
     model.eval()
