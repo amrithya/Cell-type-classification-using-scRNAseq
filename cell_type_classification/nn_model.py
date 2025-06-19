@@ -234,90 +234,60 @@ def analyze_lrp_classwise(model, lrp, X_test, y_test, test_correct_indices, gene
 
 
 def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn'):
+    
     print(f"Explaining PyTorch model predictions using SHAP for model {save_name}")
-
-    try:
-        model.eval()
-        test_loader = DataLoader(test_data, batch_size=len(test_data), shuffle=False)
-        X_all, y_all = next(iter(test_loader))
-        X_all, y_all = X_all.to(device), y_all.to(device)
-    except Exception as e:
-        print(f"Error preparing test data: {e}")
-        print(traceback.format_exc())
-        return
-
-    try:
-        with torch.no_grad():
-            outputs = model(X_all)
-            y_pred = torch.argmax(outputs, dim=1)
-
-        correct_mask = (y_pred == y_all)
-        correct_indices = correct_mask.nonzero(as_tuple=True)[0]
-
-        if len(correct_indices) == 0:
-            raise ValueError("No correctly predicted samples in test set.")
-
-        X_correct = X_all[correct_indices]
-        y_correct = y_all[correct_indices]
-        y_pred_correct = y_pred[correct_indices]
-
-        num_classes = len(le.classes_)
-        count_class = {i: (y_correct == i).sum().item() for i in range(num_classes)}
-
-        print("Counts of correctly predicted labels per class:")
-        for label, count in count_class.items():
-            class_name = le.inverse_transform([label])[0]
-            print(f"{class_name} ({label}): {count}")
-
-    except Exception as e:
-        print(f"Error during model prediction/data extraction: {e}")
-        print(traceback.format_exc())
-        return
-
-    try:
-        df_records = []
-        K = 15
-        X_bg = X_correct.detach().cpu()
-        explainer = shap.GradientExplainer(model, X_bg.to(device))
-
-        for cls_idx in range(num_classes):
-            class_correct_indices = (y_pred_correct == cls_idx).nonzero(as_tuple=True)[0]
-
-            if len(class_correct_indices) == 0:
-                print(f"Skipping class {cls_idx} (no correct predictions).")
-                continue
-
-            X_cls_correct = X_correct[class_correct_indices]
-            shap_vals = explainer.shap_values(X_cls_correct)
-            
-            if isinstance(shap_vals, list):
-                shap_vals = np.array(shap_vals)
-            
-            if len(shap_vals.shape) == 3:
-                if shap_vals.shape[0] == num_classes:
-                    shap_vals_cls = shap_vals[cls_idx]
-                else:
-                    shap_vals_cls = shap_vals[0]
-            else:
-                shap_vals_cls = shap_vals
-
-            mean_shap = np.mean(shap_vals_cls, axis=0)
-            top_idx = np.argsort(-mean_shap)[:K]
-            bottom_idx = np.argsort(mean_shap)[:K]
-            class_name = le.inverse_transform([cls_idx])[0]
-
-            for i in top_idx:
-                df_records.append([class_name, feature_names[i], mean_shap[i], 'top_positive'])
-            for i in bottom_idx:
-                df_records.append([class_name, feature_names[i], mean_shap[i], 'top_negative'])
-
-        df = pd.DataFrame(df_records, columns=['class_name', 'gene', 'shap_value', 'rank_type'])
-        os.makedirs('results', exist_ok=True)
-        csv_path = os.path.join('results', f"{save_name}_top_bottom15_genes_from_shap.csv")
-        df.to_csv(csv_path, index=False)
-        print(f"SHAP results saved to {csv_path}")
-
-    except Exception as e:
-        print(f"Error during SHAP explanation or saving results: {e}")
-        print(traceback.format_exc())
-        return
+    test_loader = DataLoader(test_data, batch_size=len(test_data), shuffle=False)
+    X_test, y_test = next(iter(test_loader))
+    X_test, y_test = X_test.to(device), y_test.to(device)
+    
+    model.eval()
+    with torch.no_grad():
+        outputs = model(X_test)
+        _, predicted = torch.max(outputs, 1)
+        correct_mask = (predicted == y_test)
+        X_correct = X_test[correct_mask]
+        y_correct = y_test[correct_mask]
+    
+    print(f"Using {len(X_correct)} correctly predicted samples for SHAP analysis")
+    
+    background = X_correct[:100].cpu().numpy()
+    X_shap = X_correct.cpu().numpy()
+    
+    explainer = shap.DeepExplainer(model, torch.tensor(background, dtype=torch.float32).to(device))
+    
+    shap_values = explainer.shap_values(X_shap)
+    
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    results_dir = os.path.join(base_dir, 'results')
+    os.makedirs(results_dir, exist_ok=True)
+        
+    num_features = 15 
+    records = []
+    
+    for i, class_name in enumerate(le.classes_):
+        mean_shap = np.mean(shap_values[i], axis=0)
+        
+        top_indices = np.argsort(-mean_shap)[:num_features]  # Descending order
+        bottom_indices = np.argsort(mean_shap)[:num_features]  # Ascending order
+        
+        for rank, idx in enumerate(top_indices):
+            records.append({
+                'class': class_name,
+                'rank': rank + 1,
+                'feature': feature_names[idx],
+                'mean_shap': mean_shap[idx],
+            })
+        
+        for rank, idx in enumerate(bottom_indices):
+            records.append({
+                'class': class_name,
+                'rank': rank + 1,
+                'feature': feature_names[idx],
+                'mean_shap': mean_shap[idx],
+            })
+    
+    df = pd.DataFrame(records)
+    csv_path = os.path.join(results_dir, f"{save_name}_top_bottom15_genes_from_shap")
+    df.to_csv(csv_path, index=False)
+    
+    print(f"SHAP analysis completed. Top and bottom features saved to {csv_path}")
