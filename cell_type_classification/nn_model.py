@@ -348,36 +348,51 @@ def analyze_lrp_classwise(model, lrp, X_test, y_test, test_correct_indices, gene
 
 def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn'):
     print(f"Explaining PyTorch model predictions using SHAP (GradientExplainer) for model {save_name}")
-    
+
     base_dir = os.path.dirname(os.path.abspath(__file__))
     results_dir = os.path.join(base_dir, 'results')
     os.makedirs(results_dir, exist_ok=True)
     results_file = os.path.join(results_dir, f"{save_name}_top_bottom15_genes_all_classes_from_shap.csv")
-    
+
     X_test = test_data.tensors[0].cpu().numpy()
     y_test = test_data.tensors[1].cpu().numpy()
+    print("X_test shape:", X_test.shape)
+    print("y_test shape:", y_test.shape)
 
     model.eval()
 
     with torch.no_grad():
         X_tensor_all = torch.tensor(X_test, dtype=torch.float32).to(device)
+        print("X_tensor_all shape:", X_tensor_all.shape)
+
         outputs = model(X_tensor_all)
+        print("outputs shape:", outputs.shape)
+
         _, predicted = torch.max(outputs, 1)
+        print("predicted shape:", predicted.shape)
 
     correct_mask = (predicted.cpu().numpy() == y_test)
+    print("correct_mask shape:", correct_mask.shape)
+
     X_correct = X_test[correct_mask]
     y_correct = y_test[correct_mask]
-
-    print(f"Number of correctly predicted test samples: {X_correct.shape[0]}")
+    print("X_correct shape:", X_correct.shape)
+    print("y_correct shape:", y_correct.shape)
 
     if X_correct.shape[0] > 10:
         X_correct = X_correct[:10]
         y_correct = y_correct[:10]
+        print("X_correct shape after slicing:", X_correct.shape)
+        print("y_correct shape after slicing:", y_correct.shape)
 
     X_tensor = torch.tensor(X_correct, dtype=torch.float32).to(device)
+    print("X_tensor shape (for SHAP):", X_tensor.shape)
 
     num_classes = model(X_tensor).shape[1]
+    print("num_classes:", num_classes)
+
     feature_dim = len(feature_names)
+    print("feature_dim (number of features):", feature_dim)
 
     records = []
 
@@ -389,22 +404,29 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
         explainer = shap.GradientExplainer(wrapped_model, X_tensor)
         shap_values = explainer.shap_values(X_tensor)
 
+        print(f"shap_values type: {type(shap_values)}")
+        print(f"shap_values[0] shape: {np.array(shap_values[0]).shape}")
+
         shap_vals = shap_values[0]
 
-        mean_shap = np.mean(shap_vals, axis=0)  # (n_features,)
+        mean_shap = np.mean(shap_vals, axis=0)
+        print("mean_shap shape:", mean_shap.shape)
 
         top_indices = np.argsort(mean_shap)[-15:][::-1]
         bottom_indices = np.argsort(mean_shap)[:15]
+        print("top_indices shape:", top_indices.shape)
+        print("bottom_indices shape:", bottom_indices.shape)
 
         top_genes = [feature_names[i] for i in top_indices]
         bottom_genes = [feature_names[i] for i in bottom_indices]
-        print("Shap values for top genes:", len(top_genes))
-        print("Shap values for bottom genes:", len(bottom_genes))
+        print("Number of top_genes:", len(top_genes))
+        print("Number of bottom_genes:", len(bottom_genes))
 
         if target_class < len(le.classes_):
             class_name = le.inverse_transform([target_class])[0]
         else:
             class_name = f"class_{target_class}"
+
         num_top = min(15, len(top_genes))
         for i in range(num_top):
             records.append({
@@ -417,6 +439,7 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
             })
 
     df = pd.DataFrame(records)
+    print("df shape (final result):", df.shape)
 
     if os.path.exists(results_file):
         os.remove(results_file)
