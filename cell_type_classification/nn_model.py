@@ -189,7 +189,7 @@ def train_gru(device, train_data, test_data, lr_rate, weights, input_size, outpu
     num_epochs = 10
 
     def save_path(input_size, hidden_size, lr_rate, dropout_rate):
-        save_path = f"/data1/data/corpus/scMODEL/shap_gru_model_Zheng68K_{dropout_rate}.pth"
+        save_path = "/data1/data/corpus/scMODEL/shap_gru_model_Zheng68K.pth"
         if os.path.exists(save_path):
             checkpoint = torch.load(save_path, map_location=device)
             model.load_state_dict(checkpoint['model_state_dict'])
