@@ -347,6 +347,96 @@ def analyze_lrp_classwise(model, lrp, X_test, y_test, test_correct_indices, gene
     df.to_csv(results_file, mode='a', header=not os.path.exists(results_file), index=False)
 
 
+def shap_sample_explain_nn(model, train_data, test_data, gene_names, le, device):
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    results_dir = os.path.join(base_dir, 'results')
+    os.makedirs(results_dir, exist_ok=True)
+    
+    csv_path = os.path.join(results_dir, "top_bottom_shap_values.csv")
+    if os.path.exists(csv_path):
+        os.remove(csv_path)
+
+    background = torch.stack([train_data[i][0] for i in range(5)]).to(device)
+
+    num_classes = len(le.classes_)
+    seen_classes = set()
+    selected_inputs = []
+    selected_labels = []
+
+    for i in range(len(test_data)):
+        input_i, label_i = test_data[i]
+        label_i = label_i.item() if torch.is_tensor(label_i) else label_i
+
+        if label_i not in seen_classes:
+            selected_inputs.append(input_i)
+            selected_labels.append(label_i)
+            seen_classes.add(label_i)
+
+        if len(seen_classes) == num_classes:
+            break
+
+    test_inputs = torch.stack(selected_inputs).to(device)
+    test_labels = torch.tensor(selected_labels).to(device)
+
+    print(f"Background shape: {background.shape}")
+    print(f"test_inputs.shape: {test_inputs.shape}")
+    print(f"test_labels: {test_labels}")
+
+    model.eval()
+    with torch.no_grad():
+        output = model(test_inputs)
+    print(f"Output shape: {output.shape}")
+
+    explainer = shap.GradientExplainer(model, background)
+    shap_values = explainer.shap_values(test_inputs)
+
+    if isinstance(shap_values, list):
+        sv_tensor = torch.stack([torch.tensor(sv).permute(1, 0) for sv in shap_values])
+        print(f"Stacked SHAP values shape: {sv_tensor.shape}")
+        shap_mean = sv_tensor.mean(dim=2)
+        print(f"Mean SHAP values shape: {shap_mean.shape}")
+    else:
+        sv_tensor = torch.tensor(shap_values)
+        print(f"SHAP values shape: {sv_tensor.shape}")
+        shap_mean = sv_tensor.mean(dim=0)
+        print(f"Mean SHAP values shape: {shap_mean.shape}")
+
+    shap_mean_np = shap_mean.cpu().numpy()
+
+    records = []
+    for class_idx in range(num_classes):
+        class_name = le.inverse_transform([class_idx])[0]
+        if shap_mean_np.shape[0] == num_classes:
+            class_shap_values = shap_mean_np[class_idx, :]
+        else:
+            class_shap_values = shap_mean_np[:, class_idx]
+
+        sorted_idx = np.argsort(class_shap_values)
+        bottom_idx = sorted_idx[:15]
+        top_idx = sorted_idx[-15:][::-1]
+
+        for i in bottom_idx:
+            records.append({
+                'class': class_name,
+                'feature_idx': i,
+                'gene_name': gene_names[i],
+                'shap_value': class_shap_values[i],
+                'rank': 'bottom'
+            })
+        for i in top_idx:
+            records.append({
+                'class': class_name,
+                'feature_idx': i,
+                'gene_name': gene_names[i],
+                'shap_value': class_shap_values[i],
+                'rank': 'top'
+            })
+
+    df = pd.DataFrame(records)
+    df.to_csv(csv_path, index=False)
+    print(f"Saved top/bottom SHAP values to {csv_path}")
+
+
 def shap_explain_nn(model, train_data, test_data, gene_names, le, device):
     base_dir = os.path.dirname(os.path.abspath(__file__))
     results_dir = os.path.join(base_dir, 'results')
