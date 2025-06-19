@@ -187,7 +187,7 @@ def train_gru(device, train_data, test_data, lr_rate, weights, input_size, outpu
             return out
 
     num_epochs = 10
-    save_path = "/data1/data/corpus/scMODEL/shap_gru_model_Zheng68K.pth"
+    save_path = f"/data1/data/corpus/scMODEL/shap_gru_model_Zheng68K_{lr_rate}.pth"
 
     model = GRUNet(input_size, hidden_size, output_size, dropout_rate).to(device)
 
@@ -226,7 +226,7 @@ def train_gru(device, train_data, test_data, lr_rate, weights, input_size, outpu
     else:
         weights = weights.to(device)
         criterion = nn.CrossEntropyLoss(weight=weights)
-        optimizer = optim.Adam(model.parameters(), lr=lr_rate)
+        optimizer = optim.Adam(model.parameters(), lr=lr_rate, weight_decay=1e-4)
 
         print(f"\nTraining with Hidden size: {hidden_size}, learning rate: {lr_rate}, dropout rate: {dropout_rate}")
         l1_lambda = 1e-5

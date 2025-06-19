@@ -115,7 +115,7 @@ if __name__ == "__main__":
         train_data, test_data, weights,le, input_size, output_size  = h.preprocess_data_nn(device, X_train, y_train, X_test, y_test,le)
         hidden_sizes = [128]
         lr_rates = [0.001]
-        dropout_rates = [0.2]
+        dropout_rates = [0.3,0.5,0.7]
         results = []
         for hidden_size in hidden_sizes:
             for dropout in dropout_rates:
