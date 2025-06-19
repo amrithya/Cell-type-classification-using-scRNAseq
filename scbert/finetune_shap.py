@@ -205,27 +205,36 @@ max_acc = 0.0
 start_epoch = 1
 
 if os.path.exists(ckpt_dir):
-        print(f"[INFO] Found checkpoint at {ckpt_dir}. Loading...")
-        checkpoint = torch.load(ckpt_dir, map_location='cpu')
-        
-        if 'model_state_dict' in checkpoint:
-            model.load_state_dict(checkpoint['model_state_dict'])
-            print("[INFO] Model state loaded.")
-        if 'optimizer_state_dict' in checkpoint:
-            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-            print("[INFO] Optimizer state loaded.")
-        if 'scheduler_state_dict' in checkpoint:
-            scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
-            print("[INFO] Scheduler state loaded.")
-        if 'epoch' in checkpoint:
-            saved_epoch = checkpoint['epoch']
-            print(f"[INFO] Checkpoint saved at epoch {saved_epoch}.")
-            if saved_epoch < EPOCHS:
-                start_epoch =  saved_epoch + 1
-            else:
-                print("[INFO] Checkpoint epoch >= total epochs, starting from scratch.")
+    print(f"[INFO] Found checkpoint at {ckpt_dir}. Loading...")
+    checkpoint = torch.load(ckpt_dir, map_location='cpu')
+    
+    if 'epoch' in checkpoint:
+        saved_epoch = checkpoint['epoch']
+        print(f"[INFO] Checkpoint saved at epoch {saved_epoch}.")
+
+        if saved_epoch == EPOCHS:
+            print("[INFO] Checkpoint corresponds to the last epoch. Loading states...")
+            
+            if 'model_state_dict' in checkpoint:
+                model.load_state_dict(checkpoint['model_state_dict'])
+                print("[INFO] Model state loaded.")
+            if 'optimizer_state_dict' in checkpoint:
+                optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+                print("[INFO] Optimizer state loaded.")
+            if 'scheduler_state_dict' in checkpoint:
+                scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+                print("[INFO] Scheduler state loaded.")
+            
+            start_epoch = EPOCHS + 1
+        else:
+            print(f"[INFO] Checkpoint does not correspond to last epoch ({EPOCHS}), skipping load.")
+            start_epoch = 1
+    else:
+        print("[WARN] Checkpoint has no epoch info. Skipping load.")
+        start_epoch = 1
 else:
-        print(f"[INFO] No checkpoint found at {ckpt_dir}, starting training from epoch 1.")
+    print(f"[INFO] No checkpoint found at {ckpt_dir}, starting training from epoch 1.")
+    start_epoch = 1
 
 
 for i in range(start_epoch, EPOCHS + 1):
