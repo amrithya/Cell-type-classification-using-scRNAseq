@@ -212,8 +212,8 @@ if os.path.exists(ckpt_dir):
         saved_epoch = checkpoint['epoch']
         print(f"[INFO] Checkpoint saved at epoch {saved_epoch}.")
 
-        if saved_epoch == EPOCHS:
-            print("[INFO] Checkpoint corresponds to the last epoch. Loading states...")
+        if saved_epoch < EPOCHS:
+            print("[INFO] Checkpoint less than total epoch. Loading states...")
             
             if 'model_state_dict' in checkpoint:
                 model.load_state_dict(checkpoint['model_state_dict'])
@@ -235,7 +235,8 @@ if os.path.exists(ckpt_dir):
 else:
     print(f"[INFO] No checkpoint found at {ckpt_dir}, starting training from epoch 1.")
     start_epoch = 1
-
+    
+print(f"[INFO] Starting training from epoch {start_epoch}.")
 
 for i in range(start_epoch, EPOCHS + 1):
     train_loader.sampler.set_epoch(i)
