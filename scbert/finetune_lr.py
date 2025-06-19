@@ -138,12 +138,17 @@ def extract_embeddings(model, loader):
             data = data.to(device)
             hidden = model(data)
             hidden = hidden.permute(0, 2, 1)
-            emb = conv(hidden).squeeze(1).cpu().numpy()
+            emb = conv(hidden)
+            print(f"Conv output shape: {emb.shape}")
+            emb = emb.squeeze(1).cpu().numpy()
+            print(f"Final embedding batch shape: {emb.shape}")
             embeddings.append(emb)
             labels_all.append(labels.cpu().numpy())
 
     embeddings = np.concatenate(embeddings, axis=0)
     labels_all = np.concatenate(labels_all, axis=0)
+    print(f"Final embeddings shape: {embeddings.shape}")
+    print(f"Final labels shape: {labels_all.shape}")
     return embeddings, labels_all
 
 save_dir = '/data1/data/corpus/'
@@ -163,6 +168,7 @@ if not args.force_extract and os.path.exists(train_emb_path) and os.path.exists(
     test_y = np.load(test_y_path)
 else:
     print("Extracting embeddings...")
+    print(f"Train dataset size: {train_loader.shape}, Validation dataset size: {val_loader.shape}")
     train_emb, train_y = extract_embeddings(model, train_loader)
     test_emb, test_y = extract_embeddings(model, val_loader)
 
