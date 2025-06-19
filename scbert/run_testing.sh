@@ -11,7 +11,7 @@
 #SBATCH --error=results/besteffort_finetune_%A_%a.err
 #SBATCH --requeue
 
- poetry run torchrun --nproc_per_node=4 testing.py
+ poetry run torchrun --nproc_per_node=4 embeddings.py
 
 echo "All Done!"
 wait
