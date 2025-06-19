@@ -234,8 +234,8 @@ def analyze_lrp_classwise(model, lrp, X_test, y_test, test_correct_indices, gene
 
 
 def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn'):
-    
     print(f"Explaining PyTorch model predictions using SHAP for model {save_name}")
+    
     test_loader = DataLoader(test_data, batch_size=len(test_data), shuffle=False)
     X_test, y_test = next(iter(test_loader))
     X_test, y_test = X_test.to(device), y_test.to(device)
@@ -248,27 +248,48 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
         X_correct = X_test[correct_mask]
         y_correct = y_test[correct_mask]
     
-    print(f"Using {len(X_correct)} correctly predicted samples for SHAP analysis")
+    num_samples = len(X_correct)
+    print(f"Using {num_samples} correctly predicted samples for SHAP analysis")
     
-    background = X_correct[:100].cpu().numpy()
+    if num_samples <= 1000:
+        background = X_correct
+    else:
+        background = X_correct[:500]
+        print(f"Using subset of {len(background)} samples as background")
+    
+    explainer = shap.DeepExplainer(model, background)
+    
+    if num_samples > 1000:
+        print("Calculating SHAP values in batches...")
+        batch_size = 500
+        shap_values = []
+        for i in range(0, num_samples, batch_size):
+            batch = X_correct[i:i+batch_size]
+            batch_shap = explainer.shap_values(batch)
+            shap_values.append(batch_shap)
+            print(f"Processed {min(i+batch_size, num_samples)}/{num_samples} samples")
+        
+        shap_values = [torch.cat([s[i] for s in shap_values], dim=0) 
+                      for i in range(len(shap_values[0]))]
+        shap_values = [shap_val.cpu().numpy() for shap_val in shap_values]
+    else:
+        shap_values = explainer.shap_values(X_correct)
+        shap_values = [shap_val.cpu().numpy() for shap_val in shap_values]
+    
     X_shap = X_correct.cpu().numpy()
-    
-    explainer = shap.DeepExplainer(model, torch.tensor(background, dtype=torch.float32).to(device))
-    
-    shap_values = explainer.shap_values(X_shap)
+    y_correct = y_correct.cpu().numpy()
     
     base_dir = os.path.dirname(os.path.abspath(__file__))
     results_dir = os.path.join(base_dir, 'results')
     os.makedirs(results_dir, exist_ok=True)
         
-    num_features = 15 
+    num_features = 15
     records = []
     
     for i, class_name in enumerate(le.classes_):
         mean_shap = np.mean(shap_values[i], axis=0)
-        
-        top_indices = np.argsort(-mean_shap)[:num_features]  # Descending order
-        bottom_indices = np.argsort(mean_shap)[:num_features]  # Ascending order
+        top_indices = np.argsort(-mean_shap)[:num_features]
+        bottom_indices = np.argsort(mean_shap)[:num_features]
         
         for rank, idx in enumerate(top_indices):
             records.append({
@@ -276,6 +297,7 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
                 'rank': rank + 1,
                 'feature': feature_names[idx],
                 'mean_shap': mean_shap[idx],
+                'impact_type': 'positive'
             })
         
         for rank, idx in enumerate(bottom_indices):
@@ -284,10 +306,11 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
                 'rank': rank + 1,
                 'feature': feature_names[idx],
                 'mean_shap': mean_shap[idx],
+                'impact_type': 'negative'
             })
     
     df = pd.DataFrame(records)
-    csv_path = os.path.join(results_dir, f"{save_name}_top_bottom15_genes_from_shap")
+    csv_path = os.path.join(results_dir, f"{save_name}_shap_top_bottom_features.csv")
     df.to_csv(csv_path, index=False)
     
     print(f"SHAP analysis completed. Top and bottom features saved to {csv_path}")
