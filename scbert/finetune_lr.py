@@ -168,7 +168,7 @@ if not args.force_extract and os.path.exists(train_emb_path) and os.path.exists(
     test_y = np.load(test_y_path)
 else:
     print("Extracting embeddings...")
-    print(f"Train dataset size: {train_loader.shape}, Validation dataset size: {val_loader.shape}")
+    print(f"Train batches: {len(train_loader)}, Validation batches: {len(val_loader)}")
     train_emb, train_y = extract_embeddings(model, train_loader)
     test_emb, test_y = extract_embeddings(model, val_loader)
 
