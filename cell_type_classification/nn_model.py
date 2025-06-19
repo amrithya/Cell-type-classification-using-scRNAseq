@@ -409,6 +409,12 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
 
         shap_vals = shap_values[0]
 
+        print("Original shap_vals shape:", shap_vals.shape)
+        if shap_vals.shape[0] == feature_dim and shap_vals.shape[1] == X_tensor.shape[0]:
+            shap_vals = shap_vals.T
+
+        print("Adjusted shap_vals shape:", shap_vals.shape)
+
         mean_shap = np.mean(shap_vals, axis=0)
         print("mean_shap shape:", mean_shap.shape)
 
