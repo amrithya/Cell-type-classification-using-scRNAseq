@@ -88,12 +88,11 @@ class SCDataset(Dataset):
         self.label = label
 
     def __getitem__(self, index):
-        rand_start = random.randint(0, self.data.shape[0]-1)
-        full_seq = self.data[rand_start].toarray()[0]
+        full_seq = self.data[index].toarray()[0]
         full_seq[full_seq > (CLASS - 2)] = CLASS - 2
         full_seq = torch.from_numpy(full_seq).long()
-        full_seq = torch.cat((full_seq, torch.tensor([0]))).to(device)
-        seq_label = self.label[rand_start]
+        full_seq = torch.cat((full_seq, torch.tensor([0])))
+        seq_label = self.label[index]
         return full_seq, seq_label
 
     def __len__(self):
@@ -153,8 +152,9 @@ for index_train, index_val in sss.split(data, label):
 
 train_sampler = DistributedSampler(train_dataset)
 val_sampler = DistributedSampler(val_dataset)
-train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, sampler=train_sampler)
-val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, sampler=val_sampler)
+
+train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, sampler=train_sampler, drop_last=True)
+val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, sampler=val_sampler, drop_last=True)
 
 model = PerformerLM(
     num_tokens=CLASS,
