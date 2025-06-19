@@ -398,13 +398,15 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
 
         top_genes = [feature_names[i] for i in top_indices]
         bottom_genes = [feature_names[i] for i in bottom_indices]
+        print("Shap values for top genes:", len(top_genes))
+        print("Shap values for bottom genes:", len(bottom_genes))
 
         if target_class < len(le.classes_):
             class_name = le.inverse_transform([target_class])[0]
         else:
             class_name = f"class_{target_class}"
-
-        for i in range(15):
+        num_top = min(15, len(top_genes))
+        for i in range(num_top):
             records.append({
                 "class": class_name,
                 "rank": i + 1,
