@@ -347,70 +347,13 @@ def analyze_lrp_classwise(model, lrp, X_test, y_test, test_correct_indices, gene
     df.to_csv(results_file, mode='a', header=not os.path.exists(results_file), index=False)
 
 
-def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn'):
-    model.eval()
-    model.to(device)
-
-    X_test = test_data.tensors[0].cpu().numpy()
-    y_test = test_data.tensors[1].cpu().numpy()
-
-    X_tensor = torch.tensor(X_test, dtype=torch.float32).to(device)
-    y_tensor = torch.tensor(y_test).to(device)
-
-    with torch.no_grad():
-        outputs = model(X_tensor)
-        if outputs.dim() == 1 or outputs.shape[1] == 1:
-            preds = (torch.sigmoid(outputs) > 0.5).long().squeeze()
-        else:
-            preds = torch.argmax(outputs, dim=1)
-
-    correct_mask = (preds == y_tensor)
-    correct_samples = X_tensor[correct_mask][:10]
-    correct_labels = y_tensor[correct_mask][:10]
-
-    total = len(y_tensor)
-    correct = correct_mask.sum().item()
-    print(f"Total samples: {total}")
-    print(f"Correctly predicted samples: {correct} ({correct/total:.2%})")
-
-    if correct == 0:
-        print("No correctly predicted samples. Exiting.")
-        return
-
-    background = correct_samples
-    background_np = background.cpu().numpy()
-    samples_np = correct_samples.cpu().numpy()
-
-    def model_forward(x):
-        x_tensor = torch.tensor(x, dtype=torch.float32).to(device)
-        model.eval()
-        with torch.no_grad():
-            out = model(x_tensor)
-            if out.dim() == 1 or out.shape[1] == 1:
-                probs = torch.sigmoid(out)
-            else:
-                probs = torch.nn.functional.softmax(out, dim=1)
-        return probs.cpu().numpy()
+def shap_explain_nn(model, train_data, test_data, le, device, save_name='nn'):
     
-    background_np = background.cpu().numpy()
-    explainer = shap.DeepExplainer(model, background_np)
-    shap_values = explainer.shap_values(samples_np)
-
-    top_k = 15
-    result_rows = []
-
-    for class_idx, class_shap in enumerate(shap_values):
-        mean_shap = np.mean(class_shap, axis=0)
-        sorted_idx = np.argsort(mean_shap)
-        bottom_idx = sorted_idx[:top_k]
-        top_idx = sorted_idx[-top_k:][::-1]
-        class_name = le.inverse_transform([class_idx])[0] if le else str(class_idx)
-        for i in top_idx:
-            result_rows.append({'Class': class_name, 'Feature': feature_names[i], 'SHAP_value': mean_shap[i], 'Impact': 'top'})
-        for i in bottom_idx:
-            result_rows.append({'Class': class_name, 'Feature': feature_names[i], 'SHAP_value': mean_shap[i], 'Impact': 'bottom'})
-
-    df = pd.DataFrame(result_rows)
-    csv_name = f"{save_name}_shap_top_bottom_features.csv"
-    df.to_csv(csv_name, index=False)
-    print(f"Saved top/bottom SHAP features per class to {csv_name}")
+    background = torch.stack([train_data[i][0] for i in range(5)]).to(device)
+    test_inputs = torch.stack([test_data[i][0] for i in range(5)]).to(device)
+    model.eval()
+    explainer = shap.DeepExplainer(model, background)
+    shap_values = explainer.shap_values(test_inputs)
+    print(f"SHAP values shape: {shap_values[0].shape}")
+    shap_mean = torch.stack([torch.mean(class_shap, dim=0) for class_shap in shap_values])
+    print(f"Mean SHAP values shape: {shap_mean.shape}")
