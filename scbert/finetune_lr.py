@@ -45,9 +45,9 @@ rank = int(os.environ["RANK"])
 local_rank = args.local_rank
 torch.cuda.set_device(local_rank)
 device = torch.device("cuda", local_rank)
-world_size = torch.distributed.get_world_size()
 
 dist.init_process_group(backend='nccl')
+world_size = torch.distributed.get_world_size()
 
 SEED = args.seed
 EPOCHS = args.epoch
