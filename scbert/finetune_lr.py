@@ -23,6 +23,7 @@ import scanpy as sc
 import pickle as pkl
 from tqdm import tqdm
 
+# ------------------ ARGUMENTS ------------------
 parser = argparse.ArgumentParser()
 parser.add_argument("--local_rank", "--local-rank", type=int, default=-1)
 parser.add_argument("--bin_num", type=int, default=5)
@@ -38,7 +39,7 @@ parser.add_argument("--data_path", type=str, default='./data/Zheng68K.h5ad')
 parser.add_argument("--model_path", type=str, default='./panglao_pretrained.pth')
 parser.add_argument("--ckpt_dir", type=str, default='./ckpts/')
 parser.add_argument("--model_name", type=str, default='finetune')
-
+parser.add_argument("--force_extract", action="store_true", help="Force re-extraction of embeddings even if files exist.")
 args = parser.parse_args()
 
 rank = int(os.environ["RANK"])
@@ -124,7 +125,7 @@ for param in model.parameters():
 
 model.to_out = nn.Identity()
 model = model.to(device)
-#model = DDP(model, device_ids=[local_rank], output_device=local_rank)
+# model = DDP(model, device_ids=[local_rank], output_device=local_rank)
 
 def extract_embeddings(model, loader):
     model.eval()
@@ -145,18 +146,39 @@ def extract_embeddings(model, loader):
     labels_all = np.concatenate(labels_all, axis=0)
     return embeddings, labels_all
 
-train_emb, train_y = extract_embeddings(model, train_loader)
-test_emb, test_y = extract_embeddings(model, val_loader)
+save_dir = '/data1/data/corpus/'
+os.makedirs(save_dir, exist_ok=True)
 
-os.makedirs('/data1/data/corpus/', exist_ok=True)
-np.save('/data1/data/corpus/train_emb.npy', train_emb)
-np.save('/data1/data/corpus/train_y.npy', train_y)
-np.save('/data1/data/corpus/test_emb.npy', test_emb)
-np.save('/data1/data/corpus/test_y.npy', test_y)
+train_emb_path = os.path.join(save_dir, 'train_emb.npy')
+train_y_path = os.path.join(save_dir, 'train_y.npy')
+test_emb_path = os.path.join(save_dir, 'test_emb.npy')
+test_y_path = os.path.join(save_dir, 'test_y.npy')
+
+if not args.force_extract and os.path.exists(train_emb_path) and os.path.exists(train_y_path) \
+        and os.path.exists(test_emb_path) and os.path.exists(test_y_path):
+    print("Embeddings already exist. Loading from disk...")
+    train_emb = np.load(train_emb_path)
+    train_y = np.load(train_y_path)
+    test_emb = np.load(test_emb_path)
+    test_y = np.load(test_y_path)
+else:
+    print("Extracting embeddings...")
+    train_emb, train_y = extract_embeddings(model, train_loader)
+    test_emb, test_y = extract_embeddings(model, val_loader)
+
+    np.save(train_emb_path, train_emb)
+    np.save(train_y_path, train_y)
+    np.save(test_emb_path, test_emb)
+    np.save(test_y_path, test_y)
+
+print(f"train_emb shape: {train_emb.shape}")
+print(f"train_y shape: {train_y.shape}")
+print(f"test_emb shape: {test_emb.shape}")
+print(f"test_y shape: {test_y.shape}")
 
 if local_rank == 0:
     print("Training Logistic Regression...")
-    clf = LogisticRegression(penalty="l1", C=0.1,solver="liblinear")
+    clf = LogisticRegression(penalty="l1", C=0.1, solver="liblinear")
     clf.fit(train_emb, train_y)
 
     pred = clf.predict(test_emb)
