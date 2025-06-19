@@ -243,17 +243,18 @@ def shap_explain_nn(model, test_data, feature_names, le, device, save_name='nn')
     X_test = test_data.tensors[0].cpu().numpy()
     y_test = test_data.tensors[1].cpu().numpy()
 
-    X_tensor = torch.tensor(X_correct, dtype=torch.float32).to(device)
     model.eval()
 
     with torch.no_grad():
-        outputs = model(X_tensor)
+        X_tensor_all = torch.tensor(X_test, dtype=torch.float32).to(device)
+        outputs = model(X_tensor_all)
         _, predicted = torch.max(outputs, 1)
     correct_mask = (predicted.cpu().numpy() == y_test)
     X_correct = X_test[correct_mask]
     y_correct = y_test[correct_mask]
     print(f"Number of correctly predicted test samples: {X_correct.shape[0]}")
 
+    X_tensor = torch.tensor(X_correct, dtype=torch.float32).to(device)
     explainer = shap.GradientExplainer(model, X_tensor)
 
     shap_values = explainer.shap_values(X_tensor)
