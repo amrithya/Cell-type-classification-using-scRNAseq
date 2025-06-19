@@ -358,6 +358,10 @@ def save_shap_top_bottom_csv(results_dir, le, shap_mean_array, gene_names, K=15)
         for cls_idx, class_name in enumerate(le.classes_):
             mean_shap_cls = shap_mean_array[cls_idx]
 
+            if len(mean_shap_cls) != len(gene_names):
+                print(f"Warning: SHAP mean shape {mean_shap_cls.shape} does not match number of genes {len(gene_names)}")
+                continue
+
             top_idx = mean_shap_cls.argsort()[-K:][::-1]
             bottom_idx = mean_shap_cls.argsort()[:K]
 
@@ -431,4 +435,5 @@ def shap_explain_nn(model, train_data, test_data, gene_names, le, device):
     results_dir = os.path.join(base_dir, 'results')
     os.makedirs(results_dir, exist_ok=True)
 
+    print(f"shap_mean_np shape: {shap_mean_np.shape}, gene_names length: {len(gene_names)}")
     save_shap_top_bottom_csv(results_dir, le, shap_mean_np, gene_names, K=K)
