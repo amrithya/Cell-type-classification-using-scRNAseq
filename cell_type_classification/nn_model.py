@@ -351,7 +351,12 @@ def shap_explain_nn(model, train_data, test_data, device):
     
     background = torch.stack([train_data[i][0] for i in range(5)]).to(device)
     test_inputs = torch.stack([test_data[i][0] for i in range(5)]).to(device)
+    print(f"Background shape: {background.shape}")
+    print(f"Test inputs shape: {test_inputs.shape}")
     model.eval()
+    with torch.no_grad():
+        output = model(test_inputs)
+    print(f"Output shape: {output.shape}")
     explainer = shap.DeepExplainer(model, background)
     shap_values = explainer.shap_values(test_inputs)
     print(f"SHAP values shape: {shap_values[0].shape}")
