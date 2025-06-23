@@ -13,7 +13,7 @@
 #SBATCH --array=1
 
 
-torchrun --nproc_per_node=4 tutorials/tutorial_annotation.py
+python -m torch.distributed.launch --nproc_per_node=4 tutorials/tutorial_annotation.py
 
 echo "All Done!"
 wait
