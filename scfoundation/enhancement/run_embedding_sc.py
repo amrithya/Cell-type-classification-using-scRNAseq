@@ -37,7 +37,7 @@ def main():
         data_r=pd.read_csv(args.data_path,index_col=0)
     gexpr_feature = data_r
     print(gexpr_feature.shape)
-    pretrainmodel,pretrainconfig = load_model_frommmf(args.ckpt_path,device)
+    pretrainmodel,pretrainconfig = load_model_from(args.ckpt_path,device)
     pretrainmodel.eval()
     geneexpemb=[]
     
