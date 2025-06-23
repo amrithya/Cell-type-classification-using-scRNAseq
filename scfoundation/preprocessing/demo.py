@@ -4,7 +4,7 @@ from scRNA_workflow import *
 sc.settings.figdir='./figures_new/'
 
 path = '/data1/data/corpus/scDATA/Zheng68K.h5ad'
-adata = sc.read_10x_mtx(path)
+adata = sc.read(path)
 
 X_df= pd.DataFrame(sparse.csr_matrix.toarray(adata.X),index=adata.obs.index.tolist(),columns=adata.var.index.tolist())
 gene_list_df = pd.read_csv('./OS_scRNA_gene_index.19264.tsv', header=0, delimiter='\t')
