@@ -13,7 +13,7 @@
 #SBATCH --array=1
 
 
-poetry run torchrun --nproc_per_node=4 tutorials/tutorial_annotation.py
+torchrun --nproc_per_node=4 tutorials/tutorial_annotation.py
 
 echo "All Done!"
 wait
