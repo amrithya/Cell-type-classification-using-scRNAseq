@@ -17,5 +17,5 @@ adata_uni.uns = adata.uns
 adata_uni = BasicFilter(adata_uni,qc_min_genes=200,qc_min_cells=0) # filter cell and gene by lower limit
 adata_uni = QC_Metrics_info(adata_uni)
 
-save_path = '/data1/data/corpus/scDATA/scfoundation/demo.h5ad'
+save_path = '/data1/data/corpus/scDATA/scfoundation/Zheng68K_foundation.h5ad'
 save_adata_h5ad(adata_uni,save_path)
