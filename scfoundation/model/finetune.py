@@ -73,4 +73,29 @@ class LinearProbingClassifier(nn.Module):
         x_emb = self.token_emb(x_binned, output_weight=0)
         pos_emb = self.pos_emb(pos_ids)
         x_emb = x_emb + pos_emb
-        logits = self.encoder(x_em_
+        logits = self.encoder(x_emb, x_padding)
+        logits, _ = torch.max(logits, dim=1)
+        logits = self.norm(logits)
+        logits = self.fc1(logits)
+        return logits
+
+    @staticmethod
+    def _freeze_module(module):
+        for param in module.parameters():
+            param.requires_grad = False
+
+if __name__ == '__main__':
+    ckpt_path = '/data1/data/corpus/scMODEL/scfoundation/models.ckpt'
+    data_path = '/data1/data/corpus/scDATA/scfoundation/Zheng68K_foundation.h5ad'
+    dataset = Zheng68KDataset(data_path)
+    n_classes = len(np.unique(dataset.y))
+    loader = DataLoader(dataset, batch_size=32, shuffle=True, num_workers=4)
+    model = LinearProbingClassifier(ckpt_path, n_classes, n_bins=100)
+    model.build()
+    model = model.cuda()
+    for batch in loader:
+        batch['x'] = batch['x'].cuda()
+        batch['targets'] = batch['targets'].cuda()
+        logits = model(batch)
+        print("Logits shape:", logits.shape)
+        break
