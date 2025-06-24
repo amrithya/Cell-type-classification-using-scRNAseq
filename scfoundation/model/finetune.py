@@ -6,8 +6,7 @@ from torch.utils.data import Dataset, DataLoader
 import scanpy as sc
 
 sys.path.append("../model/")
-from load import load_model_frommmf
-from utils import gatherData
+from load import *
 
 class Zheng68KDataset(Dataset):
     def __init__(self, h5ad_path):
