@@ -113,7 +113,7 @@ def main():
         ckpt_path = args.model_path
         key=None
     else:
-        ckpt_path = './models/models.ckpt'
+        ckpt_path = args.model_path
         if args.output_type == 'cell':
             if args.version == 'ce':
                 key = 'cell'
