@@ -13,7 +13,7 @@
 #SBATCH --array=1
 
 
-python -u finetune.py     
+CUDA_LAUNCH_BLOCKING=1 python finetune.py
 
 echo "All Done at $(date)!"
 wait
