@@ -47,8 +47,6 @@ def gatherDatanopad(data, labels, pad_token_id):
 def gatherData(data, labels, pad_token_id):
     value_nums = labels.sum(1).int()
     max_num = value_nums.max().item()
-    fake_data = torch.full((data.shape[0], max_num), pad_token_id, device=data.device)
-    data = torch.hstack([data, fake_data])
     scores = labels.float()
     scores[~labels] = -float('inf')
     offset = torch.arange(scores.shape[1], 0, -1, device=scores.device) * 1e-3
