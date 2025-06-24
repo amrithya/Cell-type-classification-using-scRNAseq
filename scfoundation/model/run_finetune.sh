@@ -13,7 +13,7 @@
 #SBATCH --array=1
 
 
-python -u get_finetune.py     
+python -u finetune.py     
 
 echo "All Done at $(date)!"
 wait
