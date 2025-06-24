@@ -13,7 +13,7 @@ class Zheng68KDataset(Dataset):
         self.adata = sc.read_h5ad(h5ad_path)
         self.X = self.adata.X.toarray() if not isinstance(self.adata.X, np.ndarray) else self.adata.X
         if 'cell_type' in self.adata.obs:
-            self.y = self.adata.obs['cell_type'].astype('category').cat.codes.values
+            self.y = self.adata.obs['celltype'].astype('category').cat.codes.values
         else:
             raise ValueError("No 'cell_type' column found in adata.obs!")
 
