@@ -45,32 +45,19 @@ def gatherDatanopad(data, labels, pad_token_id):
     return new_data, padding_labels
 
 def gatherData(data, labels, pad_token_id):
-    value_nums = labels.sum(1)
-    max_num = max(value_nums)
-
-
-    fake_data = torch.full((data.shape[0], max_num), pad_token_id,
-                           device=data.device)
+    value_nums = labels.sum(1).int()
+    max_num = value_nums.max().item()
+    fake_data = torch.full((data.shape[0], max_num), pad_token_id, device=data.device)
     data = torch.hstack([data, fake_data])
+    scores = labels.float()
+    scores[~labels] = -float('inf')
+    offset = torch.arange(scores.shape[1], 0, -1, device=scores.device) * 1e-3
+    scores += offset
+    topk_idx = scores.topk(max_num, dim=1).indices
+    new_data = torch.gather(data, 1, topk_idx)
+    padding_mask = new_data == pad_token_id
+    return new_data, padding_mask
 
-    fake_label = torch.full((labels.shape[0], max_num), 1,
-                            device=labels.device)
-    none_labels = ~labels
-    labels = labels.float()
-    labels[none_labels] = torch.tensor(-float('Inf'), device=labels.device)
-
-    tmp_data = torch.tensor([(i + 1) * 20000 for i in range(labels.shape[1], 0, -1)], device=labels.device)
-    labels += tmp_data
-
-    labels = torch.hstack([labels, fake_label])
-
-    fake_label_gene_idx = labels.topk(max_num).indices
-
-    new_data = torch.gather(data, 1, fake_label_gene_idx)
-
-    padding_labels = (new_data == pad_token_id)
-
-    return new_data, padding_labels
 
 
 def convertconfig(ckpt):
