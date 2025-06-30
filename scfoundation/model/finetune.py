@@ -102,7 +102,7 @@ def main():
     criterion = nn.CrossEntropyLoss()
 
     model.train()
-    for epoch in range(2):
+    for epoch in range(10):
         total_loss = 0
         print(f"\nEpoch {epoch+1}")
         pbar = tqdm(dataloader, desc=f"Training", leave=False)
