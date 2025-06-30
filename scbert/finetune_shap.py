@@ -41,7 +41,7 @@ parser.add_argument("--valid_every", type=int, default=1)
 parser.add_argument("--pos_embed", type=bool, default=True)
 parser.add_argument("--data_path", type=str, default='./data/Zheng68K.h5ad')
 parser.add_argument("--model_path", type=str, default='./panglao_pretrained.pth')
-parser.add_argument("--ckpt_dir", type=str, default='./ckpts/')
+parser.add_argument("--ckpt_dir", type=str, default='./ckpts/') 
 parser.add_argument("--model_name", type=str, default='finetune')
 
 args = parser.parse_args()
