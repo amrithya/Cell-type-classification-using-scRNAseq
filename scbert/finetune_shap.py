@@ -32,7 +32,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--local_rank", "--local-rank", type=int, default=-1)
 parser.add_argument("--bin_num", type=int, default=5)
 parser.add_argument("--gene_num", type=int, default=16906)
-parser.add_argument("--epoch", type=int, default=11)
+parser.add_argument("--epoch", type=int, default=13)
 parser.add_argument("--seed", type=int, default=2021)
 parser.add_argument("--batch_size", type=int, default=4)
 parser.add_argument("--learning_rate", type=float, default=1e-4)
@@ -64,7 +64,9 @@ CLASS = args.bin_num + 2
 POS_EMBED_USING = args.pos_embed
 
 model_name = args.model_name
-ckpt_dir = "/data1/data/corpus/scMODEL/finetune_model_Zheng68K.pkl"
+ckpt_dir = f"/data1/data/corpus/scMODEL/{model_name}_model_Zheng68K.pkl"
+
+
 
 dist.init_process_group(backend='nccl')
 torch.cuda.set_device(local_rank)
@@ -219,17 +221,14 @@ if os.path.exists(ckpt_dir):
                 try:
                     model.load_state_dict(checkpoint['model_state_dict'])
                 except RuntimeError as e:
-                    # Handle missing module. or extra module. prefix automatically
                     from collections import OrderedDict
                     state_dict = checkpoint['model_state_dict']
                     new_state_dict = OrderedDict()
 
                     if next(iter(state_dict)).startswith("module."):
-                        # Saved with DDP but loading without DDP
                         for k, v in state_dict.items():
                             new_state_dict[k[len("module."):]] = v
                     else:
-                        # Saved without DDP but loading with DDP
                         for k, v in state_dict.items():
                             new_state_dict["module." + k] = v
 
@@ -336,7 +335,7 @@ for i in range(start_epoch, EPOCHS + 1):
             max_acc = cur_acc
             trigger_times = 0
             save_ckpt(i, model, optimizer, scheduler, val_loss, model_name)
-        if is_master and (i == EPOCHS or cur_acc > max_acc):
+        if is_master and (i == EPOCHS):
             model.eval()
             unwrapped_model = get_unwrapped_model(model)
 
