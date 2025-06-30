@@ -69,7 +69,7 @@ class LinearProbingClassifier(nn.Module):
         gene_ids = torch.arange(x_binned.shape[1], device=x_binned.device).unsqueeze(0).expand(x_binned.shape[0], -1)
         value_mask_new = torch.ones_like(x_binned, dtype=torch.bool)
         pos_ids, _ = gatherData(gene_ids, value_mask_new, self.model_config['pad_token_id'])
-        x_emb = self.token_emb(x_binned.float(), output_weight=0)
+        x_emb = self.token_emb(x_binned.float().unsqueeze(-1), output_weight=0)
         pos_emb = self.pos_emb(pos_ids)
         x_emb = x_emb + pos_emb
         logits = self.encoder(x_emb, x_padding)
