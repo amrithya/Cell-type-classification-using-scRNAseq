@@ -81,7 +81,7 @@ class LinearProbingClassifier(nn.Module):
     @staticmethod
     def _freeze_module(module):
         for param in module.parameters():
-            param.requires_grad = False
+            param.requires_grad = True
 
 if __name__ == '__main__':
     ckpt_path = '/data1/data/corpus/scMODEL/scfoundation/models.ckpt'
