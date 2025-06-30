@@ -45,14 +45,30 @@ def gatherDatanopad(data, labels, pad_token_id):
     return new_data, padding_labels
 
 def gatherData(data, labels, pad_token_id):
+    B, G = data.shape
     value_nums = labels.sum(1).int()
     max_num = value_nums.max().item()
-    scores = labels.float()
-    scores[~labels] = -float('inf')
-    offset = torch.arange(scores.shape[1], 0, -1, device=scores.device) * 1e-3
-    scores += offset
-    topk_idx = scores.topk(max_num, dim=1).indices
-    new_data = torch.gather(data, 1, topk_idx)
+    device = data.device
+
+    gathered = []
+    for i in range(B):
+        valid_idx = torch.where(labels[i])[0]
+        num_valid = value_nums[i].item()
+
+        padded_idx = torch.full((max_num,), 0, dtype=torch.long, device=device)
+        if num_valid > 0:
+            scores = torch.full_like(labels[i], -float('inf'), dtype=torch.float)
+            scores[valid_idx] = 1.0
+            offset = torch.arange(G, 0, -1, device=device) * 1e-3
+            scores += offset
+
+            topk = scores.topk(num_valid, dim=0).indices
+            padded_idx[:num_valid] = topk
+
+        row_data = data[i][padded_idx]
+        gathered.append(row_data.unsqueeze(0))
+
+    new_data = torch.cat(gathered, dim=0)
     padding_mask = new_data == pad_token_id
     return new_data, padding_mask
 
