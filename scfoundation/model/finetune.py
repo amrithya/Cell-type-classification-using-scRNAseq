@@ -85,7 +85,7 @@ class LinearProbingClassifier(nn.Module):
 
 if __name__ == '__main__':
     ckpt_path = '/data1/data/corpus/scMODEL/scfoundation/models.ckpt'
-    data_path = '/data1/data/corpus/scDATA/scfoundation/Zheng68K_foundation.h5ad'
+    data_path = '/data1/data/corpus/scDATA/Zheng68K.h5ad'
     dataset = Zheng68KDataset(data_path)
     n_classes = len(np.unique(dataset.y))
     loader = DataLoader(dataset, batch_size=32, shuffle=True, num_workers=4)
