@@ -10,7 +10,6 @@
 #SBATCH --hint=nomultithread
 #SBATCH --output=results/finetune_shap_%A_%a.out
 #SBATCH --error=results/finetune_shap_%A_%a.err
-#SBATCH --array=1
 
 
 export CUDA_LAUNCH_BLOCKING=1
