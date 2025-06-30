@@ -9,13 +9,17 @@ from load import *
 class GeneExpressionDataset(Dataset):
     def __init__(self, csv_path, label_col='label'):
         df = pd.read_csv(csv_path, index_col=0)
-        
-        self.labels = torch.tensor(df[label_col].values, dtype=torch.long)
+
+        labels_int, uniques = pd.factorize(df[label_col].values)
+
+        self.labels = torch.tensor(labels_int, dtype=torch.long)
         self.features = torch.tensor(df.drop(columns=[label_col]).values, dtype=torch.float32)
-        
+
+        self.label_map = {i: label for i, label in enumerate(uniques)}
+
     def __len__(self):
         return self.features.shape[0]
-    
+
     def __getitem__(self, idx):
         return {
             'x': self.features[idx],
@@ -85,8 +89,9 @@ def main():
 
     dataset = GeneExpressionDataset(csv_path='/data1/data/corpus/scDATA/Zheng68K_scf_preprocessed.csv', label_col='label')
     dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
+    num_classes = len(dataset.label_map)
 
-    model = LinearProbingClassifier(ckpt_path='/data1/data/corpus/scMODEL/scfoundation/models.ckpt', n_class=11)
+    model = LinearProbingClassifier(ckpt_path='/data1/data/corpus/scMODEL/scfoundation/models.ckpt', n_class=num_classes)
     model.build()
     model = model.to(device)
 
