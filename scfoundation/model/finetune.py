@@ -46,7 +46,7 @@ class LinearProbingClassifier(nn.Module):
                 p.requires_grad = False
             for _, p in self.pos_emb.named_parameters():
                 p.requires_grad = False
-        
+
         for _, param in self.encoder.named_parameters():
             param.requires_grad = False
         for na, param in self.encoder.transformer_encoder[-2:].named_parameters():
@@ -86,6 +86,7 @@ class LinearProbingClassifier(nn.Module):
 
         return logits
 
+
 def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -101,7 +102,7 @@ def main():
     criterion = nn.CrossEntropyLoss()
 
     model.train()
-    for epoch in range(10):
+    for epoch in range(2):
         total_loss = 0
         print(f"\nEpoch {epoch+1}")
         pbar = tqdm(dataloader, desc=f"Training", leave=False)
@@ -120,6 +121,11 @@ def main():
             pbar.set_postfix(loss=total_loss / (pbar.n + 1))
 
         print(f"Epoch {epoch+1}, Avg Loss: {total_loss/len(dataloader):.4f}")
+
+    save_path = '/data1/data/corpus/scMODEL/scfoundation/scfoundation_model.pt'
+    torch.save(model.state_dict(), save_path)
+    print(f"Model saved to {save_path}")
+
 
 if __name__ == '__main__':
     main()
