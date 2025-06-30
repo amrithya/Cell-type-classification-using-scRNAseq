@@ -63,7 +63,8 @@ CLASS = args.bin_num + 2
 POS_EMBED_USING = args.pos_embed
 
 model_name = args.model_name
-ckpt_dir = args.ckpt_dir
+
+ckpt_path = f"/data1/data/corpus/scMODEL/{model_name}_model_Zheng68K.pkl"
 
 ckpt_dir = f"/data1/data/corpus/scMODEL/{model_name}_model_Zheng68K.pkl"
 
@@ -200,9 +201,9 @@ max_acc = 0.0
 
 start_epoch = 1
 
-if os.path.exists(ckpt_dir):
-    print(f"[INFO] Found checkpoint at {ckpt_dir}. Loading...")
-    checkpoint = torch.load(ckpt_dir, map_location='cpu')
+if os.path.exists(ckpt_path):
+    print(f"[INFO] Found checkpoint at {ckpt_path}. Loading...")
+    checkpoint = torch.load(ckpt_path, map_location='cpu')
 
     if 'epoch' in checkpoint:
         saved_epoch = checkpoint['epoch']
@@ -248,7 +249,7 @@ if os.path.exists(ckpt_dir):
         print("[WARN] Checkpoint has no epoch info. Skipping load.")
         start_epoch = 1
 else:
-    print(f"[INFO] No checkpoint found at {ckpt_dir}, starting training from epoch 1.")
+    print(f"[INFO] No checkpoint found at {ckpt_path}, starting training from epoch 1.")
     start_epoch = 1
 
 print(f"[INFO] Starting training from epoch {start_epoch}.")
@@ -330,7 +331,7 @@ for i in range(start_epoch, EPOCHS + 1):
         if cur_acc > max_acc:
             max_acc = cur_acc
             trigger_times = 0
-            save_ckpt(i, model, optimizer, scheduler, val_loss, model_name, ckpt_dir)
+            save_ckpt(i, model, optimizer, scheduler, val_loss, model_name)
         else:
             trigger_times += 1
             if trigger_times > PATIENCE:

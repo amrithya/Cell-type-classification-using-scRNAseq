@@ -47,6 +47,8 @@ parser.add_argument("--model_name", type=str, default='finetune')
 args = parser.parse_args()
 rank = int(os.environ["RANK"])
 local_rank = args.local_rank
+if local_rank < 0:
+    local_rank = int(os.environ.get("LOCAL_RANK", 0))
 is_master = local_rank == 0
 
 SEED = args.seed
@@ -64,7 +66,9 @@ CLASS = args.bin_num + 2
 POS_EMBED_USING = args.pos_embed
 
 model_name = args.model_name
-ckpt_dir = "/data1/data/corpus/scMODEL/finetune_model_Zheng68K.pkl"
+ckpt_dir = f"/data1/data/corpus/scMODEL/{model_name}_model_Zheng68K.pkl"
+
+
 
 dist.init_process_group(backend='nccl')
 torch.cuda.set_device(local_rank)
@@ -219,17 +223,14 @@ if os.path.exists(ckpt_dir):
                 try:
                     model.load_state_dict(checkpoint['model_state_dict'])
                 except RuntimeError as e:
-                    # Handle missing module. or extra module. prefix automatically
                     from collections import OrderedDict
                     state_dict = checkpoint['model_state_dict']
                     new_state_dict = OrderedDict()
 
                     if next(iter(state_dict)).startswith("module."):
-                        # Saved with DDP but loading without DDP
                         for k, v in state_dict.items():
                             new_state_dict[k[len("module."):]] = v
                     else:
-                        # Saved without DDP but loading with DDP
                         for k, v in state_dict.items():
                             new_state_dict["module." + k] = v
 

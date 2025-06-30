@@ -183,3 +183,6 @@ cython_debug/
 *.png
 *.jpg
 *.jpeg
+*.pkl
+*.npy
+*.ipynb
