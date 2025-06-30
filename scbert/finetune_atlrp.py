@@ -181,7 +181,7 @@ for epoch in range(start_epoch, EPOCHS+1):
             print(classification_report(trues[mask], preds[mask], target_names=label_dict, digits=4))
         if acc_v>best_acc:
             best_acc=acc_v; stale=0
-            save_ckpt(epoch, model, optim, sched, vrl, model_name, best_acc=best_acc)
+            save_ckpt(epoch, model, optim, sched, vrl, model_name)
         else:
             stale+=1
             if stale>PATIENCE:
