@@ -13,7 +13,7 @@
 #SBATCH --array=1
 
 
-python -u demo.py     
+python -u preprocess.py     
 
 echo "All Done at $(date)!"
 wait
