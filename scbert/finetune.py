@@ -329,7 +329,7 @@ for i in range(start_epoch, EPOCHS + 1):
         if cur_acc > max_acc:
             max_acc = cur_acc
             trigger_times = 0
-            save_ckpt(i, model, optimizer, scheduler, val_loss, model_name, os.path.dirname(ckpt_path))
+            save_ckpt(i, model, optimizer, scheduler, val_loss, model_name)
         else:
             trigger_times += 1
             if trigger_times > PATIENCE:
