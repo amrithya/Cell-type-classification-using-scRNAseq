@@ -1,0 +1,7802 @@
+[
+  {
+    "model": "lr_shap.xlsx",
+    "class": "CD14+ Monocyte",
+    "genes": [
+      {
+        "gene": "TYROBP",
+        "value": 1.1647,
+        "rank_type": "top"
+      },
+      {
+        "gene": "S100A9",
+        "value": 0.8983,
+        "rank_type": "top"
+      },
+      {
+        "gene": "S100A8",
+        "value": 0.8836,
+        "rank_type": "top"
+      },
+      {
+        "gene": "AIF1",
+        "value": 0.4919,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TMEM176B",
+        "value": 0.4056,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CFD",
+        "value": 0.3887,
+        "rank_type": "top"
+      },
+      {
+        "gene": "IL32",
+        "value": 0.3027,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LDHB",
+        "value": 0.2955,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CCL5",
+        "value": 0.2847,
+        "rank_type": "top"
+      },
+      {
+        "gene": "APOBEC3A",
+        "value": 0.2839,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FCGR3A",
+        "value": 0.2818,
+        "rank_type": "top"
+      },
+      {
+        "gene": "JUND",
+        "value": 0.2747,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CDA",
+        "value": 0.2703,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LST1",
+        "value": 0.2663,
+        "rank_type": "top"
+      },
+      {
+        "gene": "S100A4",
+        "value": 0.2634,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRA",
+        "value": -0.1546,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DRB5",
+        "value": -0.1424,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RHOC",
+        "value": -0.1363,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DPA1",
+        "value": -0.1357,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DQA2",
+        "value": -0.1183,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "LYZ",
+        "value": -0.0915,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GNLY",
+        "value": -0.073,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DQB1",
+        "value": -0.0687,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PNRC1",
+        "value": -0.0633,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TGFBI",
+        "value": -0.0565,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ARPC3",
+        "value": -0.055,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RAC1",
+        "value": -0.0524,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TMSB10",
+        "value": -0.0509,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DRB1",
+        "value": -0.0487,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HNRNPA1",
+        "value": -0.0485,
+        "rank_type": "bottom"
+      }
+    ]
+  },
+  {
+    "model": "lr_shap.xlsx",
+    "class": "CD19+ B",
+    "genes": [
+      {
+        "gene": "IL32",
+        "value": 2.3806,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRA",
+        "value": 2.3061,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD7",
+        "value": 2.0136,
+        "rank_type": "top"
+      },
+      {
+        "gene": "MS4A1",
+        "value": 1.6555,
+        "rank_type": "top"
+      },
+      {
+        "gene": "ANXA1",
+        "value": 1.3238,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMM",
+        "value": 1.2259,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GNLY",
+        "value": 1.2127,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD79A",
+        "value": 1.1856,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TCL1A",
+        "value": 1.0715,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD79B",
+        "value": 0.8103,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FCER2",
+        "value": 0.7469,
+        "rank_type": "top"
+      },
+      {
+        "gene": "NKG7",
+        "value": 0.695,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD74",
+        "value": 0.647,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DQA2",
+        "value": 0.6318,
+        "rank_type": "top"
+      },
+      {
+        "gene": "SPIB",
+        "value": 0.6064,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GIMAP4",
+        "value": -0.0462,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ARL4C",
+        "value": -0.0334,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD3E",
+        "value": -0.0286,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "B2M",
+        "value": -0.0265,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CDKN2D",
+        "value": -0.0228,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PSMC5",
+        "value": -0.0226,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "SMAP2",
+        "value": -0.0201,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GOLGA7",
+        "value": -0.0197,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "SH3BGRL3",
+        "value": -0.0192,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL12",
+        "value": -0.0192,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "EVL",
+        "value": -0.0179,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ITM2A",
+        "value": -0.0172,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "APEX1",
+        "value": -0.017,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "SNX3",
+        "value": -0.0165,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL37A",
+        "value": -0.0154,
+        "rank_type": "bottom"
+      }
+    ]
+  },
+  {
+    "model": "lr_shap.xlsx",
+    "class": "CD34+",
+    "genes": [
+      {
+        "gene": "PPBP",
+        "value": 3.6733,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GNG11",
+        "value": 2.2644,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GPX1",
+        "value": 1.7106,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CLU",
+        "value": 1.6216,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TMSB10",
+        "value": 1.3471,
+        "rank_type": "top"
+      },
+      {
+        "gene": "NCOA4",
+        "value": 1.0979,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TSC22D1",
+        "value": 0.5011,
+        "rank_type": "top"
+      },
+      {
+        "gene": "RPL30",
+        "value": 0.4922,
+        "rank_type": "top"
+      },
+      {
+        "gene": "RPLP2",
+        "value": 0.3923,
+        "rank_type": "top"
+      },
+      {
+        "gene": "S100A10",
+        "value": 0.3922,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GIMAP7",
+        "value": 0.3818,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TALDO1",
+        "value": 0.36,
+        "rank_type": "top"
+      },
+      {
+        "gene": "SPINT2",
+        "value": 0.3521,
+        "rank_type": "top"
+      },
+      {
+        "gene": "RPS26",
+        "value": 0.2911,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FKBP1A",
+        "value": 0.2816,
+        "rank_type": "top"
+      },
+      {
+        "gene": "RPS24",
+        "value": -0.2327,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TMSB4X",
+        "value": -0.1486,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "NPM1",
+        "value": -0.1248,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ST13",
+        "value": -0.0946,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "VIM",
+        "value": -0.0923,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "BTF3",
+        "value": -0.0813,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HSP90B1",
+        "value": -0.0727,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "SRSF3",
+        "value": -0.0525,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-A",
+        "value": -0.0463,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GSTP1",
+        "value": -0.0405,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ZFP36L2",
+        "value": -0.0394,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PYCARD",
+        "value": -0.0327,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "MRPL51",
+        "value": -0.0286,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "UBE2D2",
+        "value": -0.0279,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "NDUFAF3",
+        "value": -0.0279,
+        "rank_type": "bottom"
+      }
+    ]
+  },
+  {
+    "model": "lr_shap.xlsx",
+    "class": "CD4+ T Helper2",
+    "genes": [
+      {
+        "gene": "CST3",
+        "value": 1.3642,
+        "rank_type": "top"
+      },
+      {
+        "gene": "ITM2C",
+        "value": 1.13,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD4",
+        "value": 0.8012,
+        "rank_type": "top"
+      },
+      {
+        "gene": "SEC61B",
+        "value": 0.4119,
+        "rank_type": "top"
+      },
+      {
+        "gene": "PEBP1",
+        "value": 0.4061,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRA",
+        "value": 0.4015,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GNLY",
+        "value": 0.3664,
+        "rank_type": "top"
+      },
+      {
+        "gene": "JUN",
+        "value": 0.3392,
+        "rank_type": "top"
+      },
+      {
+        "gene": "PLP2",
+        "value": 0.3348,
+        "rank_type": "top"
+      },
+      {
+        "gene": "PGLS",
+        "value": 0.3064,
+        "rank_type": "top"
+      },
+      {
+        "gene": "KLF6",
+        "value": 0.3056,
+        "rank_type": "top"
+      },
+      {
+        "gene": "DERL3",
+        "value": 0.2575,
+        "rank_type": "top"
+      },
+      {
+        "gene": "EEF1B2",
+        "value": 0.2227,
+        "rank_type": "top"
+      },
+      {
+        "gene": "UQCRQ",
+        "value": 0.2168,
+        "rank_type": "top"
+      },
+      {
+        "gene": "SUGT1",
+        "value": 0.2109,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRB5",
+        "value": -0.3546,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "SERP1",
+        "value": -0.228,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "SPCS1",
+        "value": -0.203,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "POLD4",
+        "value": -0.1861,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "THRAP3",
+        "value": -0.1588,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DPB1",
+        "value": -0.1538,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GMFG",
+        "value": -0.1476,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPS7",
+        "value": -0.1408,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "EIF4A1",
+        "value": -0.1313,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "SRGN",
+        "value": -0.1274,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CTSC",
+        "value": -0.1162,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "EIF3D",
+        "value": -0.1119,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "S100A8",
+        "value": -0.1115,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "LCK",
+        "value": -0.1106,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PNKD",
+        "value": -0.1092,
+        "rank_type": "bottom"
+      }
+    ]
+  },
+  {
+    "model": "lr_shap.xlsx",
+    "class": "CD4+/CD25 T Reg",
+    "genes": [
+      {
+        "gene": "NKG7",
+        "value": 1.049,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMB",
+        "value": 0.7539,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GNLY",
+        "value": 0.6957,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD8A",
+        "value": 0.5212,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMH",
+        "value": 0.4369,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CCL5",
+        "value": 0.3948,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD8B",
+        "value": 0.3871,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FGFBP2",
+        "value": 0.3798,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FCGR3A",
+        "value": 0.3513,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TYROBP",
+        "value": 0.3169,
+        "rank_type": "top"
+      },
+      {
+        "gene": "AIF1",
+        "value": 0.2899,
+        "rank_type": "top"
+      },
+      {
+        "gene": "S100A8",
+        "value": 0.2849,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CTSW",
+        "value": 0.2666,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TIGIT",
+        "value": 0.2612,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CCR10",
+        "value": 0.2392,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRA",
+        "value": -0.1413,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "LYZ",
+        "value": -0.1341,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CST3",
+        "value": -0.0564,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DRB5",
+        "value": -0.0504,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "SERPINA1",
+        "value": -0.0396,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PRF1",
+        "value": -0.0339,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HMOX1",
+        "value": -0.0331,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HCK",
+        "value": -0.0322,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DRB1",
+        "value": -0.0297,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DPA1",
+        "value": -0.0293,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "IL2RB",
+        "value": -0.0277,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TANK",
+        "value": -0.025,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RHOC",
+        "value": -0.0241,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TMSB10",
+        "value": -0.0222,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD7",
+        "value": -0.0212,
+        "rank_type": "bottom"
+      }
+    ]
+  },
+  {
+    "model": "lr_shap.xlsx",
+    "class": "CD4+/CD45RA+/CD25- Naive T",
+    "genes": [
+      {
+        "gene": "CD4",
+        "value": 3.0474,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CCL5",
+        "value": 1.1049,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CST7",
+        "value": 0.6074,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD8A",
+        "value": 0.5471,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRB1",
+        "value": 0.4786,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DPB1",
+        "value": 0.4665,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRB5",
+        "value": 0.3627,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DQB1",
+        "value": 0.2691,
+        "rank_type": "top"
+      },
+      {
+        "gene": "IGLL5",
+        "value": 0.2664,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD8B",
+        "value": 0.2065,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FCER1G",
+        "value": 0.1971,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DPA1",
+        "value": 0.173,
+        "rank_type": "top"
+      },
+      {
+        "gene": "RNF175",
+        "value": 0.1729,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LGALS3",
+        "value": 0.1658,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CLIC3",
+        "value": 0.1618,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRA",
+        "value": -0.2301,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CST3",
+        "value": -0.2057,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "LYZ",
+        "value": -0.1116,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPLP2",
+        "value": -0.0573,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "IRF7",
+        "value": -0.0462,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL13A",
+        "value": -0.0403,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "LIMS1",
+        "value": -0.0375,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "IGFBP7",
+        "value": -0.0317,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "SERPINA1",
+        "value": -0.03,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "KLRG1",
+        "value": -0.0288,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TCEA1",
+        "value": -0.027,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL13",
+        "value": -0.0259,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL5",
+        "value": -0.0245,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "POLR3GL",
+        "value": -0.0245,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPLP1",
+        "value": -0.0238,
+        "rank_type": "bottom"
+      }
+    ]
+  },
+  {
+    "model": "lr_shap.xlsx",
+    "class": "CD4+/CD45RO+ Memory",
+    "genes": [
+      {
+        "gene": "KLRB1",
+        "value": 0.778,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD8A",
+        "value": 0.6506,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD8B",
+        "value": 0.5344,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FCER1G",
+        "value": 0.4452,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD4",
+        "value": 0.3935,
+        "rank_type": "top"
+      },
+      {
+        "gene": "S100A11",
+        "value": 0.2895,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TYROBP",
+        "value": 0.2871,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD79A",
+        "value": 0.2757,
+        "rank_type": "top"
+      },
+      {
+        "gene": "NKG7",
+        "value": 0.2717,
+        "rank_type": "top"
+      },
+      {
+        "gene": "S100B",
+        "value": 0.2604,
+        "rank_type": "top"
+      },
+      {
+        "gene": "IFI27",
+        "value": 0.2123,
+        "rank_type": "top"
+      },
+      {
+        "gene": "S100A4",
+        "value": 0.2083,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LGALS1",
+        "value": 0.2029,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LYZ",
+        "value": 0.2022,
+        "rank_type": "top"
+      },
+      {
+        "gene": "S100A8",
+        "value": 0.1998,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMA",
+        "value": -0.0624,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "S100A9",
+        "value": -0.0504,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HCST",
+        "value": -0.0347,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "FCER1A",
+        "value": -0.0316,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "B2M",
+        "value": -0.0272,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "NCF1",
+        "value": -0.0205,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPLP1",
+        "value": -0.0205,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "IFI16",
+        "value": -0.0196,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CENPV",
+        "value": -0.0185,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TYMP",
+        "value": -0.0178,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GZMK",
+        "value": -0.0177,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL10",
+        "value": -0.0163,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CORO1B",
+        "value": -0.0162,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GLRX3",
+        "value": -0.016,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "DUSP11",
+        "value": -0.0155,
+        "rank_type": "bottom"
+      }
+    ]
+  },
+  {
+    "model": "lr_shap.xlsx",
+    "class": "CD56+ NK",
+    "genes": [
+      {
+        "gene": "TYROBP",
+        "value": 1.3337,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMB",
+        "value": 1.3194,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FCGR3A",
+        "value": 1.137,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LTB",
+        "value": 1.0157,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GNLY",
+        "value": 0.9795,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FGFBP2",
+        "value": 0.9617,
+        "rank_type": "top"
+      },
+      {
+        "gene": "PRF1",
+        "value": 0.842,
+        "rank_type": "top"
+      },
+      {
+        "gene": "NKG7",
+        "value": 0.6773,
+        "rank_type": "top"
+      },
+      {
+        "gene": "IGFBP7",
+        "value": 0.54,
+        "rank_type": "top"
+      },
+      {
+        "gene": "PRSS23",
+        "value": 0.4502,
+        "rank_type": "top"
+      },
+      {
+        "gene": "AIF1",
+        "value": 0.3924,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CCL4",
+        "value": 0.3775,
+        "rank_type": "top"
+      },
+      {
+        "gene": "PTGDS",
+        "value": 0.3767,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CST7",
+        "value": 0.3572,
+        "rank_type": "top"
+      },
+      {
+        "gene": "SPON2",
+        "value": 0.3504,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD8A",
+        "value": -0.1344,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD8B",
+        "value": -0.0931,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "LGALS1",
+        "value": -0.0583,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ZNF683",
+        "value": -0.0552,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "FLNA",
+        "value": -0.0441,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TPST2",
+        "value": -0.0427,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RSL1D1",
+        "value": -0.0411,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "LYAR",
+        "value": -0.0355,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TAGLN2",
+        "value": -0.0345,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "EIF3L",
+        "value": -0.0331,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ACTG1",
+        "value": -0.0318,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ARPC2",
+        "value": -0.0277,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ANP32B",
+        "value": -0.0267,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "S100A8",
+        "value": -0.0261,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ID2",
+        "value": -0.0257,
+        "rank_type": "bottom"
+      }
+    ]
+  },
+  {
+    "model": "lr_shap.xlsx",
+    "class": "CD8+ Cytotoxic T",
+    "genes": [
+      {
+        "gene": "CCL5",
+        "value": 0.7438,
+        "rank_type": "top"
+      },
+      {
+        "gene": "NKG7",
+        "value": 0.6181,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMK",
+        "value": 0.4621,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GNLY",
+        "value": 0.2006,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD4",
+        "value": 0.1768,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LYAR",
+        "value": 0.108,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD8B",
+        "value": 0.1012,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRA",
+        "value": 0.0794,
+        "rank_type": "top"
+      },
+      {
+        "gene": "S100A8",
+        "value": 0.0769,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMA",
+        "value": 0.0696,
+        "rank_type": "top"
+      },
+      {
+        "gene": "DUSP2",
+        "value": 0.0694,
+        "rank_type": "top"
+      },
+      {
+        "gene": "S100A9",
+        "value": 0.0578,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FCER1G",
+        "value": 0.0576,
+        "rank_type": "top"
+      },
+      {
+        "gene": "SIGLEC7",
+        "value": 0.0513,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD8A",
+        "value": 0.0485,
+        "rank_type": "top"
+      },
+      {
+        "gene": "PRF1",
+        "value": -0.0474,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "B2M",
+        "value": -0.0418,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "LYZ",
+        "value": -0.0414,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "IGSF6",
+        "value": -0.0372,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GZMH",
+        "value": -0.0256,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DQA1",
+        "value": -0.0253,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DRB5",
+        "value": -0.0237,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CCL4",
+        "value": -0.022,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DPA1",
+        "value": -0.0217,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "LTB",
+        "value": -0.02,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ZNF683",
+        "value": -0.0183,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "FOSB",
+        "value": -0.0169,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "XCL2",
+        "value": -0.016,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "MTPN",
+        "value": -0.0156,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "KLRC1",
+        "value": -0.0152,
+        "rank_type": "bottom"
+      }
+    ]
+  },
+  {
+    "model": "lr_shap.xlsx",
+    "class": "CD8+/CD45RA+ Naive Cytotoxic",
+    "genes": [
+      {
+        "gene": "NKG7",
+        "value": 4.9731,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GNLY",
+        "value": 2.4361,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CST7",
+        "value": 1.7341,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CCL5",
+        "value": 1.0993,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMA",
+        "value": 0.9784,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMH",
+        "value": 0.9152,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LYZ",
+        "value": 0.8612,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMB",
+        "value": 0.7441,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HOPX",
+        "value": 0.7286,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FCGR3A",
+        "value": 0.7081,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRB5",
+        "value": 0.6096,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRB1",
+        "value": 0.591,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRA",
+        "value": 0.5491,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DQA1",
+        "value": 0.549,
+        "rank_type": "top"
+      },
+      {
+        "gene": "KLRD1",
+        "value": 0.4701,
+        "rank_type": "top"
+      },
+      {
+        "gene": "S100A8",
+        "value": -0.1834,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TCL1A",
+        "value": -0.1279,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "FCER1G",
+        "value": -0.1113,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "IL32",
+        "value": -0.0979,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PRF1",
+        "value": -0.0748,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD79A",
+        "value": -0.0672,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ABI3",
+        "value": -0.0459,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HCST",
+        "value": -0.0435,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "SPIB",
+        "value": -0.0414,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TPST2",
+        "value": -0.0352,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CTSW",
+        "value": -0.0343,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GSTP1",
+        "value": -0.0337,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DMB",
+        "value": -0.0316,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "LST1",
+        "value": -0.0309,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GRN",
+        "value": -0.0306,
+        "rank_type": "bottom"
+      }
+    ]
+  },
+  {
+    "model": "lr_shap.xlsx",
+    "class": "Dendritic",
+    "genes": [
+      {
+        "gene": "CST3",
+        "value": 1.7932,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LYZ",
+        "value": 1.0371,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRB1",
+        "value": 1.0358,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TYROBP",
+        "value": 0.4741,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD7",
+        "value": 0.4497,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DPA1",
+        "value": 0.4168,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRA",
+        "value": 0.4007,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DQA2",
+        "value": 0.3986,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FCER1A",
+        "value": 0.3642,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMM",
+        "value": 0.2954,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FCER1G",
+        "value": 0.2701,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CLEC10A",
+        "value": 0.2458,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CFP",
+        "value": 0.2326,
+        "rank_type": "top"
+      },
+      {
+        "gene": "RHOC",
+        "value": 0.2044,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DPB1",
+        "value": 0.1984,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LTB",
+        "value": -0.3543,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD3D",
+        "value": -0.1567,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "LDHB",
+        "value": -0.1358,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "NOSIP",
+        "value": -0.1296,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TMEM176B",
+        "value": -0.1241,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TNFRSF1B",
+        "value": -0.1002,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "FTL",
+        "value": -0.0971,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CFD",
+        "value": -0.097,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TIMP1",
+        "value": -0.0878,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CCR7",
+        "value": -0.0819,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GIMAP7",
+        "value": -0.0794,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "SH3BGRL3",
+        "value": -0.0689,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CDA",
+        "value": -0.0641,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPS27A",
+        "value": -0.0632,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "NUP214",
+        "value": -0.0622,
+        "rank_type": "bottom"
+      }
+    ]
+  },
+  {
+    "model": "nn_lrp.xlsx",
+    "class": "CD14+ Monocyte",
+    "genes": [
+      {
+        "gene": "S100A9",
+        "value": 1.8524426,
+        "rank_type": "top"
+      },
+      {
+        "gene": "S100A8",
+        "value": 1.7023592,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TYROBP",
+        "value": 1.2690971,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CST3",
+        "value": 0.92545223,
+        "rank_type": "top"
+      },
+      {
+        "gene": "AIF1",
+        "value": 0.884144,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LYZ",
+        "value": 0.7020048,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LST1",
+        "value": 0.60695046,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TMEM176B",
+        "value": 0.5945233,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CFD",
+        "value": 0.5919459,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FCN1",
+        "value": 0.45793143,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CTSS",
+        "value": 0.43775374,
+        "rank_type": "top"
+      },
+      {
+        "gene": "S100A6",
+        "value": 0.36693743,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TSPO",
+        "value": 0.33570626,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD4",
+        "value": 0.33549723,
+        "rank_type": "top"
+      },
+      {
+        "gene": "S100A11",
+        "value": 0.32676095,
+        "rank_type": "top"
+      },
+      {
+        "gene": "RPL29",
+        "value": -0.27344406,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL3",
+        "value": -0.24399991,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "B2M",
+        "value": -0.23526485,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "DUSP1",
+        "value": -0.23504695,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DPB1",
+        "value": -0.23015262,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CFL1",
+        "value": -0.21743275,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PFN1",
+        "value": -0.20364277,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPS7",
+        "value": -0.19387001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPS5",
+        "value": -0.183641,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL10A",
+        "value": -0.18036374,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DPA1",
+        "value": -0.18024932,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "OAZ1",
+        "value": -0.17044805,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL15",
+        "value": -0.16970205,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPS27A",
+        "value": -0.16676848,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPS6",
+        "value": -0.1645543,
+        "rank_type": "bottom"
+      }
+    ]
+  },
+  {
+    "model": "nn_lrp.xlsx",
+    "class": "CD19+ B",
+    "genes": [
+      {
+        "gene": "CD79A",
+        "value": 2.1640954,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TCL1A",
+        "value": 0.95499104,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD79B",
+        "value": 0.94696724,
+        "rank_type": "top"
+      },
+      {
+        "gene": "MS4A1",
+        "value": 0.86159176,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DPA1",
+        "value": 0.6280638,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD74",
+        "value": 0.5650516,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DQA1",
+        "value": 0.56455404,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DQA2",
+        "value": 0.53776455,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FCER2",
+        "value": 0.49425006,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DPB1",
+        "value": 0.48258558,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRB5",
+        "value": 0.41997188,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRB1",
+        "value": 0.40292984,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRA",
+        "value": 0.3919505,
+        "rank_type": "top"
+      },
+      {
+        "gene": "VPREB3",
+        "value": 0.3731023,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HVCN1",
+        "value": 0.3149314,
+        "rank_type": "top"
+      },
+      {
+        "gene": "RPL17",
+        "value": -0.18470621,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CYBA",
+        "value": -0.16383629,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL37A",
+        "value": -0.16136949,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPS11",
+        "value": -0.14295354,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "MYL6",
+        "value": -0.14179802,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "FTL",
+        "value": -0.13839921,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "SLC25A6",
+        "value": -0.13812296,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPS24",
+        "value": -0.13566765,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GNLY",
+        "value": -0.12199666,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "COX7C",
+        "value": -0.11574125,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "EIF1",
+        "value": -0.11362968,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "EEF2",
+        "value": -0.11326642,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PABPC1",
+        "value": -0.10966355,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL36A",
+        "value": -0.10829469,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "NBEAL1",
+        "value": -0.10619121,
+        "rank_type": "bottom"
+      }
+    ]
+  },
+  {
+    "model": "nn_lrp.xlsx",
+    "class": "CD34+",
+    "genes": [
+      {
+        "gene": "CLU",
+        "value": 1.5697712,
+        "rank_type": "top"
+      },
+      {
+        "gene": "PPBP",
+        "value": 1.550911,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GPX1",
+        "value": 1.298952,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GNG11",
+        "value": 1.2947909,
+        "rank_type": "top"
+      },
+      {
+        "gene": "PF4",
+        "value": 1.2187047,
+        "rank_type": "top"
+      },
+      {
+        "gene": "NCOA4",
+        "value": 1.0595487,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CCL5",
+        "value": 0.82529813,
+        "rank_type": "top"
+      },
+      {
+        "gene": "ACRBP",
+        "value": 0.690822,
+        "rank_type": "top"
+      },
+      {
+        "gene": "SPARC",
+        "value": 0.6632552,
+        "rank_type": "top"
+      },
+      {
+        "gene": "OAZ1",
+        "value": 0.5823767,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TAGLN2",
+        "value": 0.5606356,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TPM4",
+        "value": 0.543676,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TREML1",
+        "value": 0.53855276,
+        "rank_type": "top"
+      },
+      {
+        "gene": "NRGN",
+        "value": 0.52736515,
+        "rank_type": "top"
+      },
+      {
+        "gene": "ITGA2B",
+        "value": 0.5256787,
+        "rank_type": "top"
+      },
+      {
+        "gene": "STXBP2",
+        "value": -0.2757347,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CST3",
+        "value": -0.26304188,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PKM",
+        "value": -0.25366402,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-C",
+        "value": -0.1834766,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "LAT",
+        "value": -0.17469804,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "LIMS1",
+        "value": -0.1626278,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "COTL1",
+        "value": -0.15675414,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "DOK2",
+        "value": -0.13915953,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TMEM50A",
+        "value": -0.13804954,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "YWHAZ",
+        "value": -0.12944256,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "MYL12A",
+        "value": -0.12731934,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "EIF4G2",
+        "value": -0.12694626,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CLDN5",
+        "value": -0.120915025,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ATP6V0E1",
+        "value": -0.11726834,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "R3HDM4",
+        "value": -0.11722227,
+        "rank_type": "bottom"
+      }
+    ]
+  },
+  {
+    "model": "nn_lrp.xlsx",
+    "class": "CD4+/CD25 T Reg",
+    "genes": [
+      {
+        "gene": "IL32",
+        "value": 0.47506207,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TIGIT",
+        "value": 0.19856478,
+        "rank_type": "top"
+      },
+      {
+        "gene": "JUNB",
+        "value": 0.13980451,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LGALS3",
+        "value": 0.13669278,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD4",
+        "value": 0.12367872,
+        "rank_type": "top"
+      },
+      {
+        "gene": "IER2",
+        "value": 0.11387289,
+        "rank_type": "top"
+      },
+      {
+        "gene": "ANXA1",
+        "value": 0.09451272,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GAPDH",
+        "value": 0.09361598,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CCR10",
+        "value": 0.09286292,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD7",
+        "value": 0.08538736,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRB5",
+        "value": 0.08438939,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TNFRSF1B",
+        "value": 0.0833869,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LTB",
+        "value": 0.08288056,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRB1",
+        "value": 0.08065069,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TNFRSF18",
+        "value": 0.07821568,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FTL",
+        "value": -0.10142766,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "MYL6",
+        "value": -0.08560091,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CYBA",
+        "value": -0.080241606,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPS9",
+        "value": -0.07390694,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "MYL12A",
+        "value": -0.07368785,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPS15",
+        "value": -0.07339159,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PABPC1",
+        "value": -0.07335028,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL7",
+        "value": -0.07018722,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HCST",
+        "value": -0.06041048,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPS19",
+        "value": -0.05966252,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "COX7C",
+        "value": -0.05838598,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "COX4I1",
+        "value": -0.0574648,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL27A",
+        "value": -0.0570857,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPS10",
+        "value": -0.053462792,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL28",
+        "value": -0.053316783,
+        "rank_type": "bottom"
+      }
+    ]
+  },
+  {
+    "model": "nn_lrp.xlsx",
+    "class": "CD4+/CD45RO+ Memory",
+    "genes": [
+      {
+        "gene": "KLRB1",
+        "value": 0.6102343,
+        "rank_type": "top"
+      },
+      {
+        "gene": "IL32",
+        "value": 0.5606053,
+        "rank_type": "top"
+      },
+      {
+        "gene": "S100A4",
+        "value": 0.34675178,
+        "rank_type": "top"
+      },
+      {
+        "gene": "S100A11",
+        "value": 0.31394506,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LGALS1",
+        "value": 0.29878238,
+        "rank_type": "top"
+      },
+      {
+        "gene": "ANXA1",
+        "value": 0.2520369,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMK",
+        "value": 0.18065703,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LYAR",
+        "value": 0.16730389,
+        "rank_type": "top"
+      },
+      {
+        "gene": "KLRG1",
+        "value": 0.16629311,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMA",
+        "value": 0.16062008,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HOPX",
+        "value": 0.15466394,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TIMP1",
+        "value": 0.13942432,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GSTK1",
+        "value": 0.13787648,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CCL5",
+        "value": 0.12488513,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD3D",
+        "value": 0.12032438,
+        "rank_type": "top"
+      },
+      {
+        "gene": "ACTB",
+        "value": -0.18728384,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "JUNB",
+        "value": -0.16993283,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PTMA",
+        "value": -0.15007275,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "FTH1",
+        "value": -0.14958706,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TMSB10",
+        "value": -0.12842925,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CYBA",
+        "value": -0.12586416,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL37",
+        "value": -0.10573561,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-B",
+        "value": -0.10018638,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "BTF3",
+        "value": -0.094521604,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "BTG1",
+        "value": -0.094337955,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPS20",
+        "value": -0.09233571,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "OAZ1",
+        "value": -0.08822015,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPS14",
+        "value": -0.08587493,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPS28",
+        "value": -0.085607775,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ARHGDIB",
+        "value": -0.08552564,
+        "rank_type": "bottom"
+      }
+    ]
+  },
+  {
+    "model": "nn_lrp.xlsx",
+    "class": "CD56+ NK",
+    "genes": [
+      {
+        "gene": "GNLY",
+        "value": 2.7150688,
+        "rank_type": "top"
+      },
+      {
+        "gene": "NKG7",
+        "value": 2.2596421,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMB",
+        "value": 1.4972306,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FCGR3A",
+        "value": 1.2223622,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TYROBP",
+        "value": 1.1848125,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FGFBP2",
+        "value": 1.1405891,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CCL5",
+        "value": 1.0616181,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CST7",
+        "value": 0.99679357,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMA",
+        "value": 0.81572324,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMH",
+        "value": 0.7815764,
+        "rank_type": "top"
+      },
+      {
+        "gene": "PRF1",
+        "value": 0.7508243,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CLIC3",
+        "value": 0.6616542,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CTSW",
+        "value": 0.6559003,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HOPX",
+        "value": 0.6312434,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CCL4",
+        "value": 0.5267646,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FTH1",
+        "value": -0.26025578,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD8B",
+        "value": -0.25693202,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DRB1",
+        "value": -0.2495804,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD52",
+        "value": -0.20863943,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "JUNB",
+        "value": -0.20557797,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ACTG1",
+        "value": -0.19256671,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DPB1",
+        "value": -0.19042236,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DRB5",
+        "value": -0.18938152,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL8",
+        "value": -0.1650716,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "S100A6",
+        "value": -0.16060051,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "VIM",
+        "value": -0.15914583,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD74",
+        "value": -0.15598588,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "IER2",
+        "value": -0.15438296,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TAGLN2",
+        "value": -0.15379043,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD37",
+        "value": -0.14614163,
+        "rank_type": "bottom"
+      }
+    ]
+  },
+  {
+    "model": "nn_lrp.xlsx",
+    "class": "CD8+ Cytotoxic T",
+    "genes": [
+      {
+        "gene": "CCL5",
+        "value": 1.1591356,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMK",
+        "value": 0.7781672,
+        "rank_type": "top"
+      },
+      {
+        "gene": "NKG7",
+        "value": 0.76384485,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD8B",
+        "value": 0.5403793,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD8A",
+        "value": 0.42583165,
+        "rank_type": "top"
+      },
+      {
+        "gene": "IL32",
+        "value": 0.403913,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMA",
+        "value": 0.38794714,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CTSW",
+        "value": 0.33361453,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GNLY",
+        "value": 0.30190858,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LYAR",
+        "value": 0.25439838,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD7",
+        "value": 0.220655,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMM",
+        "value": 0.18618146,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CST7",
+        "value": 0.18447249,
+        "rank_type": "top"
+      },
+      {
+        "gene": "DUSP2",
+        "value": 0.169772,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HCST",
+        "value": 0.15766583,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD74",
+        "value": -0.11240557,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CLIC1",
+        "value": -0.09416531,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ACTB",
+        "value": -0.09243335,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "FTH1",
+        "value": -0.09183239,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-E",
+        "value": -0.09093602,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DRB1",
+        "value": -0.08716826,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TMSB10",
+        "value": -0.08286445,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL37",
+        "value": -0.07638684,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "UBA52",
+        "value": -0.07502848,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "FTL",
+        "value": -0.073810175,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "BTF3",
+        "value": -0.07053287,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GAPDH",
+        "value": -0.0692957,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "SLC25A6",
+        "value": -0.06501965,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "SRGN",
+        "value": -0.06406202,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TMSB4X",
+        "value": -0.06321931,
+        "rank_type": "bottom"
+      }
+    ]
+  },
+  {
+    "model": "nn_lrp.xlsx",
+    "class": "CD8+/CD45RA+ Naive Cytotoxic",
+    "genes": [
+      {
+        "gene": "CD8B",
+        "value": 0.73364794,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD7",
+        "value": 0.5061289,
+        "rank_type": "top"
+      },
+      {
+        "gene": "JUNB",
+        "value": 0.40468657,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD8A",
+        "value": 0.28280836,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMM",
+        "value": 0.23190986,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LDHB",
+        "value": 0.18763098,
+        "rank_type": "top"
+      },
+      {
+        "gene": "S100B",
+        "value": 0.18364863,
+        "rank_type": "top"
+      },
+      {
+        "gene": "IL32",
+        "value": 0.17892481,
+        "rank_type": "top"
+      },
+      {
+        "gene": "RPL15",
+        "value": 0.17178893,
+        "rank_type": "top"
+      },
+      {
+        "gene": "RPL29",
+        "value": 0.15928665,
+        "rank_type": "top"
+      },
+      {
+        "gene": "RPL27A",
+        "value": 0.15196817,
+        "rank_type": "top"
+      },
+      {
+        "gene": "BTG1",
+        "value": 0.14915039,
+        "rank_type": "top"
+      },
+      {
+        "gene": "RPS20",
+        "value": 0.14026098,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CTSW",
+        "value": 0.1368984,
+        "rank_type": "top"
+      },
+      {
+        "gene": "AIF1",
+        "value": 0.12152517,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FTL",
+        "value": -0.18124343,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPS11",
+        "value": -0.17987138,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "SH3BGRL3",
+        "value": -0.13866939,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL35",
+        "value": -0.1131865,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "S100A4",
+        "value": -0.11176448,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPS10",
+        "value": -0.107548766,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL36A",
+        "value": -0.10251512,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "UBA52",
+        "value": -0.09846706,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GAPDH",
+        "value": -0.096502826,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-E",
+        "value": -0.08629604,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPS24",
+        "value": -0.085014455,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PABPC1",
+        "value": -0.08219756,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL37",
+        "value": -0.079067975,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TMSB4X",
+        "value": -0.073876925,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "EIF3E",
+        "value": -0.07188972,
+        "rank_type": "bottom"
+      }
+    ]
+  },
+  {
+    "model": "nn_lrp.xlsx",
+    "class": "Dendritic",
+    "genes": [
+      {
+        "gene": "LYZ",
+        "value": 1.1306778,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CST3",
+        "value": 0.79340166,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRA",
+        "value": 0.61139494,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DPA1",
+        "value": 0.47258154,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRB1",
+        "value": 0.4680753,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DQA2",
+        "value": 0.45158735,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DQA1",
+        "value": 0.4008687,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TYROBP",
+        "value": 0.36042565,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DPB1",
+        "value": 0.3480471,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD74",
+        "value": 0.33706236,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CPVL",
+        "value": 0.3253623,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DMA",
+        "value": 0.30484793,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LST1",
+        "value": 0.30053604,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRB5",
+        "value": 0.29120922,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FCER1A",
+        "value": 0.27310437,
+        "rank_type": "top"
+      },
+      {
+        "gene": "RPL4",
+        "value": -0.14150815,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "B2M",
+        "value": -0.13217832,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PFN1",
+        "value": -0.12728661,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-A",
+        "value": -0.11596304,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD52",
+        "value": -0.113007754,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "EIF1",
+        "value": -0.10906351,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "EEF1D",
+        "value": -0.10371032,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ANXA1",
+        "value": -0.09860287,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "FAU",
+        "value": -0.09463528,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CORO1A",
+        "value": -0.09461265,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-C",
+        "value": -0.09301088,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RNASET2",
+        "value": -0.0921407,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL23A",
+        "value": -0.09142066,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PSME1",
+        "value": -0.091234796,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "NACA",
+        "value": -0.090742886,
+        "rank_type": "bottom"
+      }
+    ]
+  },
+  {
+    "model": "nn_shap.xlsx",
+    "class": "CD14+ Monocyte",
+    "genes": [
+      {
+        "gene": "CCL5",
+        "value": -0.087218161,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD79A",
+        "value": -0.070625041,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "NKG7",
+        "value": -0.06631367,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD8A",
+        "value": -0.064897977,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GNLY",
+        "value": -0.064590723,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD8B",
+        "value": -0.053934167,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GZMK",
+        "value": -0.049506405,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CTSW",
+        "value": -0.042689759,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GZMA",
+        "value": -0.039700506,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CST7",
+        "value": -0.032016081,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD79B",
+        "value": -0.028472836,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TCL1A",
+        "value": -0.028115903,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GZMM",
+        "value": -0.027082161,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "MATK",
+        "value": -0.024162041,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD7",
+        "value": -0.023296014,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TYROBP",
+        "value": 0.049605197,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LDHB",
+        "value": 0.017154449,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRA",
+        "value": 0.016566442,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FCER1G",
+        "value": 0.015047855,
+        "rank_type": "top"
+      },
+      {
+        "gene": "PRF1",
+        "value": 0.01489484,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CST3",
+        "value": 0.013370222,
+        "rank_type": "top"
+      },
+      {
+        "gene": "S100A9",
+        "value": 0.013127278,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CEBPD",
+        "value": 0.012453028,
+        "rank_type": "top"
+      },
+      {
+        "gene": "S100A8",
+        "value": 0.011378015,
+        "rank_type": "top"
+      },
+      {
+        "gene": "AIF1",
+        "value": 0.009750184,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LTB",
+        "value": 0.008874183,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD74",
+        "value": 0.00830421,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FGR",
+        "value": 0.006451383,
+        "rank_type": "top"
+      },
+      {
+        "gene": "JUNB",
+        "value": 0.005798976,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRB1",
+        "value": 0.005560232,
+        "rank_type": "top"
+      }
+    ]
+  },
+  {
+    "model": "nn_shap.xlsx",
+    "class": "CD19+ B",
+    "genes": [
+      {
+        "gene": "NKG7",
+        "value": -0.125731398,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GNLY",
+        "value": -0.117045559,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GZMA",
+        "value": -0.068214077,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CCL5",
+        "value": -0.065434115,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GZMB",
+        "value": -0.041498882,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CST7",
+        "value": -0.041152296,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CTSW",
+        "value": -0.039396787,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GZMK",
+        "value": -0.036729647,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "FCGR3A",
+        "value": -0.032461495,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TYROBP",
+        "value": -0.032282894,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GZMM",
+        "value": -0.028851954,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HOPX",
+        "value": -0.0262606,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CLIC3",
+        "value": -0.023453415,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "FGFBP2",
+        "value": -0.021236974,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD7",
+        "value": -0.021093877,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD79A",
+        "value": 0.042674542,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TCL1A",
+        "value": 0.017837409,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD79B",
+        "value": 0.016719719,
+        "rank_type": "top"
+      },
+      {
+        "gene": "MS4A1",
+        "value": 0.014950267,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DPB1",
+        "value": 0.014371561,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD74",
+        "value": 0.011691956,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD4",
+        "value": 0.010879409,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DPA1",
+        "value": 0.009965539,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DQA1",
+        "value": 0.009220395,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DQA2",
+        "value": 0.009130153,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FCER2",
+        "value": 0.009049009,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRB5",
+        "value": 0.008866864,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DMB",
+        "value": 0.007631062,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HVCN1",
+        "value": 0.00750771,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DMA",
+        "value": 0.006503973,
+        "rank_type": "top"
+      }
+    ]
+  },
+  {
+    "model": "nn_shap.xlsx",
+    "class": "CD34+",
+    "genes": [
+      {
+        "gene": "GNLY",
+        "value": -0.040813206,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "NKG7",
+        "value": -0.032110936,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CCL5",
+        "value": -0.029677011,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GZMA",
+        "value": -0.027857295,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GZMK",
+        "value": -0.024647479,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD8B",
+        "value": -0.022817313999999998,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD79A",
+        "value": -0.02182401,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CTSW",
+        "value": -0.020774388,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GZMM",
+        "value": -0.020356235,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD8A",
+        "value": -0.019413749,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD7",
+        "value": -0.018264086,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CST7",
+        "value": -0.016584314,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HOPX",
+        "value": -0.009849186,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "MATK",
+        "value": -0.009752655,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GZMB",
+        "value": -0.009409691,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DRA",
+        "value": 0.018771866,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD74",
+        "value": 0.00704876,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DPA1",
+        "value": 0.0059674,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD4",
+        "value": 0.005523608,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TYROBP",
+        "value": 0.004472572,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GIMAP7",
+        "value": 0.004299868,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CLIC1",
+        "value": 0.004136244,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD3E",
+        "value": 0.004072939,
+        "rank_type": "top"
+      },
+      {
+        "gene": "PLEK",
+        "value": 0.004051317,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FCER1G",
+        "value": 0.0037672,
+        "rank_type": "top"
+      },
+      {
+        "gene": "PDLIM1",
+        "value": 0.003327881,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRB1",
+        "value": 0.003284107,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CXXC5",
+        "value": 0.003234099,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CYBA",
+        "value": 0.002469514,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GPX1",
+        "value": 0.002295189,
+        "rank_type": "top"
+      }
+    ]
+  },
+  {
+    "model": "nn_shap.xlsx",
+    "class": "CD4+ T Helper2",
+    "genes": [
+      {
+        "gene": "CD79A",
+        "value": -0.013942083,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD8A",
+        "value": -0.012097124,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD8B",
+        "value": -0.010395378,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TCL1A",
+        "value": -0.008474894,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD79B",
+        "value": -0.008225344,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD4",
+        "value": -0.004438408,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DMB",
+        "value": -0.004262501,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DMA",
+        "value": -0.003834447,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GZMM",
+        "value": -0.003730769,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "LIMS1",
+        "value": -0.003350294,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "IGLL5",
+        "value": -0.003286771,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "S100B",
+        "value": -0.003215845,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "LY86",
+        "value": -0.003134277,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "NCR3",
+        "value": -0.003104442,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "MS4A1",
+        "value": -0.003103124,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "NKG7",
+        "value": 0.028558396,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GNLY",
+        "value": 0.021625269,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TYROBP",
+        "value": 0.016323107,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRA",
+        "value": 0.013783967,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMB",
+        "value": 0.012858938,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FCGR3A",
+        "value": 0.011817989,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRB1",
+        "value": 0.010244956,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DPA1",
+        "value": 0.009380731,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMA",
+        "value": 0.00916396,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CCL5",
+        "value": 0.00763579,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FGFBP2",
+        "value": 0.006791974,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD74",
+        "value": 0.005624915,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CTSW",
+        "value": 0.005473205,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LDHB",
+        "value": 0.005468794,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CST3",
+        "value": 0.005284418,
+        "rank_type": "top"
+      }
+    ]
+  },
+  {
+    "model": "nn_shap.xlsx",
+    "class": "CD4+/CD25 T Reg",
+    "genes": [
+      {
+        "gene": "NKG7",
+        "value": -0.176639527,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GNLY",
+        "value": -0.15604064,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CCL5",
+        "value": -0.102345267,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GZMA",
+        "value": -0.069978067,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CTSW",
+        "value": -0.063923902,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GZMB",
+        "value": -0.056457288,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TYROBP",
+        "value": -0.052241141,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CST7",
+        "value": -0.045776986,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "FCGR3A",
+        "value": -0.042952329,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "FGFBP2",
+        "value": -0.042438781,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD8A",
+        "value": -0.039776499,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GZMK",
+        "value": -0.037171906,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HOPX",
+        "value": -0.036122804,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CLIC3",
+        "value": -0.035107338,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD8B",
+        "value": -0.029506574,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DRB5",
+        "value": 0.026666596,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRB1",
+        "value": 0.026636697,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DQB1",
+        "value": 0.013959881,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LGALS3",
+        "value": 0.007647558,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CLIC1",
+        "value": 0.006400639,
+        "rank_type": "top"
+      },
+      {
+        "gene": "PMAIP1",
+        "value": 0.004392479,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TIGIT",
+        "value": 0.003543247,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DPA1",
+        "value": 0.003183011,
+        "rank_type": "top"
+      },
+      {
+        "gene": "PSMB8",
+        "value": 0.002367693,
+        "rank_type": "top"
+      },
+      {
+        "gene": "DOK2",
+        "value": 0.002061789,
+        "rank_type": "top"
+      },
+      {
+        "gene": "RSL1D1",
+        "value": 0.002004061,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TPM4",
+        "value": 0.001929749,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CTSC",
+        "value": 0.001851004,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LY6E",
+        "value": 0.001799738,
+        "rank_type": "top"
+      },
+      {
+        "gene": "PABPC1",
+        "value": 0.001781751,
+        "rank_type": "top"
+      }
+    ]
+  },
+  {
+    "model": "nn_shap.xlsx",
+    "class": "CD4+/CD45RA+/CD25- Naive T",
+    "genes": [
+      {
+        "gene": "CCL5",
+        "value": -0.145459935,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "NKG7",
+        "value": -0.138214328,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GNLY",
+        "value": -0.107841823,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CST7",
+        "value": -0.07211566,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GZMA",
+        "value": -0.059564277,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GZMK",
+        "value": -0.042904928,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HOPX",
+        "value": -0.039257357,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DRB1",
+        "value": -0.038930101,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD8A",
+        "value": -0.029987366,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GZMB",
+        "value": -0.028176717,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DPA1",
+        "value": -0.027791452,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CTSW",
+        "value": -0.025527983,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CLIC3",
+        "value": -0.025113018,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "KLRC1",
+        "value": -0.023312587,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DRB5",
+        "value": -0.022927071,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "IGLL5",
+        "value": 0.009778085,
+        "rank_type": "top"
+      },
+      {
+        "gene": "AKR1C3",
+        "value": 0.004407085,
+        "rank_type": "top"
+      },
+      {
+        "gene": "AIF1",
+        "value": 0.004076596,
+        "rank_type": "top"
+      },
+      {
+        "gene": "NCF1",
+        "value": 0.003050827,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TTC39C",
+        "value": 0.002508371,
+        "rank_type": "top"
+      },
+      {
+        "gene": "IFITM3",
+        "value": 0.002478062,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CYCS",
+        "value": 0.002029873,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HVCN1",
+        "value": 0.001971827,
+        "rank_type": "top"
+      },
+      {
+        "gene": "PSMB8",
+        "value": 0.001942578,
+        "rank_type": "top"
+      },
+      {
+        "gene": "AGTRAP",
+        "value": 0.001896859,
+        "rank_type": "top"
+      },
+      {
+        "gene": "IRF7",
+        "value": 0.001843235,
+        "rank_type": "top"
+      },
+      {
+        "gene": "SLC25A5",
+        "value": 0.001796571,
+        "rank_type": "top"
+      },
+      {
+        "gene": "NMRK1",
+        "value": 0.001767652,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FXYD5",
+        "value": 0.001735718,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LY6E",
+        "value": 0.001699072,
+        "rank_type": "top"
+      }
+    ]
+  },
+  {
+    "model": "nn_shap.xlsx",
+    "class": "CD4+/CD45RO+ Memory",
+    "genes": [
+      {
+        "gene": "CD79A",
+        "value": -0.077789573,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TYROBP",
+        "value": -0.046054657,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DRA",
+        "value": -0.037431294,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "FGFBP2",
+        "value": -0.034252634,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DPB1",
+        "value": -0.033049221,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DQA2",
+        "value": -0.032391857,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TCL1A",
+        "value": -0.031386941,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD74",
+        "value": -0.031261927,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DPA1",
+        "value": -0.031105405,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD8A",
+        "value": -0.029999811,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "FCGR3A",
+        "value": -0.028870495,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD8B",
+        "value": -0.028770132,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "IL32",
+        "value": -0.028159,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GZMB",
+        "value": -0.027839604,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DQA1",
+        "value": -0.02765984,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GZMK",
+        "value": 0.023400711,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CCL5",
+        "value": 0.018457069,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMA",
+        "value": 0.018019614,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HOPX",
+        "value": 0.005952583,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LGALS3",
+        "value": 0.00417362,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DQB1",
+        "value": 0.003899418,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LYAR",
+        "value": 0.003804392,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TYMP",
+        "value": 0.003448992,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FLNA",
+        "value": 0.00322639,
+        "rank_type": "top"
+      },
+      {
+        "gene": "RGS10",
+        "value": 0.002884408,
+        "rank_type": "top"
+      },
+      {
+        "gene": "MYO1F",
+        "value": 0.002806648,
+        "rank_type": "top"
+      },
+      {
+        "gene": "PSMB8",
+        "value": 0.002791838,
+        "rank_type": "top"
+      },
+      {
+        "gene": "RNASE6",
+        "value": 0.002746338,
+        "rank_type": "top"
+      },
+      {
+        "gene": "KLRG1",
+        "value": 0.002372755,
+        "rank_type": "top"
+      },
+      {
+        "gene": "RPS20",
+        "value": 0.002133712,
+        "rank_type": "top"
+      }
+    ]
+  },
+  {
+    "model": "nn_shap.xlsx",
+    "class": "CD56+ NK",
+    "genes": [
+      {
+        "gene": "CD79A",
+        "value": -0.070592275,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DRB5",
+        "value": -0.040323114,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD79B",
+        "value": -0.035551212,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DRB1",
+        "value": -0.033870012,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TCL1A",
+        "value": -0.030920241,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DPA1",
+        "value": -0.028354253,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DRA",
+        "value": -0.027381477,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DPB1",
+        "value": -0.026541749,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DQA2",
+        "value": -0.023576067,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DQA1",
+        "value": -0.023567539,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "MS4A1",
+        "value": -0.022714002,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD74",
+        "value": -0.016589904,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DMB",
+        "value": -0.01651307,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DQB1",
+        "value": -0.016253147,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DMA",
+        "value": -0.015901328,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "NKG7",
+        "value": 0.17811181,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GNLY",
+        "value": 0.131819906,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CCL5",
+        "value": 0.104434303,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMA",
+        "value": 0.070446208,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CST7",
+        "value": 0.052997956,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMB",
+        "value": 0.04764178,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TYROBP",
+        "value": 0.046744809,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CTSW",
+        "value": 0.04016139,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FGFBP2",
+        "value": 0.038208994,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HOPX",
+        "value": 0.037005326,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FCGR3A",
+        "value": 0.035479003,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMK",
+        "value": 0.033776754,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CLIC3",
+        "value": 0.029584434,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CCL4",
+        "value": 0.025073571,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMH",
+        "value": 0.024541921,
+        "rank_type": "top"
+      }
+    ]
+  },
+  {
+    "model": "nn_shap.xlsx",
+    "class": "CD8+ Cytotoxic T",
+    "genes": [
+      {
+        "gene": "HLA-DRA",
+        "value": -0.042294211,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TYROBP",
+        "value": -0.028252362,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DPA1",
+        "value": -0.025618536,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DRB1",
+        "value": -0.02557877,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD74",
+        "value": -0.018773118,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DRB5",
+        "value": -0.017171748,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PRF1",
+        "value": -0.013700615,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CST3",
+        "value": -0.012728246,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "LYZ",
+        "value": -0.012489914,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DQA1",
+        "value": -0.011224756,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "IL32",
+        "value": -0.011009549,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DPB1",
+        "value": -0.010248483,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DQA2",
+        "value": -0.01005687,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "FCER1G",
+        "value": -0.009241599,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "LDHB",
+        "value": -0.009234462,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "NKG7",
+        "value": 0.069830468,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CCL5",
+        "value": 0.069722364,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GNLY",
+        "value": 0.045943066,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD8A",
+        "value": 0.043157092,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMA",
+        "value": 0.029346102,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMK",
+        "value": 0.02910813,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CTSW",
+        "value": 0.027996955,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD8B",
+        "value": 0.02728138,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CST7",
+        "value": 0.01925195,
+        "rank_type": "top"
+      },
+      {
+        "gene": "MATK",
+        "value": 0.014985478,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HOPX",
+        "value": 0.012392061,
+        "rank_type": "top"
+      },
+      {
+        "gene": "KLRC1",
+        "value": 0.011300605,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD4",
+        "value": 0.011218029,
+        "rank_type": "top"
+      },
+      {
+        "gene": "NCR3",
+        "value": 0.009571853,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMM",
+        "value": 0.008998672,
+        "rank_type": "top"
+      }
+    ]
+  },
+  {
+    "model": "nn_shap.xlsx",
+    "class": "CD8+/CD45RA+ Naive Cytotoxic",
+    "genes": [
+      {
+        "gene": "GNLY",
+        "value": -0.061432456,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "NKG7",
+        "value": -0.054486392,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TYROBP",
+        "value": -0.051387975,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DRA",
+        "value": -0.045444654,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CST7",
+        "value": -0.039505508,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GZMB",
+        "value": -0.037350951,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "FCGR3A",
+        "value": -0.034094952,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DRB1",
+        "value": -0.030838925,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "FGFBP2",
+        "value": -0.029206989,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DPA1",
+        "value": -0.028692436,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GZMA",
+        "value": -0.027032539,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CCL5",
+        "value": -0.026416556,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PRF1",
+        "value": -0.025066326,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "LTB",
+        "value": -0.022950648,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PRSS23",
+        "value": -0.018952859,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD8A",
+        "value": 0.037351355,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD8B",
+        "value": 0.028008242,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD79A",
+        "value": 0.009160569,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD4",
+        "value": 0.007803925,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LIMS1",
+        "value": 0.007221948,
+        "rank_type": "top"
+      },
+      {
+        "gene": "S100B",
+        "value": 0.005554997,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TCL1A",
+        "value": 0.0045429,
+        "rank_type": "top"
+      },
+      {
+        "gene": "ID2",
+        "value": 0.004449192,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HVCN1",
+        "value": 0.003278904,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DMB",
+        "value": 0.003008381,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMM",
+        "value": 0.002588499,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CTSW",
+        "value": 0.002291872,
+        "rank_type": "top"
+      },
+      {
+        "gene": "NCR3",
+        "value": 0.002220006,
+        "rank_type": "top"
+      },
+      {
+        "gene": "NCF1",
+        "value": 0.002162781,
+        "rank_type": "top"
+      },
+      {
+        "gene": "RPL37",
+        "value": 0.002143841,
+        "rank_type": "top"
+      }
+    ]
+  },
+  {
+    "model": "nn_shap.xlsx",
+    "class": "Dendritic",
+    "genes": [
+      {
+        "gene": "NKG7",
+        "value": -0.092670764,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CCL5",
+        "value": -0.087912992,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GNLY",
+        "value": -0.083659193,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GZMA",
+        "value": -0.051669023,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GZMK",
+        "value": -0.046043576,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD8A",
+        "value": -0.044661399,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CTSW",
+        "value": -0.04144121,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD8B",
+        "value": -0.032762532,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CST7",
+        "value": -0.030672396,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GZMM",
+        "value": -0.02399668,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "MATK",
+        "value": -0.022315262,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HOPX",
+        "value": -0.020790477,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD79A",
+        "value": -0.020746438,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "KLRC1",
+        "value": -0.0165776,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD7",
+        "value": -0.015790681,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DRA",
+        "value": 0.037716474,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TYROBP",
+        "value": 0.028762487,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRB1",
+        "value": 0.028183317,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DPA1",
+        "value": 0.023096335,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD74",
+        "value": 0.018655926,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRB5",
+        "value": 0.013624066,
+        "rank_type": "top"
+      },
+      {
+        "gene": "PRF1",
+        "value": 0.013066603,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FCER1G",
+        "value": 0.012120111,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CST3",
+        "value": 0.010449949,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DPB1",
+        "value": 0.009661758,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LDHB",
+        "value": 0.009453636,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CEBPD",
+        "value": 0.009234789,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LYZ",
+        "value": 0.00875439,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DQA1",
+        "value": 0.006442929,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DQA2",
+        "value": 0.00617424,
+        "rank_type": "top"
+      }
+    ]
+  },
+  {
+    "model": "rf_shap.xlsx",
+    "class": "CD14+ Monocyte",
+    "genes": [
+      {
+        "gene": "FTL",
+        "value": 0.0301,
+        "rank_type": "top"
+      },
+      {
+        "gene": "S100A9",
+        "value": 0.0287,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TYROBP",
+        "value": 0.0267,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CST3",
+        "value": 0.0209,
+        "rank_type": "top"
+      },
+      {
+        "gene": "S100A8",
+        "value": 0.0183,
+        "rank_type": "top"
+      },
+      {
+        "gene": "S100A4",
+        "value": 0.0175,
+        "rank_type": "top"
+      },
+      {
+        "gene": "AIF1",
+        "value": 0.0171,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LST1",
+        "value": 0.0126,
+        "rank_type": "top"
+      },
+      {
+        "gene": "B2M",
+        "value": 0.0114,
+        "rank_type": "top"
+      },
+      {
+        "gene": "RPL3",
+        "value": 0.01,
+        "rank_type": "top"
+      },
+      {
+        "gene": "PSAP",
+        "value": 0.0097,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FCN1",
+        "value": 0.0097,
+        "rank_type": "top"
+      },
+      {
+        "gene": "SAT1",
+        "value": 0.0086,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TYMP",
+        "value": 0.0085,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FTH1",
+        "value": 0.0072,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DQA2",
+        "value": -0.0004,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DQA1",
+        "value": -0.0002,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CALM2",
+        "value": -0.0002,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PLEK",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD63",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GSN",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ABI3",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD37",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ID2",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CLEC10A",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "SNX10",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD33",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "MNDA",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "EAF2",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CASP1",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      }
+    ]
+  },
+  {
+    "model": "rf_shap.xlsx",
+    "class": "CD19+ B",
+    "genes": [
+      {
+        "gene": "CD74",
+        "value": 0.0717,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRA",
+        "value": 0.0587,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRB1",
+        "value": 0.0409,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD79A",
+        "value": 0.0331,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DPA1",
+        "value": 0.0308,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD79B",
+        "value": 0.0265,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DPB1",
+        "value": 0.0206,
+        "rank_type": "top"
+      },
+      {
+        "gene": "MS4A1",
+        "value": 0.0187,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DQA1",
+        "value": 0.0166,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TCL1A",
+        "value": 0.0165,
+        "rank_type": "top"
+      },
+      {
+        "gene": "IL32",
+        "value": 0.0154,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DQA2",
+        "value": 0.0144,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRB5",
+        "value": 0.0102,
+        "rank_type": "top"
+      },
+      {
+        "gene": "VPREB3",
+        "value": 0.0097,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD3D",
+        "value": 0.0096,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LSP1",
+        "value": -0.0002,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "NACA",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ZFP36",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CLIC1",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPS28",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GSN",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PLEK",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "LY6E",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CCR10",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "NFKBIA",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ARPC5",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL35",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "APOBEC3G",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "KLF6",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PLP2",
+        "value": 0.0,
+        "rank_type": "bottom"
+      }
+    ]
+  },
+  {
+    "model": "rf_shap.xlsx",
+    "class": "CD34+",
+    "genes": [
+      {
+        "gene": "RPS2",
+        "value": 0.02,
+        "rank_type": "top"
+      },
+      {
+        "gene": "RPL11",
+        "value": 0.017,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GPX1",
+        "value": 0.0157,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CLU",
+        "value": 0.0148,
+        "rank_type": "top"
+      },
+      {
+        "gene": "RPS19",
+        "value": 0.0147,
+        "rank_type": "top"
+      },
+      {
+        "gene": "SPARC",
+        "value": 0.0139,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GNG11",
+        "value": 0.0138,
+        "rank_type": "top"
+      },
+      {
+        "gene": "RPL21",
+        "value": 0.0131,
+        "rank_type": "top"
+      },
+      {
+        "gene": "RPS3",
+        "value": 0.0127,
+        "rank_type": "top"
+      },
+      {
+        "gene": "RPL32",
+        "value": 0.0127,
+        "rank_type": "top"
+      },
+      {
+        "gene": "RPS27",
+        "value": 0.0122,
+        "rank_type": "top"
+      },
+      {
+        "gene": "SAT1",
+        "value": 0.0116,
+        "rank_type": "top"
+      },
+      {
+        "gene": "PF4",
+        "value": 0.0114,
+        "rank_type": "top"
+      },
+      {
+        "gene": "ACRBP",
+        "value": 0.0112,
+        "rank_type": "top"
+      },
+      {
+        "gene": "SH3BGRL3",
+        "value": 0.0108,
+        "rank_type": "top"
+      },
+      {
+        "gene": "RHOC",
+        "value": -0.0009,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-A",
+        "value": -0.0009,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "EAF2",
+        "value": -0.0006,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "COTL1",
+        "value": -0.0004,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TYMP",
+        "value": -0.0004,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "FTL",
+        "value": -0.0003,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "IFITM3",
+        "value": -0.0002,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ACTG1",
+        "value": -0.0002,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PPP1R18",
+        "value": -0.0002,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TSC22D3",
+        "value": -0.0002,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CDKN1A",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ARL2",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HMGN1",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD22",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CNBP",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      }
+    ]
+  },
+  {
+    "model": "rf_shap.xlsx",
+    "class": "CD4+/CD25 T Reg",
+    "genes": [
+      {
+        "gene": "S100A4",
+        "value": 0.0119,
+        "rank_type": "top"
+      },
+      {
+        "gene": "NKG7",
+        "value": 0.0079,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CCL5",
+        "value": 0.0077,
+        "rank_type": "top"
+      },
+      {
+        "gene": "B2M",
+        "value": 0.007,
+        "rank_type": "top"
+      },
+      {
+        "gene": "IL32",
+        "value": 0.0068,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LGALS1",
+        "value": 0.0068,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CCR10",
+        "value": 0.0064,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GNLY",
+        "value": 0.0046,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMA",
+        "value": 0.0038,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LGALS3",
+        "value": 0.0035,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CTSW",
+        "value": 0.0034,
+        "rank_type": "top"
+      },
+      {
+        "gene": "SH3BGRL3",
+        "value": 0.003,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMK",
+        "value": 0.003,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRB1",
+        "value": 0.0027,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-A",
+        "value": 0.0027,
+        "rank_type": "top"
+      },
+      {
+        "gene": "C12orf75",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL24",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PIK3IP1",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "FLNA",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL36A",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "MPRIP",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GLIPR2",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL27",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL34",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "COX7C",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "EIF3G",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RWDD1",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PHF5A",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "EIF3F",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ANAPC11",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      }
+    ]
+  },
+  {
+    "model": "rf_shap.xlsx",
+    "class": "CD4+/CD45RO+ Memory",
+    "genes": [
+      {
+        "gene": "KLRB1",
+        "value": 0.0301,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD4",
+        "value": 0.013,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LGALS1",
+        "value": 0.0092,
+        "rank_type": "top"
+      },
+      {
+        "gene": "S100A4",
+        "value": 0.0078,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CTSH",
+        "value": 0.005,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD7",
+        "value": 0.0041,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LTB",
+        "value": 0.0039,
+        "rank_type": "top"
+      },
+      {
+        "gene": "AQP3",
+        "value": 0.0035,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CAPG",
+        "value": 0.003,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FUT7",
+        "value": 0.003,
+        "rank_type": "top"
+      },
+      {
+        "gene": "USP10",
+        "value": 0.003,
+        "rank_type": "top"
+      },
+      {
+        "gene": "RPS14",
+        "value": 0.0028,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TNFRSF4",
+        "value": 0.0028,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRB1",
+        "value": 0.0025,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TAGLN2",
+        "value": 0.0024,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD3D",
+        "value": -0.0032,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "IL2RG",
+        "value": -0.0023,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PPP1R15A",
+        "value": -0.0019,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CCDC57",
+        "value": -0.0017,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PDLIM1",
+        "value": -0.0017,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL37A",
+        "value": -0.0016,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPS23",
+        "value": -0.0014,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "SRSF4",
+        "value": -0.0014,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "LEF1",
+        "value": -0.0014,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "COX7A2L",
+        "value": -0.0014,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CLTA",
+        "value": -0.0013,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CCT5",
+        "value": -0.0013,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "S100A11",
+        "value": -0.0013,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TTC39C",
+        "value": -0.0013,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "S100A6",
+        "value": -0.0013,
+        "rank_type": "bottom"
+      }
+    ]
+  },
+  {
+    "model": "rf_shap.xlsx",
+    "class": "CD56+ NK",
+    "genes": [
+      {
+        "gene": "GNLY",
+        "value": 0.0516,
+        "rank_type": "top"
+      },
+      {
+        "gene": "NKG7",
+        "value": 0.0387,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMB",
+        "value": 0.0377,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FGFBP2",
+        "value": 0.0274,
+        "rank_type": "top"
+      },
+      {
+        "gene": "PRF1",
+        "value": 0.0188,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LTB",
+        "value": 0.0174,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TYROBP",
+        "value": 0.0173,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CST7",
+        "value": 0.0154,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMH",
+        "value": 0.0137,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FCGR3A",
+        "value": 0.0131,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMA",
+        "value": 0.013,
+        "rank_type": "top"
+      },
+      {
+        "gene": "RPS2",
+        "value": 0.0102,
+        "rank_type": "top"
+      },
+      {
+        "gene": "RPL13",
+        "value": 0.0097,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CTSW",
+        "value": 0.0093,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CLIC3",
+        "value": 0.0093,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD8B",
+        "value": -0.0002,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "LDHA",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TIMP1",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ANXA2",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL36AL",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "S100A10",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GYPC",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PPP2R5C",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "DNAJC1",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "UBE2D2",
+        "value": 0.0,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HSP90AA1",
+        "value": 0.0,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "VAMP5",
+        "value": 0.0,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GYG1",
+        "value": 0.0,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD3G",
+        "value": 0.0,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "SMC6",
+        "value": 0.0,
+        "rank_type": "bottom"
+      }
+    ]
+  },
+  {
+    "model": "rf_shap.xlsx",
+    "class": "CD8+ Cytotoxic T",
+    "genes": [
+      {
+        "gene": "NKG7",
+        "value": 0.0222,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CCL5",
+        "value": 0.0221,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMK",
+        "value": 0.0209,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GNLY",
+        "value": 0.011,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMA",
+        "value": 0.0105,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CST7",
+        "value": 0.0096,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LYAR",
+        "value": 0.0064,
+        "rank_type": "top"
+      },
+      {
+        "gene": "IL32",
+        "value": 0.0043,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CTSW",
+        "value": 0.0038,
+        "rank_type": "top"
+      },
+      {
+        "gene": "B2M",
+        "value": 0.0035,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRA",
+        "value": 0.0029,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD74",
+        "value": 0.0028,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HOPX",
+        "value": 0.0026,
+        "rank_type": "top"
+      },
+      {
+        "gene": "S100A4",
+        "value": 0.0024,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRB1",
+        "value": 0.0023,
+        "rank_type": "top"
+      },
+      {
+        "gene": "DOK2",
+        "value": -0.0002,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CLIC1",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TRADD",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ANXA2",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "VIM",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GYPC",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "EEF1B2",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PCBP2",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GMFG",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "FLNA",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ABI3",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CCR10",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "YWHAB",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ERP29",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CXCR3",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      }
+    ]
+  },
+  {
+    "model": "rf_shap.xlsx",
+    "class": "CD8+/CD45RA+ Naive Cytotoxic",
+    "genes": [
+      {
+        "gene": "NKG7",
+        "value": 0.0151,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GNLY",
+        "value": 0.0118,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CCL5",
+        "value": 0.0115,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CST7",
+        "value": 0.0095,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMA",
+        "value": 0.0089,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRB1",
+        "value": 0.0068,
+        "rank_type": "top"
+      },
+      {
+        "gene": "S100A4",
+        "value": 0.0067,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMK",
+        "value": 0.0056,
+        "rank_type": "top"
+      },
+      {
+        "gene": "B2M",
+        "value": 0.0049,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRA",
+        "value": 0.0038,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD74",
+        "value": 0.0037,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DPA1",
+        "value": 0.0037,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HOPX",
+        "value": 0.0037,
+        "rank_type": "top"
+      },
+      {
+        "gene": "IL32",
+        "value": 0.0034,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD4",
+        "value": 0.0028,
+        "rank_type": "top"
+      },
+      {
+        "gene": "ID2",
+        "value": -0.0002,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL8",
+        "value": -0.0002,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PLP2",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPS29",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PRDX2",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL36A",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "BIN2",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ABRACL",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "YWHAQ",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "BANF1",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "NDUFA4",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CHCHD2",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ZNF706",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HNRNPA2B1",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PCBP1",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      }
+    ]
+  },
+  {
+    "model": "rf_shap.xlsx",
+    "class": "Dendritic",
+    "genes": [
+      {
+        "gene": "CST3",
+        "value": 0.0343,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRB1",
+        "value": 0.0231,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD74",
+        "value": 0.0183,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LYZ",
+        "value": 0.018,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DPA1",
+        "value": 0.0177,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRA",
+        "value": 0.0175,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TYROBP",
+        "value": 0.0173,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DQA2",
+        "value": 0.0156,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DPB1",
+        "value": 0.0146,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DQA1",
+        "value": 0.013,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FCER1G",
+        "value": 0.0114,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FCER1A",
+        "value": 0.01,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRB5",
+        "value": 0.0085,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DQB1",
+        "value": 0.0082,
+        "rank_type": "top"
+      },
+      {
+        "gene": "AIF1",
+        "value": 0.0079,
+        "rank_type": "top"
+      },
+      {
+        "gene": "NUP214",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PARVB",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CXXC5",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "FLNA",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "MX1",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD84",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ISG15",
+        "value": -0.0001,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "VPS28",
+        "value": 0.0,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HNRNPK",
+        "value": 0.0,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CPSF4",
+        "value": 0.0,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GCA",
+        "value": 0.0,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "AHNAK",
+        "value": 0.0,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GRPEL1",
+        "value": 0.0,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "STX10",
+        "value": 0.0,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CRIP1",
+        "value": 0.0,
+        "rank_type": "bottom"
+      }
+    ]
+  },
+  {
+    "model": "xgb_shap.xlsx",
+    "class": "CD14+ Monocyte",
+    "genes": [
+      {
+        "gene": "FTL",
+        "value": 3.6061,
+        "rank_type": "top"
+      },
+      {
+        "gene": "S100A8",
+        "value": 1.9894,
+        "rank_type": "top"
+      },
+      {
+        "gene": "S100A9",
+        "value": 1.7008,
+        "rank_type": "top"
+      },
+      {
+        "gene": "RPL3",
+        "value": 0.5467,
+        "rank_type": "top"
+      },
+      {
+        "gene": "B2M",
+        "value": 0.3503,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CST3",
+        "value": 0.2965,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TYROBP",
+        "value": 0.2813,
+        "rank_type": "top"
+      },
+      {
+        "gene": "AIF1",
+        "value": 0.2619,
+        "rank_type": "top"
+      },
+      {
+        "gene": "IL32",
+        "value": 0.2598,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CFD",
+        "value": 0.248,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TMEM176B",
+        "value": 0.2407,
+        "rank_type": "top"
+      },
+      {
+        "gene": "S100A4",
+        "value": 0.1539,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LST1",
+        "value": 0.1498,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LDHB",
+        "value": 0.1292,
+        "rank_type": "top"
+      },
+      {
+        "gene": "RPLP1",
+        "value": 0.1179,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRA",
+        "value": -0.0351,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "LYZ",
+        "value": -0.0187,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DRB5",
+        "value": -0.0181,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RHOC",
+        "value": -0.0146,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DQA2",
+        "value": -0.0124,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "LSP1",
+        "value": -0.0103,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DMB",
+        "value": -0.0093,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "DUSP1",
+        "value": -0.0092,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CFP",
+        "value": -0.0079,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DRB1",
+        "value": -0.0075,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ILK",
+        "value": -0.0065,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PLEKHO1",
+        "value": -0.0057,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DQB1",
+        "value": -0.0052,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ARPC1B",
+        "value": -0.005,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DQA1",
+        "value": -0.0049,
+        "rank_type": "bottom"
+      }
+    ]
+  },
+  {
+    "model": "xgb_shap.xlsx",
+    "class": "CD19+ B",
+    "genes": [
+      {
+        "gene": "CD74",
+        "value": 2.1529,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRA",
+        "value": 0.7191,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD7",
+        "value": 0.5801,
+        "rank_type": "top"
+      },
+      {
+        "gene": "IL32",
+        "value": 0.5115,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMM",
+        "value": 0.482,
+        "rank_type": "top"
+      },
+      {
+        "gene": "ANXA1",
+        "value": 0.4761,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD79A",
+        "value": 0.4322,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GNLY",
+        "value": 0.3284,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMA",
+        "value": 0.2646,
+        "rank_type": "top"
+      },
+      {
+        "gene": "NKG7",
+        "value": 0.2564,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD79B",
+        "value": 0.2528,
+        "rank_type": "top"
+      },
+      {
+        "gene": "ID2",
+        "value": 0.2045,
+        "rank_type": "top"
+      },
+      {
+        "gene": "MS4A1",
+        "value": 0.201,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CTSW",
+        "value": 0.1872,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TCL1A",
+        "value": 0.1862,
+        "rank_type": "top"
+      },
+      {
+        "gene": "APH1A",
+        "value": -0.0057,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPLP1",
+        "value": -0.0057,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL13",
+        "value": -0.0042,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "SH3BGRL3",
+        "value": -0.0042,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "NBEAL1",
+        "value": -0.004,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ARL6IP4",
+        "value": -0.0038,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD3E",
+        "value": -0.0036,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "EVL",
+        "value": -0.0036,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PSMC5",
+        "value": -0.0033,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPS4X",
+        "value": -0.0033,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "NRBP1",
+        "value": -0.003,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "NDUFA11",
+        "value": -0.003,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "MRPS25",
+        "value": -0.0029,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ZFAND1",
+        "value": -0.0029,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL6",
+        "value": -0.0028,
+        "rank_type": "bottom"
+      }
+    ]
+  },
+  {
+    "model": "xgb_shap.xlsx",
+    "class": "CD34+",
+    "genes": [
+      {
+        "gene": "GNG11",
+        "value": 3.4365,
+        "rank_type": "top"
+      },
+      {
+        "gene": "PPBP",
+        "value": 2.8844,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GPX1",
+        "value": 2.4443,
+        "rank_type": "top"
+      },
+      {
+        "gene": "NCOA4",
+        "value": 0.9491,
+        "rank_type": "top"
+      },
+      {
+        "gene": "OAZ1",
+        "value": 0.8146,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CLU",
+        "value": 0.6429,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TMSB10",
+        "value": 0.5787,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TMSB4X",
+        "value": 0.5068,
+        "rank_type": "top"
+      },
+      {
+        "gene": "B2M",
+        "value": 0.4874,
+        "rank_type": "top"
+      },
+      {
+        "gene": "EGFL7",
+        "value": 0.4642,
+        "rank_type": "top"
+      },
+      {
+        "gene": "PTCRA",
+        "value": 0.4056,
+        "rank_type": "top"
+      },
+      {
+        "gene": "RPS27",
+        "value": 0.4042,
+        "rank_type": "top"
+      },
+      {
+        "gene": "PF4",
+        "value": 0.3459,
+        "rank_type": "top"
+      },
+      {
+        "gene": "IL32",
+        "value": 0.2797,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CYTL1",
+        "value": 0.2457,
+        "rank_type": "top"
+      },
+      {
+        "gene": "SRSF3",
+        "value": -0.0218,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "VIM",
+        "value": -0.0207,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL18",
+        "value": -0.0161,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GSTP1",
+        "value": -0.014,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPS27A",
+        "value": -0.012,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-A",
+        "value": -0.0117,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL19",
+        "value": -0.011,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPSA",
+        "value": -0.0087,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL9",
+        "value": -0.0084,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PSMA7",
+        "value": -0.0083,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL5",
+        "value": -0.0083,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TRAPPC1",
+        "value": -0.0078,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CCT2",
+        "value": -0.0067,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ACTG1",
+        "value": -0.0055,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CDK2AP2",
+        "value": -0.0052,
+        "rank_type": "bottom"
+      }
+    ]
+  },
+  {
+    "model": "xgb_shap.xlsx",
+    "class": "CD4+/CD25 T Reg",
+    "genes": [
+      {
+        "gene": "NKG7",
+        "value": 0.5015,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD8B",
+        "value": 0.2975,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD8A",
+        "value": 0.2686,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GNLY",
+        "value": 0.199,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CCL5",
+        "value": 0.1828,
+        "rank_type": "top"
+      },
+      {
+        "gene": "AIF1",
+        "value": 0.1745,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CTSW",
+        "value": 0.1694,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMB",
+        "value": 0.1623,
+        "rank_type": "top"
+      },
+      {
+        "gene": "S100A4",
+        "value": 0.1332,
+        "rank_type": "top"
+      },
+      {
+        "gene": "IL32",
+        "value": 0.1259,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TIGIT",
+        "value": 0.1192,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CCR10",
+        "value": 0.1162,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TYROBP",
+        "value": 0.1119,
+        "rank_type": "top"
+      },
+      {
+        "gene": "S100B",
+        "value": 0.1089,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TNFRSF1B",
+        "value": 0.1072,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HCK",
+        "value": -0.0167,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HMOX1",
+        "value": -0.0079,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CST3",
+        "value": -0.0052,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "MPEG1",
+        "value": -0.0041,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "SF3B2",
+        "value": -0.0037,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "C1orf112",
+        "value": -0.0036,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "FAU",
+        "value": -0.0032,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HLA-DQA1",
+        "value": -0.0032,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPS27",
+        "value": -0.003,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "BIN2",
+        "value": -0.0029,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "SKIV2L",
+        "value": -0.0025,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL30",
+        "value": -0.0025,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPP30",
+        "value": -0.0024,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TPPP3",
+        "value": -0.0023,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL23A",
+        "value": -0.0022,
+        "rank_type": "bottom"
+      }
+    ]
+  },
+  {
+    "model": "xgb_shap.xlsx",
+    "class": "CD4+/CD45RA+/CD25- Naive T",
+    "genes": [
+      {
+        "gene": "CD4",
+        "value": 1.4274,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CCL5",
+        "value": 0.5469,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CST7",
+        "value": 0.4312,
+        "rank_type": "top"
+      },
+      {
+        "gene": "IGLL5",
+        "value": 0.3935,
+        "rank_type": "top"
+      },
+      {
+        "gene": "S100A4",
+        "value": 0.2713,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD8A",
+        "value": 0.223,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRB1",
+        "value": 0.2198,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DPB1",
+        "value": 0.1968,
+        "rank_type": "top"
+      },
+      {
+        "gene": "NKG7",
+        "value": 0.1514,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DQB1",
+        "value": 0.1372,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD8B",
+        "value": 0.1225,
+        "rank_type": "top"
+      },
+      {
+        "gene": "IL32",
+        "value": 0.1098,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HOPX",
+        "value": 0.1021,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LGALS1",
+        "value": 0.0963,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRB5",
+        "value": 0.0709,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRA",
+        "value": -0.0226,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "LIMS1",
+        "value": -0.0217,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "SPI1",
+        "value": -0.017,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PRSS1",
+        "value": -0.0121,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "IRF7",
+        "value": -0.0105,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RASGRP1",
+        "value": -0.0092,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL13A",
+        "value": -0.0086,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "SNX3",
+        "value": -0.0073,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "BANK1",
+        "value": -0.007,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CPVL",
+        "value": -0.0063,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PISD",
+        "value": -0.0061,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "KLRG1",
+        "value": -0.0056,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "IGFBP7",
+        "value": -0.0048,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "IL1B",
+        "value": -0.0048,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "MRPL17",
+        "value": -0.0047,
+        "rank_type": "bottom"
+      }
+    ]
+  },
+  {
+    "model": "xgb_shap.xlsx",
+    "class": "CD4+/CD45RO+ Memory",
+    "genes": [
+      {
+        "gene": "KLRB1",
+        "value": 0.531,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD8B",
+        "value": 0.3745,
+        "rank_type": "top"
+      },
+      {
+        "gene": "NKG7",
+        "value": 0.2982,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD8A",
+        "value": 0.2945,
+        "rank_type": "top"
+      },
+      {
+        "gene": "S100A11",
+        "value": 0.274,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD4",
+        "value": 0.2704,
+        "rank_type": "top"
+      },
+      {
+        "gene": "S100A4",
+        "value": 0.2212,
+        "rank_type": "top"
+      },
+      {
+        "gene": "IL32",
+        "value": 0.216,
+        "rank_type": "top"
+      },
+      {
+        "gene": "S100B",
+        "value": 0.145,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LGALS1",
+        "value": 0.1319,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FCER1G",
+        "value": 0.13,
+        "rank_type": "top"
+      },
+      {
+        "gene": "ANXA1",
+        "value": 0.1022,
+        "rank_type": "top"
+      },
+      {
+        "gene": "RNASE6",
+        "value": 0.0997,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TYROBP",
+        "value": 0.0928,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TNFRSF18",
+        "value": 0.0893,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TYMP",
+        "value": -0.0065,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "EHBP1L1",
+        "value": -0.0065,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RSAD1",
+        "value": -0.0055,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "FCER1A",
+        "value": -0.005,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PTGDS",
+        "value": -0.0046,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TYW1",
+        "value": -0.0045,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ABHD14B",
+        "value": -0.0041,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RBMX",
+        "value": -0.0039,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "NPC2",
+        "value": -0.0038,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "FGR",
+        "value": -0.0035,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PSMB9",
+        "value": -0.0035,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TUBA4A",
+        "value": -0.0034,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PARVB",
+        "value": -0.0031,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "LYL1",
+        "value": -0.0027,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CENPV",
+        "value": -0.0026,
+        "rank_type": "bottom"
+      }
+    ]
+  },
+  {
+    "model": "xgb_shap.xlsx",
+    "class": "CD56+ NK",
+    "genes": [
+      {
+        "gene": "NKG7",
+        "value": 3.0819,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GNLY",
+        "value": 1.7474,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TYROBP",
+        "value": 0.6404,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FGFBP2",
+        "value": 0.5003,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMB",
+        "value": 0.4145,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FCGR3A",
+        "value": 0.3888,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LTB",
+        "value": 0.3064,
+        "rank_type": "top"
+      },
+      {
+        "gene": "IGFBP7",
+        "value": 0.2974,
+        "rank_type": "top"
+      },
+      {
+        "gene": "PRF1",
+        "value": 0.2653,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMH",
+        "value": 0.2303,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CST7",
+        "value": 0.1853,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CCL4",
+        "value": 0.1374,
+        "rank_type": "top"
+      },
+      {
+        "gene": "COTL1",
+        "value": 0.1308,
+        "rank_type": "top"
+      },
+      {
+        "gene": "SIGLEC7",
+        "value": 0.1264,
+        "rank_type": "top"
+      },
+      {
+        "gene": "AIF1",
+        "value": 0.1194,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD8A",
+        "value": -0.0292,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD8B",
+        "value": -0.0215,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PFDN5",
+        "value": -0.0119,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TAGLN2",
+        "value": -0.0112,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CCL5",
+        "value": -0.01,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CHCHD2",
+        "value": -0.0052,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TPT1",
+        "value": -0.004,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL27A",
+        "value": -0.0037,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ENOPH1",
+        "value": -0.0036,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "LGALS1",
+        "value": -0.003,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "S100A10",
+        "value": -0.003,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPS13",
+        "value": -0.0029,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "MFSD10",
+        "value": -0.0028,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "SH3BGRL",
+        "value": -0.0026,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "BUB3",
+        "value": -0.0025,
+        "rank_type": "bottom"
+      }
+    ]
+  },
+  {
+    "model": "xgb_shap.xlsx",
+    "class": "CD8+ Cytotoxic T",
+    "genes": [
+      {
+        "gene": "CCL5",
+        "value": 0.4316,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMK",
+        "value": 0.2614,
+        "rank_type": "top"
+      },
+      {
+        "gene": "NKG7",
+        "value": 0.2263,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GNLY",
+        "value": 0.1622,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD4",
+        "value": 0.1582,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRA",
+        "value": 0.0867,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LYAR",
+        "value": 0.0675,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRB1",
+        "value": 0.0645,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD8B",
+        "value": 0.0596,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMB",
+        "value": 0.0569,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMA",
+        "value": 0.0465,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CST7",
+        "value": 0.0454,
+        "rank_type": "top"
+      },
+      {
+        "gene": "DUSP2",
+        "value": 0.0363,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD8A",
+        "value": 0.0327,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FCER1G",
+        "value": 0.0314,
+        "rank_type": "top"
+      },
+      {
+        "gene": "ZNF683",
+        "value": -0.0194,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HBEGF",
+        "value": -0.0135,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "MTPN",
+        "value": -0.008,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "MS4A1",
+        "value": -0.0077,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "IER2",
+        "value": -0.0059,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "SH2D1B",
+        "value": -0.0056,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "FOS",
+        "value": -0.0045,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "FOSB",
+        "value": -0.0044,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PRF1",
+        "value": -0.0043,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "IGSF6",
+        "value": -0.0035,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CCR10",
+        "value": -0.0032,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TUBA4A",
+        "value": -0.0027,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "FTH1",
+        "value": -0.0026,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "PRPF39",
+        "value": -0.0025,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL35A",
+        "value": -0.0024,
+        "rank_type": "bottom"
+      }
+    ]
+  },
+  {
+    "model": "xgb_shap.xlsx",
+    "class": "CD8+/CD45RA+ Naive Cytotoxic",
+    "genes": [
+      {
+        "gene": "NKG7",
+        "value": 0.792,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CST7",
+        "value": 0.5567,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMA",
+        "value": 0.3697,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GNLY",
+        "value": 0.3349,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRB1",
+        "value": 0.2948,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HOPX",
+        "value": 0.2681,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRB5",
+        "value": 0.2306,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LYZ",
+        "value": 0.1873,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DQA1",
+        "value": 0.1743,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMH",
+        "value": 0.1549,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LGALS3",
+        "value": 0.1362,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DPA1",
+        "value": 0.135,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CCL5",
+        "value": 0.1278,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD4",
+        "value": 0.1224,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRA",
+        "value": 0.1213,
+        "rank_type": "top"
+      },
+      {
+        "gene": "S100A8",
+        "value": -0.0354,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "FCER1G",
+        "value": -0.0238,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD79A",
+        "value": -0.0091,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "IP6K2",
+        "value": -0.0087,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CD74",
+        "value": -0.0066,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPLP2",
+        "value": -0.0053,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "AGTRAP",
+        "value": -0.0051,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL13",
+        "value": -0.005,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RHOG",
+        "value": -0.0043,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TPST2",
+        "value": -0.0038,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPS12",
+        "value": -0.0037,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CYBA",
+        "value": -0.0037,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ABI3",
+        "value": -0.0036,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPS25",
+        "value": -0.0036,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ATXN2L",
+        "value": -0.0035,
+        "rank_type": "bottom"
+      }
+    ]
+  },
+  {
+    "model": "xgb_shap.xlsx",
+    "class": "Dendritic",
+    "genes": [
+      {
+        "gene": "CST3",
+        "value": 3.6684,
+        "rank_type": "top"
+      },
+      {
+        "gene": "LYZ",
+        "value": 0.639,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD7",
+        "value": 0.5835,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRB1",
+        "value": 0.4544,
+        "rank_type": "top"
+      },
+      {
+        "gene": "CD74",
+        "value": 0.3665,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DRA",
+        "value": 0.3352,
+        "rank_type": "top"
+      },
+      {
+        "gene": "GZMM",
+        "value": 0.3057,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DPB1",
+        "value": 0.2897,
+        "rank_type": "top"
+      },
+      {
+        "gene": "S100A9",
+        "value": 0.2658,
+        "rank_type": "top"
+      },
+      {
+        "gene": "AIF1",
+        "value": 0.2592,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FTH1",
+        "value": 0.2051,
+        "rank_type": "top"
+      },
+      {
+        "gene": "FCN1",
+        "value": 0.1948,
+        "rank_type": "top"
+      },
+      {
+        "gene": "TYROBP",
+        "value": 0.1846,
+        "rank_type": "top"
+      },
+      {
+        "gene": "HLA-DQA2",
+        "value": 0.1756,
+        "rank_type": "top"
+      },
+      {
+        "gene": "IL32",
+        "value": 0.171,
+        "rank_type": "top"
+      },
+      {
+        "gene": "RPL7A",
+        "value": -0.0184,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPS19",
+        "value": -0.0169,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "BTF3",
+        "value": -0.0132,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "GIMAP7",
+        "value": -0.0119,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL17",
+        "value": -0.0095,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "CDA",
+        "value": -0.0092,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPLP2",
+        "value": -0.0091,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "MYL12A",
+        "value": -0.009,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "ISG20",
+        "value": -0.0088,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL5",
+        "value": -0.0084,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "RPL19",
+        "value": -0.0081,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "HK3",
+        "value": -0.0077,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "NUP214",
+        "value": -0.0072,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "MAFB",
+        "value": -0.0068,
+        "rank_type": "bottom"
+      },
+      {
+        "gene": "TNFRSF1B",
+        "value": -0.0067,
+        "rank_type": "bottom"
+      }
+    ]
+  }
+]
