@@ -63,7 +63,7 @@ CLASS = args.bin_num + 2
 POS_EMBED_USING = args.pos_embed
 
 model_name = args.model_name
-ckpt_dir = args.ckpt_dir
+ckpt_dir = f"/data1/data/corpus/scMODEL/{model_name}_model_Zheng68K.pkl"
 
 dist.init_process_group(backend='nccl')
 torch.cuda.set_device(local_rank)
