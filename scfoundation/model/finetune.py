@@ -3,6 +3,8 @@ import pandas as pd
 import torch
 from torch import nn
 from torch.utils.data import Dataset, DataLoader
+from tqdm import tqdm
+
 sys.path.append("../model/")
 from load import *
 
@@ -101,7 +103,9 @@ def main():
     model.train()
     for epoch in range(10):
         total_loss = 0
-        for batch in dataloader:
+        print(f"\nEpoch {epoch+1}")
+        pbar = tqdm(dataloader, desc=f"Training", leave=False)
+        for batch in pbar:
             inputs = batch['x'].to(device)
             labels = batch['targets'].to(device)
 
@@ -113,8 +117,9 @@ def main():
             optimizer.step()
 
             total_loss += loss.item()
+            pbar.set_postfix(loss=total_loss / (pbar.n + 1))
 
-        print(f"Epoch {epoch+1}, Loss: {total_loss/len(dataloader):.4f}")
+        print(f"Epoch {epoch+1}, Avg Loss: {total_loss/len(dataloader):.4f}")
 
 if __name__ == '__main__':
     main()
