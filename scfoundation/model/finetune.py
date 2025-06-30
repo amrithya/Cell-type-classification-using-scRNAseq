@@ -1,12 +1,28 @@
 import sys
-import numpy as np
+import pandas as pd
 import torch
 from torch import nn
+from torch.utils.data import Dataset, DataLoader
 sys.path.append("../model/")
 from load import *
 
-class LinearProbingClassifier(nn.Module):
+class GeneExpressionDataset(Dataset):
+    def __init__(self, csv_path, label_col='label'):
+        df = pd.read_csv(csv_path, index_col=0)
+        
+        self.labels = torch.tensor(df[label_col].values, dtype=torch.long)
+        self.features = torch.tensor(df.drop(columns=[label_col]).values, dtype=torch.float32)
+        
+    def __len__(self):
+        return self.features.shape[0]
+    
+    def __getitem__(self, idx):
+        return {
+            'x': self.features[idx],
+            'targets': self.labels[idx]
+        }
 
+class LinearProbingClassifier(nn.Module):
     def __init__(self, ckpt_path, frozenmore=True, n_class=10):
         super().__init__()
         self.ckpt_path = ckpt_path
@@ -27,9 +43,7 @@ class LinearProbingClassifier(nn.Module):
         
         for _, param in self.encoder.named_parameters():
             param.requires_grad = False
-
         for na, param in self.encoder.transformer_encoder[-2:].named_parameters():
-            print('self.encoder.transformer_encoder ', na, ' have grad')
             param.requires_grad = True
 
         hidden_dim = model_config['encoder']['hidden_dim']
@@ -66,19 +80,36 @@ class LinearProbingClassifier(nn.Module):
 
         return logits
 
-
-if __name__ == '__main__':
+def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    finetune_model = LinearProbingClassifier(ckpt_path='./models/models.ckpt', n_class=10)
-    finetune_model.build()
-    finetune_model = finetune_model.to(device)
+    dataset = GeneExpressionDataset(csv_path='/data1/data/corpus/scDATA/Zheng68K_preprocessed.csv', label_col='label')
+    dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
 
-    sample_list = {
-        'x': torch.zeros([8, 18264], device=device),
-        'targets': torch.randint(0, 10, (8,), device=device)
-    }
-    sample_list['x'][:, :100] = 1
+    model = LinearProbingClassifier(ckpt_path='/data1/data/corpus/scMODEL/scfoundation/models.ckpt', n_class=11)
+    model.build()
+    model = model.to(device)
 
-    output_logits = finetune_model(sample_list)
-    print(output_logits.shape)
+    optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=1e-4)
+    criterion = nn.CrossEntropyLoss()
+
+    model.train()
+    for epoch in range(10):
+        total_loss = 0
+        for batch in dataloader:
+            inputs = batch['x'].to(device)
+            labels = batch['targets'].to(device)
+
+            optimizer.zero_grad()
+            outputs = model({'x': inputs, 'targets': labels})
+
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+
+            total_loss += loss.item()
+
+        print(f"Epoch {epoch+1}, Loss: {total_loss/len(dataloader):.4f}")
+
+if __name__ == '__main__':
+    main()
