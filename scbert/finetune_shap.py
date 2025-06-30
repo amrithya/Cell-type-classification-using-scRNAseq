@@ -32,7 +32,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--local_rank", "--local-rank", type=int, default=-1)
 parser.add_argument("--bin_num", type=int, default=5)
 parser.add_argument("--gene_num", type=int, default=16906)
-parser.add_argument("--epoch", type=int, default=11)
+parser.add_argument("--epoch", type=int, default=18)
 parser.add_argument("--seed", type=int, default=2021)
 parser.add_argument("--batch_size", type=int, default=4)
 parser.add_argument("--learning_rate", type=float, default=1e-4)
@@ -336,7 +336,7 @@ for i in range(start_epoch, EPOCHS + 1):
             max_acc = cur_acc
             trigger_times = 0
             save_ckpt(i, model, optimizer, scheduler, val_loss, model_name)
-        if is_master and (i == EPOCHS or cur_acc > max_acc):
+        if is_master and (i == EPOCHS):
             model.eval()
             unwrapped_model = get_unwrapped_model(model)
 
@@ -344,10 +344,6 @@ for i in range(start_epoch, EPOCHS + 1):
             val_labels = val_dataset.label
 
             correct_idx = np.where(predictions == truths)[0]
-
-            unique, counts = np.unique(truths[correct_idx], return_counts=True)
-            class_counts = dict(zip(unique, counts))
-
             correct_data_sparse = val_data[correct_idx]
             correct_data_np = correct_data_sparse.toarray() if hasattr(correct_data_sparse, "toarray") else np.array(correct_data_sparse)
 
@@ -362,26 +358,49 @@ for i in range(start_epoch, EPOCHS + 1):
                     probs = torch.nn.functional.softmax(logits, dim=-1).cpu().numpy()
                 return probs
 
-            background = input_seqs[np.random.choice(input_seqs.shape[0], min(100, input_seqs.shape[0]), replace=False)]
+            background_size = min(50, input_seqs.shape[0])
+            background = input_seqs[np.random.choice(input_seqs.shape[0], background_size, replace=False)]
+
             explainer = shap.KernelExplainer(model_predict, background)
-            shap_values = explainer.shap_values(input_seqs, nsamples=100)
 
             gene_names = [f"gene_{i}" for i in range(SEQ_LEN - 1)]
             top_bottom_genes = []
+
             for class_idx in range(CLASS):
                 class_samples_idx = np.where(truths[correct_idx] == class_idx)[0]
                 if len(class_samples_idx) == 0:
                     continue
-                class_shap_vals = shap_values[class_idx][class_samples_idx, :-1]
-                mean_shap = np.mean(class_shap_vals, axis=0)
-                top_15_idx = np.argsort(mean_shap)[-15:][::-1]
-                bottom_15_idx = np.argsort(mean_shap)[:15]
-                top_genes = [(gene_names[idx], mean_shap[idx]) for idx in top_15_idx]
-                bottom_genes = [(gene_names[idx], mean_shap[idx]) for idx in bottom_15_idx]
-                for gene, val in top_genes:
-                    top_bottom_genes.append([class_idx, 'top', gene, val])
-                    for gene, val in bottom_genes:
-                        top_bottom_genes.append([class_idx, 'bottom', gene, val])
+
+            class_input_seqs = input_seqs[class_samples_idx]
+
+            batch_size = 10
+            shap_vals_accum = []
+
+            for j in range(0, len(class_input_seqs), batch_size):
+                batch = class_input_seqs[j:j+batch_size]
+                try:
+                    shap_vals_batch = explainer.shap_values(batch, nsamples=100)
+                    shap_vals_accum.append(shap_vals_batch[class_idx][:, :-1])  # exclude CLS token
+                except Exception as e:
+                    print(f"Skipping SHAP batch due to error: {e}")
+                    continue
+
+            if not shap_vals_accum:
+                continue
+
+            class_shap_vals = np.concatenate(shap_vals_accum, axis=0)
+            mean_shap = np.mean(class_shap_vals, axis=0)
+
+            top_15_idx = np.argsort(mean_shap)[-15:][::-1]
+            bottom_15_idx = np.argsort(mean_shap)[:15]
+
+            top_genes = [(gene_names[idx], mean_shap[idx]) for idx in top_15_idx]
+            bottom_genes = [(gene_names[idx], mean_shap[idx]) for idx in bottom_15_idx]
+
+            for gene, val in top_genes:
+                top_bottom_genes.append([class_idx, 'top', gene, val])
+            for gene, val in bottom_genes:
+                top_bottom_genes.append([class_idx, 'bottom', gene, val])
 
             df_shap = pd.DataFrame(top_bottom_genes, columns=['class', 'rank', 'gene', 'mean_shap'])
             df_shap.to_csv(f"results/top_bottom15_genes_epoch_{i}.csv", index=False)
