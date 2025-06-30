@@ -66,6 +66,8 @@ model_name = args.model_name
 
 ckpt_path = f"/data1/data/corpus/scMODEL/{model_name}_model_Zheng68K.pkl"
 
+ckpt_dir = f"/data1/data/corpus/scMODEL/{model_name}_model_Zheng68K.pkl"
+
 dist.init_process_group(backend='nccl')
 torch.cuda.set_device(local_rank)
 device = torch.device("cuda", local_rank)
