@@ -83,7 +83,7 @@ class LinearProbingClassifier(nn.Module):
 def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    dataset = GeneExpressionDataset(csv_path='/data1/data/corpus/scDATA/Zheng68K_preprocessed.csv', label_col='label')
+    dataset = GeneExpressionDataset(csv_path='/data1/data/corpus/scDATA/Zheng68K_scf_preprocessed.csv', label_col='label')
     dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
 
     model = LinearProbingClassifier(ckpt_path='/data1/data/corpus/scMODEL/scfoundation/models.ckpt', n_class=11)
