@@ -31,7 +31,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--local_rank", "--local-rank", type=int, default=-1)
 parser.add_argument("--bin_num", type=int, default=5)
 parser.add_argument("--gene_num", type=int, default=16906)
-parser.add_argument("--epoch", type=int, default=7)
+parser.add_argument("--epoch", type=int, default=8)
 parser.add_argument("--seed", type=int, default=2021)
 parser.add_argument("--batch_size", type=int, default=4)
 parser.add_argument("--learning_rate", type=float, default=1e-4)
@@ -332,7 +332,7 @@ for i in range(start_epoch, EPOCHS + 1):
         if cur_acc > max_acc:
             max_acc = cur_acc
             trigger_times = 0
-            save_ckpt(i, model, optimizer, scheduler, val_loss, model_name)
+            save_ckpt_atlrp(i, model, optimizer, scheduler, val_loss, model_name)
         else:
             trigger_times += 1
             if trigger_times > PATIENCE:
