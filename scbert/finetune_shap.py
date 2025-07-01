@@ -69,7 +69,7 @@ def load_data(data_path):
 def get_unwrapped_model(model_ddp):
     return model_ddp.module if hasattr(model_ddp, 'module') else model_ddp
 
-CLASS = 11 
+CLASS = 7 
 SEQ_LEN = 16907
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 BATCH_SIZE = 4
