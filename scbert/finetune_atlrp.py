@@ -13,7 +13,7 @@ import pickle as pkl
 from performer_pytorch import PerformerLM
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--local_rank", type=int, default=-1)
+parser.add_argument("--local_rank", "--local-rank", type=int, default=-1)
 parser.add_argument("--bin_num", type=int, default=5)
 parser.add_argument("--gene_num", type=int, default=16906)
 parser.add_argument("--seed", type=int, default=2021)
