@@ -112,8 +112,20 @@ def main():
     optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=1e-4)
     criterion = nn.CrossEntropyLoss()
 
-    model.train()
-    for epoch in range(10):
+    save_path = '/data1/data/corpus/scMODEL/scfoundation/scfoundation_model.pt'
+    checkpoint_path = save_path.replace('.pt', '_checkpoint.pt')
+
+    start_epoch = 0
+
+    if os.path.exists(checkpoint_path):
+        checkpoint = torch.load(checkpoint_path, map_location=device)
+        model.load_state_dict(checkpoint['model_state'])
+        optimizer.load_state_dict(checkpoint['optimizer_state'])
+        start_epoch = checkpoint['epoch'] + 1
+        print(f"Resumed from checkpoint at epoch {start_epoch}")
+
+    for epoch in range(start_epoch, 20):
+        model.train()
         total_loss = 0
         print(f"\nEpoch {epoch+1}")
         pbar = tqdm(train_loader, desc=f"Training", leave=False)
@@ -129,9 +141,15 @@ def main():
             pbar.set_postfix(loss=total_loss / (pbar.n + 1))
         print(f"Epoch {epoch+1}, Avg Loss: {total_loss/len(train_loader):.4f}")
 
-    save_path = '/data1/data/corpus/scMODEL/scfoundation/scfoundation_model.pt'
+        torch.save({
+            'epoch': epoch,
+            'model_state': model.state_dict(),
+            'optimizer_state': optimizer.state_dict()
+        }, checkpoint_path)
+        print(f"Checkpoint saved to {checkpoint_path}")
+
     torch.save(model.state_dict(), save_path)
-    print(f"Model saved to {save_path}")
+    print(f"Final model saved to {save_path}")
 
     evaluate(model, test_loader, device)
 
