@@ -186,3 +186,5 @@ for cls in np.unique(lbls.cpu()):
 
 df = pd.DataFrame(records, columns=['class', 'rank', 'gene', 'value'])
 df.to_csv(f"{model_name}_relevance_topbot.csv", index=False)
+
+dist.destroy_process_group()
