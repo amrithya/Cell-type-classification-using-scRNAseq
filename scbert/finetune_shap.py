@@ -12,6 +12,7 @@ import pickle as pkl
 from performer_pytorch import PerformerLM
 from utils import *
 import shap
+from tqdm import tqdm
 
 class Identity(nn.Module):
     def __init__(self, dropout=0., h_dim=100, out_dim=10):
@@ -104,13 +105,12 @@ model.load_state_dict(checkpoint['model_state_dict'])
 
 model.eval()
 
-
 all_inputs = []
 all_labels = []
 all_preds = []
 
 with torch.no_grad():
-    for x, y in val_loader:
+    for x, y in tqdm(val_loader, desc="Validation Batches"):
         x = x.to(DEVICE)
         logits = model(x)
         preds = torch.argmax(logits, dim=1).cpu()
@@ -126,7 +126,7 @@ correct_mask = all_preds == all_labels
 correct_inputs = all_inputs[correct_mask]
 correct_labels = all_labels[correct_mask]
 
-correct_inputs_np = correct_inputs[:, :-1].numpy()  # exclude CLS token
+correct_inputs_np = correct_inputs[:, :-1].numpy()
 
 def model_predict(x):
     x_tensor = torch.tensor(x, dtype=torch.long).to(DEVICE)
@@ -144,7 +144,7 @@ gene_names = [f"gene_{i}" for i in range(SEQ_LEN - 1)]
 
 top_bottom_genes = []
 
-for class_idx in range(CLASS):
+for class_idx in tqdm(range(CLASS), desc="Classes for SHAP"):
     class_indices = (correct_labels.numpy() == class_idx)
     if not np.any(class_indices):
         continue
@@ -152,7 +152,7 @@ for class_idx in range(CLASS):
 
     shap_vals_accum = []
     batch_size = 10
-    for j in range(0, class_inputs.shape[0], batch_size):
+    for j in tqdm(range(0, class_inputs.shape[0], batch_size), desc=f"Class {class_idx} SHAP batches", leave=False):
         batch = class_inputs[j:j+batch_size]
         try:
             shap_vals_batch = explainer.shap_values(batch, nsamples=100)
