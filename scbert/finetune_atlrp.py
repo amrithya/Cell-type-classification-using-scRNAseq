@@ -126,7 +126,7 @@ val_ds   = SCDataset(data[val_idx], labels[val_idx])
 train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, sampler=DistributedSampler(train_ds))
 val_loader   = DataLoader(val_ds, batch_size=BATCH_SIZE, sampler=DistributedSampler(val_ds))
 
-model = PerformerLM(num_tokens=CLASS, dim=200, depth=6, max_seq_len=SEQ_LEN, heads=10, local_attn_heads=0, g2v_position_emb=POS_EMBED)
+model = PerformerLM(num_tokens=CLASS, dim=200, depth=6, max_seq_len=SEQ_LEN, heads=10, local_attn_heads=0, g2v_position_emb=POS_EMBED_USING)
 ckpt = torch.load(args.model_path, map_location='cpu')
 model.load_state_dict(ckpt['model_state_dict'])
 
