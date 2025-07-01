@@ -168,9 +168,15 @@ try:
     relevances = []
     for seq, lbl in zip(seqs, lbls):
         net.zero_grad(set_to_none=True)
-        reps = net.to_tokens(seq.unsqueeze(0)).clone().detach().requires_grad_(True)
-        logits = net.forward_tokens(reps)
+        seq_input = seq.unsqueeze(0).to(device)
+    
+        reps = net(seq_input, return_encodings=True)
+        reps.retain_grad()
+    
+        logits = net.to_out(reps)
+    
         logits[0, lbl].backward()
+    
         rel = (reps.grad * reps).sum(dim=-1).squeeze().cpu().numpy()
         rel = rel / (np.max(np.abs(rel)) + 1e-12)
         relevances.append(rel)
