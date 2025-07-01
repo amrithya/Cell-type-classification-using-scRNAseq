@@ -30,7 +30,6 @@ parser.add_argument("--ckpt_dir", type=str, default='./ckpts/')
 parser.add_argument("--model_name", type=str, default='finetune')
 args = parser.parse_args()
 
-args = parser.parse_args()
 rank = int(os.environ["RANK"])
 local_rank = args.local_rank
 is_master = local_rank == 0
@@ -48,15 +47,13 @@ UNASSIGN_THRES = 0.0
 
 CLASS = args.bin_num + 2
 POS_EMBED_USING = args.pos_embed
-
 model_name = args.model_name
 
 dist.init_process_group(backend='nccl')
 torch.cuda.set_device(local_rank)
 device = torch.device("cuda", local_rank)
-world_size = torch.distributed.get_world_size()
-
-seed_all(SEED + torch.distributed.get_rank())
+world_size = dist.get_world_size()
+seed_all(SEED + dist.get_rank())
 
 class SCDataset(Dataset):
     def __init__(self, data, label):
@@ -76,115 +73,120 @@ class SCDataset(Dataset):
         return self.data.shape[0]
 
 try:
-    data = sc.read_h5ad(args.data_path)
-    label_dict, label = np.unique(np.array(data.obs['celltype']), return_inverse=True)
-    with open('label_dict', 'wb') as fp:
-        pkl.dump(label_dict, fp)
-    with open('label', 'wb') as fp:
-        pkl.dump(label, fp)
-    label = torch.from_numpy(label)
-    data = data.X
-except Exception as e:
-    exit(1)
+    try:
+        data = sc.read_h5ad(args.data_path)
+        label_dict, label = np.unique(np.array(data.obs['celltype']), return_inverse=True)
+        if is_master:
+            with open('label_dict', 'wb') as fp:
+                pkl.dump(label_dict, fp)
+            with open('label', 'wb') as fp:
+                pkl.dump(label, fp)
+        label = torch.from_numpy(label)
+        data = data.X
+    except Exception as e:
+        if is_master:
+            print(f"[ERROR] Failed to load data: {e}")
+        raise
 
-sss_indices = np.arange(len(label))
-train_idx = sss_indices
-val_idx = sss_indices
+    sss_indices = np.arange(len(label))
+    train_idx = sss_indices
+    val_idx = sss_indices
+    val_dataset = SCDataset(data[val_idx], label[val_idx])
+    val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
-val_dataset = SCDataset(data[val_idx], label[val_idx])
-val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
+    model = PerformerLM(
+        num_tokens=CLASS,
+        dim=200,
+        depth=6,
+        max_seq_len=SEQ_LEN,
+        heads=10,
+        local_attn_heads=0,
+        g2v_position_emb=POS_EMBED_USING
+    )
 
-model = PerformerLM(
-    num_tokens=CLASS,
-    dim=200,
-    depth=6,
-    max_seq_len=SEQ_LEN,
-    heads=10,
-    local_attn_heads=0,
-    g2v_position_emb=POS_EMBED_USING
-)
+    ckpt_path = f"/data1/data/corpus/scMODEL/{model_name}_full_model_Zheng68K.pkl"
+    try:
+        ckpt = torch.load(ckpt_path, map_location='cpu')
+        model.load_state_dict(ckpt['model_state_dict'])
+    except Exception as e:
+        if is_master:
+            print(f"[ERROR] Failed to load checkpoint: {e}")
+        raise
 
-ckpt_path = f"/data1/data/corpus/scMODEL/{model_name}_full_model_Zheng68K.pkl"
+    class Identity(nn.Module):
+        def __init__(self, dropout=0., h_dim=100, out_dim=10):
+            super().__init__()
+            self.conv1 = nn.Conv2d(1, 1, (1, 200))
+            self.act = nn.ReLU()
+            self.fc1 = nn.Linear(in_features=SEQ_LEN, out_features=512)
+            self.act1 = nn.ReLU()
+            self.dropout1 = nn.Dropout(dropout)
+            self.fc2 = nn.Linear(in_features=512, out_features=h_dim)
+            self.act2 = nn.ReLU()
+            self.dropout2 = nn.Dropout(dropout)
+            self.fc3 = nn.Linear(in_features=h_dim, out_features=out_dim)
 
-try:
-    ckpt = torch.load(ckpt_path, map_location='cpu')
-    model.load_state_dict(ckpt['model_state_dict'])
-except Exception as e:
-    exit(1)
+        def forward(self, x):
+            x = x[:, None, :, :]
+            x = self.conv1(x)
+            x = self.act(x)
+            x = x.view(x.shape[0], -1)
+            x = self.fc1(x)
+            x = self.act1(x)
+            x = self.dropout1(x)
+            x = self.fc2(x)
+            x = self.act2(x)
+            x = self.dropout2(x)
+            x = self.fc3(x)
+            return x
 
-class Identity(nn.Module):
-    def __init__(self, dropout=0., h_dim=100, out_dim=10):
-        super().__init__()
-        self.conv1 = nn.Conv2d(1, 1, (1, 200))
-        self.act = nn.ReLU()
-        self.fc1 = nn.Linear(in_features=SEQ_LEN, out_features=512)
-        self.act1 = nn.ReLU()
-        self.dropout1 = nn.Dropout(dropout)
-        self.fc2 = nn.Linear(in_features=512, out_features=h_dim)
-        self.act2 = nn.ReLU()
-        self.dropout2 = nn.Dropout(dropout)
-        self.fc3 = nn.Linear(in_features=h_dim, out_features=out_dim)
+    model.to_out = Identity(dropout=0., h_dim=128, out_dim=label_dict.shape[0])
+    model = model.to(device)
+    model = DDP(model, device_ids=[local_rank], output_device=local_rank)
+    model.eval()
 
-    def forward(self, x):
-        x = x[:, None, :, :]
-        x = self.conv1(x)
-        x = self.act(x)
-        x = x.view(x.shape[0], -1)
-        x = self.fc1(x)
-        x = self.act1(x)
-        x = self.dropout1(x)
-        x = self.fc2(x)
-        x = self.act2(x)
-        x = self.dropout2(x)
-        x = self.fc3(x)
-        return x
+    net = model.module if isinstance(model, DDP) else model
 
-model.to_out = Identity(dropout=0., h_dim=128, out_dim=label_dict.shape[0])
-model = model.to(device)
-model = DDP(model, device_ids=[local_rank], output_device=local_rank)
-model.eval()
+    for m in net.performer.modules():
+        if isinstance(m, nn.Linear) or isinstance(m, nn.Conv1d):
+            m.register_forward_hook(lambda mod, inp, out: setattr(mod, "_x", inp[0].detach()))
+            m.register_full_backward_hook(lambda mod, gi, go: setattr(mod, "_rel", (mod._x * go[0]).sum(dim=-1).detach()))
 
-net = model.module if isinstance(model, DDP) else model
+    seqs, lbls = [], []
+    for x_v, y_v in val_loader:
+        x_v = x_v.to(device)
+        y_v = y_v.to(device)
+        seqs.append(x_v)
+        lbls.append(y_v)
+        if sum(len(s) for s in seqs) >= 200:
+            break
+    seqs = torch.cat(seqs)[:200]
+    lbls = torch.cat(lbls)[:200]
 
-for m in net.performer.modules():
-    if isinstance(m, nn.Linear) or isinstance(m, nn.Conv1d):
-        m.register_forward_hook(lambda mod, inp, out: setattr(mod, "_x", inp[0].detach()))
-        m.register_full_backward_hook(lambda mod, gi, go: setattr(mod, "_rel", (mod._x * go[0]).sum(dim=-1).detach()))
+    relevances = []
+    for seq, lbl in zip(seqs, lbls):
+        net.zero_grad(set_to_none=True)
+        reps = net.to_tokens(seq.unsqueeze(0)).clone().detach().requires_grad_(True)
+        logits = net.forward_tokens(reps)
+        logits[0, lbl].backward()
+        rel = (reps.grad * reps).sum(dim=-1).squeeze().cpu().numpy()
+        rel = rel / (np.max(np.abs(rel)) + 1e-12)
+        relevances.append(rel)
+    relevances = np.stack(relevances)[:, :-1]
 
-seqs = []
-lbls = []
-for x_v, y_v in val_loader:
-    x_v = x_v.to(device)
-    y_v = y_v.to(device)
-    seqs.append(x_v)
-    lbls.append(y_v)
-    if sum(len(s) for s in seqs) >= 200:
-        break
-seqs = torch.cat(seqs)[:200]
-lbls = torch.cat(lbls)[:200]
+    records = []
+    for cls in np.unique(lbls.cpu()):
+        arr = np.mean(np.abs(relevances[lbls.cpu() == cls]), axis=0)
+        top15 = arr.argsort()[-15:][::-1]
+        bot15 = arr.argsort()[:15]
+        for rank, g in enumerate(top15, 1):
+            records.append((label_dict[cls], rank, g, arr[g]))
+        for rank, g in enumerate(bot15[::-1], 1):
+            records.append((label_dict[cls], -rank, g, arr[g]))
 
-relevances = []
-for seq, lbl in zip(seqs, lbls):
-    net.zero_grad(set_to_none=True)
-    reps = net.to_tokens(seq.unsqueeze(0)).clone().detach().requires_grad_(True)
-    logits = net.forward_tokens(reps)
-    logits[0, lbl].backward()
-    rel = (reps.grad * reps).sum(dim=-1).squeeze().cpu().numpy()
-    rel = rel / (np.max(np.abs(rel)) + 1e-12)
-    relevances.append(rel)
-relevances = np.stack(relevances)[:, :-1]
+    df = pd.DataFrame(records, columns=['class', 'rank', 'gene', 'value'])
+    if is_master:
+        df.to_csv(f"{model_name}_relevance_topbot.csv", index=False)
 
-records = []
-for cls in np.unique(lbls.cpu()):
-    arr = np.mean(np.abs(relevances[lbls.cpu() == cls]), axis=0)
-    top15 = arr.argsort()[-15:][::-1]
-    bot15 = arr.argsort()[:15]
-    for rank, g in enumerate(top15, 1):
-        records.append((label_dict[cls], rank, g, arr[g]))
-    for rank, g in enumerate(bot15[::-1], 1):
-        records.append((label_dict[cls], -rank, g, arr[g]))
-
-df = pd.DataFrame(records, columns=['class', 'rank', 'gene', 'value'])
-df.to_csv(f"{model_name}_relevance_topbot.csv", index=False)
-
-dist.destroy_process_group()
+finally:
+    dist.destroy_process_group()
