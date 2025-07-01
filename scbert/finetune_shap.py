@@ -1,89 +1,44 @@
-# -*- coding: utf-8 -*-
 import os
-import gc
 import argparse
-import json
-import random
-import math
-from functools import reduce
 import numpy as np
 import pandas as pd
-from scipy import sparse
-from sklearn.model_selection import train_test_split, ShuffleSplit, StratifiedShuffleSplit, StratifiedKFold
-from sklearn.metrics import accuracy_score, f1_score, confusion_matrix, precision_recall_fscore_support, classification_report
 import torch
-import shap
-from torch import nn
-from torch.optim import Adam, SGD, AdamW
-from torch.nn import functional as F
-from torch.optim.lr_scheduler import StepLR, CosineAnnealingWarmRestarts, CyclicLR
+import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset
-from torch.utils.data.distributed import DistributedSampler
 from torch.nn.parallel import DistributedDataParallel as DDP
 import torch.distributed as dist
-from performer_pytorch import PerformerLM
 import scanpy as sc
-import anndata as ad
-from utils import *
 import pickle as pkl
-from tqdm import tqdm
+from performer_pytorch import PerformerLM
+from utils import *
+import shap
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--local_rank", "--local-rank", type=int, default=-1)
-parser.add_argument("--bin_num", type=int, default=5)
-parser.add_argument("--gene_num", type=int, default=16906)
-parser.add_argument("--epoch", type=int, default=18)
-parser.add_argument("--seed", type=int, default=2021)
-parser.add_argument("--batch_size", type=int, default=4)
-parser.add_argument("--learning_rate", type=float, default=1e-4)
-parser.add_argument("--grad_acc", type=int, default=60)
-parser.add_argument("--valid_every", type=int, default=1)
-parser.add_argument("--pos_embed", type=bool, default=True)
-parser.add_argument("--data_path", type=str, default='./data/Zheng68K.h5ad')
-parser.add_argument("--model_path", type=str, default='./panglao_pretrained.pth')
-parser.add_argument("--ckpt_dir", type=str, default='./ckpts/') 
-parser.add_argument("--model_name", type=str, default='finetune')
+class Identity(nn.Module):
+    def __init__(self, dropout=0., h_dim=100, out_dim=10):
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 1, (1, 200))
+        self.act = nn.ReLU()
+        self.fc1 = nn.Linear(in_features=SEQ_LEN, out_features=512)
+        self.act1 = nn.ReLU()
+        self.dropout1 = nn.Dropout(dropout)
+        self.fc2 = nn.Linear(in_features=512, out_features=h_dim)
+        self.act2 = nn.ReLU()
+        self.dropout2 = nn.Dropout(dropout)
+        self.fc3 = nn.Linear(in_features=h_dim, out_features=out_dim)
 
-args = parser.parse_args()
-rank = int(os.environ["RANK"])
-local_rank = args.local_rank
-if local_rank < 0:
-    local_rank = int(os.environ.get("LOCAL_RANK", 0))
-is_master = local_rank == 0
-
-SEED = args.seed
-EPOCHS = args.epoch
-BATCH_SIZE = args.batch_size
-GRADIENT_ACCUMULATION = args.grad_acc
-LEARNING_RATE = args.learning_rate
-SEQ_LEN = args.gene_num + 1
-VALIDATE_EVERY = args.valid_every
-
-PATIENCE = 10
-UNASSIGN_THRES = 0.0
-
-CLASS = args.bin_num + 2
-POS_EMBED_USING = args.pos_embed
-
-model_name = args.model_name
-ckpt_dir = f"/data1/data/corpus/scMODEL/{model_name}_model_Zheng68K.pkl"
-
-
-
-dist.init_process_group(backend='nccl')
-torch.cuda.set_device(local_rank)
-device = torch.device("cuda", local_rank)
-world_size = torch.distributed.get_world_size()
-
-seed_all(SEED + torch.distributed.get_rank())
-
-print(f"[Init] Seed: {SEED}, Epochs: {EPOCHS}, Batch size: {BATCH_SIZE}, LR: {LEARNING_RATE}")
-print(f"[Init] Using {world_size} GPUs, local_rank: {local_rank}")
-
-def get_unwrapped_model(model_ddp):
-    if hasattr(model_ddp, 'module'):
-        return model_ddp.module
-    return model_ddp
+    def forward(self, x):
+        x = x[:, None, :, :]
+        x = self.conv1(x)
+        x = self.act(x)
+        x = x.view(x.shape[0], -1)
+        x = self.fc1(x)
+        x = self.act1(x)
+        x = self.dropout1(x)
+        x = self.fc2(x)
+        x = self.act2(x)
+        x = self.dropout2(x)
+        x = self.fc3(x)
+        return x
 
 class SCDataset(Dataset):
     def __init__(self, data, label):
@@ -102,63 +57,34 @@ class SCDataset(Dataset):
     def __len__(self):
         return self.data.shape[0]
 
-class Identity(nn.Module):
-    def __init__(self, dropout=0., h_dim=100, out_dim=10):
-        super().__init__()
-        self.conv1 = nn.Conv2d(1, 1, (1, 200))
-        self.act = nn.ReLU()
-        self.fc1 = nn.Linear(SEQ_LEN, out_dim)
-        self.act1 = nn.ReLU()
-        self._printed = False
-
-    def forward(self, x):
-        if not self._printed:
-            print(f"Shape after Performer, before Identity: {x.shape}")
-        x = x[:, None, :, :]
-        x = self.conv1(x)
-        x = self.act(x)
-        x = x.view(x.shape[0], -1)
-        x = self.fc1(x)
-        x = self.act1(x)
-        if not self._printed:
-            print(f"Shape after Identity: {x.shape}")
-            self._printed = True
-        return x
-
-try:
-    print("Loading data...")
-    data = sc.read_h5ad(args.data_path)
+def load_data(data_path):
+    data = sc.read_h5ad(data_path)
     label_dict, label = np.unique(np.array(data.obs['celltype']), return_inverse=True)
     with open('label_dict', 'wb') as fp:
         pkl.dump(label_dict, fp)
     with open('label', 'wb') as fp:
         pkl.dump(label, fp)
-    class_num = np.unique(label, return_counts=True)[1].tolist()
-    class_weight = torch.tensor([(1 - (x / sum(class_num))) ** 2 for x in class_num])
-    label = torch.from_numpy(label)
-    data = data.X
-except Exception as e:
-    print(f"[ERROR] Data loading failed: {e}")
-    exit(1)
+    return data.X, torch.from_numpy(label), label_dict
 
-acc = []
-f1 = []
-f1w = []
-skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=SEED)
-pred_list = pd.Series(['un'] * data.shape[0])
+def get_unwrapped_model(model_ddp):
+    return model_ddp.module if hasattr(model_ddp, 'module') else model_ddp
 
-sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=SEED)
-for index_train, index_val in sss.split(data, label):
-    data_train, label_train = data[index_train], label[index_train]
-    data_val, label_val = data[index_val], label[index_val]
-    train_dataset = SCDataset(data_train, label_train)
-    val_dataset = SCDataset(data_val, label_val)
+CLASS = 11 
+SEQ_LEN = 16907
+DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+BATCH_SIZE = 4
+MODEL_PATH = '/data1/data/corpus/scMODEL/finetune_full_model_Zheng68K.pkl'
+DATA_PATH = '/data1/data/corpus/scDATA/Zheng68K.h5ad'
 
-train_sampler = DistributedSampler(train_dataset)
-val_sampler = DistributedSampler(val_dataset)
+data, label, label_dict = load_data(DATA_PATH)
 
-train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, sampler=train_sampler, drop_last=True)
-val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, sampler=val_sampler, drop_last=True)
+from sklearn.model_selection import StratifiedShuffleSplit
+sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=2021)
+index_train, index_val = next(sss.split(data, label))
+data_val, label_val = data[index_val], label[index_val]
+
+val_dataset = SCDataset(data_val, label_val)
+val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
 model = PerformerLM(
     num_tokens=CLASS,
@@ -167,247 +93,92 @@ model = PerformerLM(
     max_seq_len=SEQ_LEN,
     heads=10,
     local_attn_heads=0,
-    g2v_position_emb=POS_EMBED_USING
+    g2v_position_emb=True
 )
-
-try:
-    print("Loading pretrained PerformerLM model...")
-    path = args.model_path
-    ckpt = torch.load(path, map_location='cpu')
-    model.load_state_dict(ckpt['model_state_dict'])
-except Exception as e:
-    print(f"[ERROR] Model loading failed: {e}")
-    exit(1)
-
-for param in model.parameters():
-    param.requires_grad = False
-for param in model.norm.parameters():
-    param.requires_grad = True
-for param in model.performer.net.layers[-2].parameters():
-    param.requires_grad = True
 
 model.to_out = Identity(dropout=0., h_dim=128, out_dim=label_dict.shape[0])
-model = model.to(device)
-model = DDP(model, device_ids=[local_rank], output_device=local_rank)
+model = model.to(DEVICE)
 
-optimizer = Adam(model.parameters(), lr=LEARNING_RATE)
-scheduler = CosineAnnealingWarmupRestarts(
-    optimizer,
-    first_cycle_steps=15,
-    cycle_mult=2,
-    max_lr=LEARNING_RATE,
-    min_lr=1e-6,
-    warmup_steps=5,
-    gamma=0.9
-)
-loss_fn = nn.CrossEntropyLoss(weight=None).to(local_rank)
+checkpoint = torch.load(MODEL_PATH, map_location=DEVICE)
+model.load_state_dict(checkpoint['model_state_dict'])
 
-dist.barrier()
-trigger_times = 0
-max_acc = 0.0
-
-start_epoch = 1
-
-if os.path.exists(ckpt_dir):
-    print(f"[INFO] Found checkpoint at {ckpt_dir}. Loading...")
-    checkpoint = torch.load(ckpt_dir, map_location='cpu')
-
-    if 'epoch' in checkpoint:
-        saved_epoch = checkpoint['epoch']
-        print(f"[INFO] Checkpoint saved at epoch {saved_epoch}.")
-
-        if saved_epoch < EPOCHS:
-            print("[INFO] Checkpoint epoch less than total epochs. Loading states...")
-
-            if 'model_state_dict' in checkpoint:
-                try:
-                    model.load_state_dict(checkpoint['model_state_dict'])
-                except RuntimeError as e:
-                    from collections import OrderedDict
-                    state_dict = checkpoint['model_state_dict']
-                    new_state_dict = OrderedDict()
-
-                    if next(iter(state_dict)).startswith("module."):
-                        for k, v in state_dict.items():
-                            new_state_dict[k[len("module."):]] = v
-                    else:
-                        for k, v in state_dict.items():
-                            new_state_dict["module." + k] = v
-
-                    model.load_state_dict(new_state_dict)
-                print("[INFO] Model state loaded.")
-
-            if 'optimizer_state_dict' in checkpoint:
-                optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-                print("[INFO] Optimizer state loaded.")
-
-            if 'scheduler_state_dict' in checkpoint:
-                scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
-                print("[INFO] Scheduler state loaded.")
-
-            start_epoch = saved_epoch + 1
-        else:
-            print(f"[INFO] Checkpoint epoch >= total epochs ({EPOCHS}), starting from scratch.")
-            start_epoch = 1
-    else:
-        print("[WARN] Checkpoint has no epoch info. Skipping load.")
-        start_epoch = 1
-else:
-    print(f"[INFO] No checkpoint found at {ckpt_dir}, starting training from epoch 1.")
-    start_epoch = 1
-
-print(f"[INFO] Starting training from epoch {start_epoch}.")
+model.eval()
 
 
-for i in range(start_epoch, EPOCHS + 1):
-    train_loader.sampler.set_epoch(i)
-    model.train()
-    dist.barrier()
-    running_loss = 0.0
-    cum_acc = 0.0
-    try:
-        for index, (data, labels) in enumerate(tqdm(train_loader, desc=f"Epoch {i} - Training")):
-            index += 1
-            data, labels = data.to(device), labels.to(device)
-            if index % GRADIENT_ACCUMULATION != 0:
-                with model.no_sync():
-                    logits = model(data)
-                    loss = loss_fn(logits, labels)
-                    loss.backward()
-            if index % GRADIENT_ACCUMULATION == 0:
-                logits = model(data)
-                loss = loss_fn(logits, labels)
-                loss.backward()
-                torch.nn.utils.clip_grad_norm_(model.parameters(), int(1e6))
-                optimizer.step()
-                optimizer.zero_grad()
-            running_loss += loss.item()
-            softmax = nn.Softmax(dim=-1)
-            final = softmax(logits).argmax(dim=-1)
-            pred_num = labels.size(0)
-            correct_num = torch.eq(final, labels).sum(dim=-1)
-            cum_acc += torch.true_divide(correct_num, pred_num).mean().item()
-    except Exception as e:
-        print(f"[ERROR] Training failed at epoch {i}: {e}")
+all_inputs = []
+all_labels = []
+all_preds = []
+
+with torch.no_grad():
+    for x, y in val_loader:
+        x = x.to(DEVICE)
+        logits = model(x)
+        preds = torch.argmax(logits, dim=1).cpu()
+        all_inputs.append(x.cpu())
+        all_labels.append(y)
+        all_preds.append(preds)
+
+all_inputs = torch.cat(all_inputs)
+all_labels = torch.cat(all_labels)
+all_preds = torch.cat(all_preds)
+
+correct_mask = all_preds == all_labels
+correct_inputs = all_inputs[correct_mask]
+correct_labels = all_labels[correct_mask]
+
+correct_inputs_np = correct_inputs[:, :-1].numpy()  # exclude CLS token
+
+def model_predict(x):
+    x_tensor = torch.tensor(x, dtype=torch.long).to(DEVICE)
+    with torch.no_grad():
+        logits = model(x_tensor)
+        probs = torch.nn.functional.softmax(logits, dim=-1).cpu().numpy()
+    return probs
+
+background_size = min(50, correct_inputs_np.shape[0])
+background = correct_inputs_np[np.random.choice(correct_inputs_np.shape[0], background_size, replace=False)]
+
+explainer = shap.KernelExplainer(model_predict, background)
+
+gene_names = [f"gene_{i}" for i in range(SEQ_LEN - 1)]
+
+top_bottom_genes = []
+
+for class_idx in range(CLASS):
+    class_indices = (correct_labels.numpy() == class_idx)
+    if not np.any(class_indices):
+        continue
+    class_inputs = correct_inputs_np[class_indices]
+
+    shap_vals_accum = []
+    batch_size = 10
+    for j in range(0, class_inputs.shape[0], batch_size):
+        batch = class_inputs[j:j+batch_size]
+        try:
+            shap_vals_batch = explainer.shap_values(batch, nsamples=100)
+            shap_vals_accum.append(shap_vals_batch[class_idx])
+        except Exception as e:
+            print(f"SHAP batch error: {e}")
+            continue
+
+    if len(shap_vals_accum) == 0:
         continue
 
-    epoch_loss = running_loss / index
-    epoch_acc = 100 * cum_acc / index
-    epoch_loss = get_reduced(epoch_loss, local_rank, 0, world_size)
-    epoch_acc = get_reduced(epoch_acc, local_rank, 0, world_size)
-    if is_master:
-        print(f'==  Epoch: {i} | Training Loss: {epoch_loss:.6f} | Accuracy: {epoch_acc:6.4f}%  ==')
-    dist.barrier()
-    scheduler.step()
+    class_shap_vals = np.vstack(shap_vals_accum)
+    mean_shap = np.mean(class_shap_vals, axis=0)
 
-    if i % VALIDATE_EVERY == 0:
-        model.eval()
-        dist.barrier()
-        running_loss = 0.0
-        predictions = []
-        truths = []
-        with torch.no_grad():
-            for index, (data_v, labels_v) in enumerate(tqdm(val_loader, desc=f"Epoch {i} - Validation")):
-                index += 1
-                data_v, labels_v = data_v.to(device), labels_v.to(device)
-                logits = model(data_v)
-                loss = loss_fn(logits, labels_v)
-                running_loss += loss.item()
-                softmax = nn.Softmax(dim=-1)
-                final_prob = softmax(logits)
-                final = final_prob.argmax(dim=-1)
-                final[np.amax(np.array(final_prob.cpu()), axis=-1) < UNASSIGN_THRES] = -1
-                predictions.append(final)
-                truths.append(labels_v)
+    top_15_idx = np.argsort(mean_shap)[-15:][::-1]
+    bottom_15_idx = np.argsort(mean_shap)[:15]
 
-        predictions = distributed_concat(torch.cat(predictions, dim=0), len(val_sampler.dataset), world_size)
-        truths = distributed_concat(torch.cat(truths, dim=0), len(val_sampler.dataset), world_size)
-        no_drop = predictions != -1
-        predictions = np.array((predictions[no_drop]).cpu())
-        truths = np.array((truths[no_drop]).cpu())
-        cur_acc = accuracy_score(truths, predictions)
-        f1 = f1_score(truths, predictions, average='macro')
-        val_loss = running_loss / index
-        val_loss = get_reduced(val_loss, local_rank, 0, world_size)
-        if is_master:
-            print(f'==  Epoch: {i} | Validation Loss: {val_loss:.6f} | F1 Score: {f1:.6f}  ==')
-            print(confusion_matrix(truths, predictions))
-            print(classification_report(truths, predictions, target_names=label_dict.tolist(), digits=4))
-        if cur_acc > max_acc:
-            max_acc = cur_acc
-            trigger_times = 0
-            save_ckpt(i, model, optimizer, scheduler, val_loss, model_name)
-        if is_master and (i == EPOCHS):
-            model.eval()
-            unwrapped_model = get_unwrapped_model(model)
+    top_genes = [(gene_names[i], mean_shap[i]) for i in top_15_idx]
+    bottom_genes = [(gene_names[i], mean_shap[i]) for i in bottom_15_idx]
 
-            val_data = val_dataset.data
-            val_labels = val_dataset.label
+    for gene, val in top_genes:
+        top_bottom_genes.append([class_idx, 'top', gene, val])
+    for gene, val in bottom_genes:
+        top_bottom_genes.append([class_idx, 'bottom', gene, val])
 
-            correct_idx = np.where(predictions == truths)[0]
-            correct_data_sparse = val_data[correct_idx]
-            correct_data_np = correct_data_sparse.toarray() if hasattr(correct_data_sparse, "toarray") else np.array(correct_data_sparse)
+df_shap = pd.DataFrame(top_bottom_genes, columns=['class', 'rank', 'gene', 'mean_shap'])
+df_shap.to_csv(f"results/top_bottom15_genes_shap_only.csv", index=False)
 
-            cls_token = np.zeros((correct_data_np.shape[0], 1), dtype=int)
-            input_seqs = np.concatenate([correct_data_np, cls_token], axis=1)
-            input_seqs[input_seqs > (CLASS - 2)] = CLASS - 2
-
-            def model_predict(x):
-                with torch.no_grad():
-                    x_t = torch.tensor(x).long().to(device)
-                    logits = unwrapped_model(x_t)
-                    probs = torch.nn.functional.softmax(logits, dim=-1).cpu().numpy()
-                return probs
-
-            background_size = min(50, input_seqs.shape[0])
-            background = input_seqs[np.random.choice(input_seqs.shape[0], background_size, replace=False)]
-
-            explainer = shap.KernelExplainer(model_predict, background)
-
-            gene_names = [f"gene_{i}" for i in range(SEQ_LEN - 1)]
-            top_bottom_genes = []
-
-            for class_idx in range(CLASS):
-                class_samples_idx = np.where(truths[correct_idx] == class_idx)[0]
-                if len(class_samples_idx) == 0:
-                    continue
-
-            class_input_seqs = input_seqs[class_samples_idx]
-
-            batch_size = 10
-            shap_vals_accum = []
-
-            for j in range(0, len(class_input_seqs), batch_size):
-                batch = class_input_seqs[j:j+batch_size]
-                try:
-                    shap_vals_batch = explainer.shap_values(batch, nsamples=100)
-                    shap_vals_accum.append(shap_vals_batch[class_idx][:, :-1])  # exclude CLS token
-                except Exception as e:
-                    print(f"Skipping SHAP batch due to error: {e}")
-                    continue
-
-            if not shap_vals_accum:
-                continue
-
-            class_shap_vals = np.concatenate(shap_vals_accum, axis=0)
-            mean_shap = np.mean(class_shap_vals, axis=0)
-
-            top_15_idx = np.argsort(mean_shap)[-15:][::-1]
-            bottom_15_idx = np.argsort(mean_shap)[:15]
-
-            top_genes = [(gene_names[idx], mean_shap[idx]) for idx in top_15_idx]
-            bottom_genes = [(gene_names[idx], mean_shap[idx]) for idx in bottom_15_idx]
-
-            for gene, val in top_genes:
-                top_bottom_genes.append([class_idx, 'top', gene, val])
-            for gene, val in bottom_genes:
-                top_bottom_genes.append([class_idx, 'bottom', gene, val])
-
-            df_shap = pd.DataFrame(top_bottom_genes, columns=['class', 'rank', 'gene', 'mean_shap'])
-            df_shap.to_csv(f"results/top_bottom15_genes_epoch_{i}.csv", index=False)
-        else:
-            trigger_times += 1
-            if trigger_times > PATIENCE:
-                break
-
-        del predictions, truths
+print("SHAP analysis completed and saved.")
