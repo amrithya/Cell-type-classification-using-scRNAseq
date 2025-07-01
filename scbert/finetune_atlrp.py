@@ -85,23 +85,25 @@ class SCDataset(Dataset):
         seq = np.concatenate([arr, [0]]).astype(int)
         return torch.from_numpy(seq).long(), torch.tensor(self.label[idx], dtype=torch.long)
 
-class IdentityHead(nn.Module):
-    def __init__(self, seq_len, num_classes):
+class Identity(nn.Module):
+    def __init__(self, dropout=0., h_dim=100, out_dim=10):
         super().__init__()
-        self.conv = nn.Conv2d(1, 1, (1, 200))
-        self.relu = nn.ReLU()
-        self.fc = nn.Linear(seq_len, num_classes)
+        self.conv1 = nn.Conv2d(1, 1, (1, 200))
         self.act = nn.ReLU()
+        self.fc1 = nn.Linear(SEQ_LEN, out_dim)
+        self.act1 = nn.ReLU()
         self._printed = False
     def forward(self, x):
         if not self._printed:
-            print("Before head:", x.shape)
-        x = x.unsqueeze(1)
-        x = self.relu(self.conv(x))
-        x = x.view(x.size(0), -1)
-        x = self.act(self.fc(x))
+            print(f"Shape after Performer, before Identity: {x.shape}")
+        x = x[:, None, :, :]
+        x = self.conv1(x)
+        x = self.act(x)
+        x = x.view(x.shape[0], -1)
+        x = self.fc1(x)
+        x = self.act1(x)
         if not self._printed:
-            print("After head:", x.shape)
+            print(f"Shape after Identity: {x.shape}")
             self._printed = True
         return x
 
@@ -127,7 +129,7 @@ for p in model.parameters(): p.requires_grad = False
 for p in model.norm.parameters(): p.requires_grad = True
 for p in model.performer.net.layers[-2].parameters(): p.requires_grad = True
 
-model.to_out = IdentityHead(SEQ_LEN, len(label_dict))
+model.to_out = Identity(SEQ_LEN, len(label_dict))
 model = model.to(device)
 model = DDP(model, device_ids=[local_rank], output_device=local_rank)
 
