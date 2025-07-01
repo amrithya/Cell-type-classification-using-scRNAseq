@@ -66,23 +66,19 @@ UNASSIGN_THRES = 0.0
 CLASS = args.bin_num + 2
 POS_EMBED_USING = args.pos_embed
 
-SEED = args.seed
-EPOCHS = args.epoch
-BATCH_SIZE = args.batch_size
-GRADIENT_ACCUMULATION = args.grad_acc
-LEARNING_RATE = args.learning_rate
-SEQ_LEN = args.gene_num + 1
-VALIDATE_EVERY = args.valid_every
-PATIENCE = 10
-UNASSIGN_THRES = 0.0
-CLASS = args.bin_num + 2
-POS_EMBED = args.pos_embed
 model_name = args.model_name
-ckpt_path = f"{model_name}_model_Zheng68K.pkl"
 
-seed_all(SEED + dist.get_rank())
+dist.init_process_group(backend='nccl')
+torch.cuda.set_device(local_rank)
+device = torch.device("cuda", local_rank)
+world_size = torch.distributed.get_world_size()
+
+seed_all(SEED + torch.distributed.get_rank())
+
 if is_master:
     print(f"Init: seed={SEED}, epochs={EPOCHS}, bs={BATCH_SIZE}, lr={LEARNING_RATE}, gpus={world_size}")
+
+ckpt_path = f"{model_name}_model_Zheng68K.pkl"
 
 class SCDataset(Dataset):
     def __init__(self, data, label):

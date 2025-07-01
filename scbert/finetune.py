@@ -64,16 +64,16 @@ POS_EMBED_USING = args.pos_embed
 
 model_name = args.model_name
 
-ckpt_path = f"/data1/data/corpus/scMODEL/{model_name}_full_model_Zheng68K.pkl"
-
-ckpt_dir = f"/data1/data/corpus/scMODEL/{model_name}_model_Zheng68K.pkl"
-
 dist.init_process_group(backend='nccl')
 torch.cuda.set_device(local_rank)
 device = torch.device("cuda", local_rank)
 world_size = torch.distributed.get_world_size()
 
 seed_all(SEED + torch.distributed.get_rank())
+
+ckpt_path = f"/data1/data/corpus/scMODEL/{model_name}_full_model_Zheng68K.pkl"
+
+ckpt_dir = f"/data1/data/corpus/scMODEL/{model_name}_model_Zheng68K.pkl"
 
 print(f"[Init] Seed: {SEED}, Epochs: {EPOCHS}, Batch size: {BATCH_SIZE}, LR: {LEARNING_RATE}")
 print(f"[Init] Using {world_size} GPUs, local_rank: {local_rank}")
