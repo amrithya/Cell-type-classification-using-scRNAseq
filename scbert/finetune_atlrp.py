@@ -150,7 +150,7 @@ try:
     net = model.module if isinstance(model, DDP) else model
 
     for m in net.performer.modules():
-        if isinstance(m, nn.Linear) or isinstance(m, nn.Conv1d):
+        if isinstance(m, nn.Linear):
             m.register_forward_hook(lambda mod, inp, out: setattr(mod, "_x", inp[0].detach()))
             m.register_full_backward_hook(lambda mod, gi, go: setattr(mod, "_rel", (mod._x * go[0]).sum(dim=-1).detach()))
 
