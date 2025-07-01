@@ -104,15 +104,6 @@ try:
         g2v_position_emb=POS_EMBED_USING
     )
 
-    ckpt_path = f"/data1/data/corpus/scMODEL/{model_name}_full_model_Zheng68K.pkl"
-    try:
-        ckpt = torch.load(ckpt_path, map_location='cpu')
-        model.load_state_dict(ckpt['model_state_dict'])
-    except Exception as e:
-        if is_master:
-            print(f"[ERROR] Failed to load checkpoint: {e}")
-        raise
-
     class Identity(nn.Module):
         def __init__(self, dropout=0., h_dim=100, out_dim=10):
             super().__init__()
@@ -141,6 +132,17 @@ try:
             return x
 
     model.to_out = Identity(dropout=0., h_dim=128, out_dim=label_dict.shape[0])
+
+    ckpt_path = f"/data1/data/corpus/scMODEL/{model_name}_full_model_Zheng68K.pkl"
+    try:
+        ckpt = torch.load(ckpt_path, map_location='cpu')
+        model.load_state_dict(ckpt['model_state_dict'])
+    except Exception as e:
+        if is_master:
+            print(f"[ERROR] Failed to load checkpoint: {e}")
+        raise
+
+    
     model = model.to(device)
     model = DDP(model, device_ids=[local_rank], output_device=local_rank)
     model.eval()
