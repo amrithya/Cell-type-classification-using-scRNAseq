@@ -11,6 +11,7 @@ import torch.distributed as dist
 import scanpy as sc
 import pickle as pkl
 from performer_pytorch import PerformerLM
+from utils import *
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--local_rank", "--local-rank", type=int, default=-1)
