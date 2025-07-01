@@ -135,16 +135,57 @@ optim = Adam(model.parameters(), lr=LEARNING_RATE)
 sched = CosineAnnealingWarmupRestarts(optim, first_cycle_steps=15, cycle_mult=2, max_lr=LEARNING_RATE, min_lr=1e-6, warmup_steps=5, gamma=0.9)
 loss_fn = nn.CrossEntropyLoss().to(device)
 
-start_epoch = 1; best_acc = 0; stale = 0
+start_epoch = 1
+
 if os.path.exists(ckpt_path):
-    ck = torch.load(ckpt_path, map_location='cpu')
-    start_epoch = ck.get('epoch', 0) + 1
-    best_acc = ck.get('best_acc', 0)
-    model.load_state_dict(ck['model_state_dict'])
-    optim.load_state_dict(ck['optimizer_state_dict'])
-    sched.load_state_dict(ck['scheduler_state_dict'])
-    if is_master:
-        print(f"Resumed from epoch {start_epoch} with acc={best_acc:.4f}")
+    print(f"[INFO] Found checkpoint at {ckpt_path}. Loading...")
+    checkpoint = torch.load(ckpt_path, map_location='cpu')
+
+    if 'epoch' in checkpoint:
+        saved_epoch = checkpoint['epoch']
+        print(f"[INFO] Checkpoint saved at epoch {saved_epoch}.")
+
+        if saved_epoch < EPOCHS:
+            print("[INFO] Checkpoint epoch less than total epochs. Loading states...")
+
+            if 'model_state_dict' in checkpoint:
+                try:
+                    model.load_state_dict(checkpoint['model_state_dict'])
+                except RuntimeError as e:
+                    from collections import OrderedDict
+                    state_dict = checkpoint['model_state_dict']
+                    new_state_dict = OrderedDict()
+
+                    if next(iter(state_dict)).startswith("module."):
+                        for k, v in state_dict.items():
+                            new_state_dict[k[len("module."):]] = v
+                    else:
+                        for k, v in state_dict.items():
+                            new_state_dict["module." + k] = v
+
+                    model.load_state_dict(new_state_dict)
+                print("[INFO] Model state loaded.")
+
+            if 'optimizer_state_dict' in checkpoint:
+                optim.load_state_dict(checkpoint['optimizer_state_dict'])
+                print("[INFO] Optimizer state loaded.")
+
+            if 'scheduler_state_dict' in checkpoint:
+                sched.load_state_dict(checkpoint['scheduler_state_dict'])
+                print("[INFO] Scheduler state loaded.")
+
+            start_epoch = saved_epoch + 1
+        else:
+            print(f"[INFO] Checkpoint epoch >= total epochs ({EPOCHS}), starting from scratch.")
+            start_epoch = 1
+    else:
+        print("[WARN] Checkpoint has no epoch info. Skipping load.")
+        start_epoch = 1
+else:
+    print(f"[INFO] No checkpoint found at {ckpt_path}, starting training from epoch 1.")
+    start_epoch = 1
+
+print(f"[INFO] Starting training from epoch {start_epoch}.")
 
 for epoch in range(start_epoch, EPOCHS+1):
     model.train()
