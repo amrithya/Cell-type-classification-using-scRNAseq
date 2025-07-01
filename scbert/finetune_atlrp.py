@@ -43,7 +43,6 @@ parser.add_argument("--ckpt_dir", type=str, default='./ckpts/')
 parser.add_argument("--model_name", type=str, default='finetune')
 args = parser.parse_args()
 
-# Setup
 rank = int(os.environ["RANK"])
 local_rank = args.local_rank
 is_master = local_rank == 0
@@ -134,7 +133,10 @@ optim = Adam(model.parameters(), lr=LEARNING_RATE)
 sched = CosineAnnealingWarmupRestarts(optim, first_cycle_steps=15, cycle_mult=2, max_lr=LEARNING_RATE, min_lr=1e-6, warmup_steps=5, gamma=0.9)
 loss_fn = nn.CrossEntropyLoss().to(device)
 
-start_epoch = 1; best_acc = 0; stale = 0
+start_epoch = 1
+best_acc = 0
+stale = 0
+
 if os.path.exists(ckpt_path):
     ck = torch.load(ckpt_path, map_location='cpu')
     start_epoch = ck.get('epoch', 0) + 1
@@ -148,7 +150,8 @@ if os.path.exists(ckpt_path):
 for epoch in range(start_epoch, EPOCHS+1):
     model.train()
     train_loader.sampler.set_epoch(epoch)
-    rl = 0; ra = 0
+    rl = 0
+    ra = 0
     for i, (x, y) in enumerate(tqdm(train_loader, desc=f"Train {epoch}")):
         x = x.to(device, non_blocking=True)
         y = y.to(device, non_blocking=True)
@@ -157,18 +160,22 @@ for epoch in range(start_epoch, EPOCHS+1):
         loss.backward()
         if (i + 1) % GRADIENT_ACCUMULATION == 0:
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1e6)
-            optim.step(); optim.zero_grad()
+            optim.step()
+            optim.zero_grad()
         rl += loss.item()
         ra += (logits.argmax(-1) == y).float().mean().item()
     train_loss = get_reduced(rl / (i + 1), local_rank, 0, world_size)
     train_acc = get_reduced(ra / (i + 1) * 100, local_rank, 0, world_size)
     if is_master:
         print(f"[Epoch {epoch}] Train loss={train_loss:.4f}, acc={train_acc:.2f}%")
-    sched.step(); dist.barrier()
+    sched.step()
+    dist.barrier()
 
     if epoch % VALIDATE_EVERY == 0:
         model.eval()
-        vrl = 0; preds = []; trues = []
+        vrl = 0
+        preds = []
+        trues = []
         with torch.no_grad():
             for x_v, y_v in tqdm(val_loader, desc=f"Valid {epoch}"):
                 x_v = x_v.to(device)
@@ -178,8 +185,10 @@ for epoch in range(start_epoch, EPOCHS+1):
                 preds.append(logv.argmax(-1).cpu())
                 trues.append(y_v.cpu())
         vrl /= len(val_loader)
-        if is_master: print("Val loss:", vrl)
-        preds = torch.cat(preds); trues = torch.cat(trues)
+        if is_master:
+            print("Val loss:", vrl)
+        preds = torch.cat(preds)
+        trues = torch.cat(trues)
         mask = preds >= 0
         acc_v = accuracy_score(trues[mask], preds[mask])
         f1_v = f1_score(trues[mask], preds[mask], average='macro')
@@ -187,12 +196,15 @@ for epoch in range(start_epoch, EPOCHS+1):
             print(confusion_matrix(trues[mask], preds[mask]))
             print(classification_report(trues[mask], preds[mask], target_names=label_dict, digits=4))
         if acc_v > best_acc:
-            best_acc = acc_v; stale = 0
+            best_acc = acc_v
+            stale = 0
             save_ckpt(epoch, model, optim, sched, vrl, model_name)
         else:
             stale += 1
             if stale > PATIENCE:
-                if is_master: print("Early stopping"); break
+                if is_master:
+                    print("Early stopping")
+                break
 
 if is_master:
     print("\nComputing relevance per class...")
@@ -204,13 +216,17 @@ for m in net.performer.modules():
         m.register_forward_hook(lambda mod, inp, out: setattr(mod, "_x", inp[0].detach()))
         m.register_backward_hook(lambda mod, gi, go: setattr(mod, "_rel", (mod._x * go[0]).sum(dim=-1).detach()))
 
-seqs = []; lbls = []
+seqs = []
+lbls = []
 for x_v, y_v in val_loader:
     x_v = x_v.to(device)
     y_v = y_v.to(device)
-    seqs.append(x_v); lbls.append(y_v)
-    if sum(len(s) for s in seqs) >= 200: break
-seqs = torch.cat(seqs)[:200]; lbls = torch.cat(lbls)[:200]
+    seqs.append(x_v)
+    lbls.append(y_v)
+    if sum(len(s) for s in seqs) >= 200:
+        break
+seqs = torch.cat(seqs)[:200]
+lbls = torch.cat(lbls)[:200]
 
 relevances = []
 for seq, lbl in zip(seqs, lbls):
@@ -222,7 +238,7 @@ for seq, lbl in zip(seqs, lbls):
     rel = (reps.grad * reps).sum(dim=-1).squeeze().cpu().numpy()
     rel = rel / (np.max(np.abs(rel)) + 1e-12)
     relevances.append(rel)
-relevances = np.stack(relevances)[:, :-1]  # drop CLS
+relevances = np.stack(relevances)[:, :-1]
 
 records = []
 for cls in np.unique(lbls.cpu()):
