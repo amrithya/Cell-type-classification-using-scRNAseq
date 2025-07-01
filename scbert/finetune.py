@@ -64,7 +64,7 @@ POS_EMBED_USING = args.pos_embed
 
 model_name = args.model_name
 
-ckpt_path = f"/data1/data/corpus/scMODEL/{model_name}_model_Zheng68K.pkl"
+ckpt_path = f"/data1/data/corpus/scMODEL/{model_name}_full_model_Zheng68K.pkl"
 
 ckpt_dir = f"/data1/data/corpus/scMODEL/{model_name}_model_Zheng68K.pkl"
 
@@ -96,27 +96,31 @@ class SCDataset(Dataset):
     def __len__(self):
         return self.data.shape[0]
 
-class Identity(nn.Module):
-    def __init__(self, dropout=0., h_dim=100, out_dim=10):
-        super().__init__()
+class Identity(torch.nn.Module):
+    def __init__(self, dropout = 0., h_dim = 100, out_dim = 10):
+        super(Identity, self).__init__()
         self.conv1 = nn.Conv2d(1, 1, (1, 200))
         self.act = nn.ReLU()
-        self.fc1 = nn.Linear(SEQ_LEN, out_dim)
+        self.fc1 = nn.Linear(in_features=SEQ_LEN, out_features=512, bias=True)
         self.act1 = nn.ReLU()
-        self._printed = False
+        self.dropout1 = nn.Dropout(dropout)
+        self.fc2 = nn.Linear(in_features=512, out_features=h_dim, bias=True)
+        self.act2 = nn.ReLU()
+        self.dropout2 = nn.Dropout(dropout)
+        self.fc3 = nn.Linear(in_features=h_dim, out_features=out_dim, bias=True)
 
     def forward(self, x):
-        if not self._printed:
-            print(f"Shape after Performer, before Identity: {x.shape}")
-        x = x[:, None, :, :]
+        x = x[:,None,:,:]
         x = self.conv1(x)
         x = self.act(x)
-        x = x.view(x.shape[0], -1)
+        x = x.view(x.shape[0],-1)
         x = self.fc1(x)
         x = self.act1(x)
-        if not self._printed:
-            print(f"Shape after Identity: {x.shape}")
-            self._printed = True
+        x = self.dropout1(x)
+        x = self.fc2(x)
+        x = self.act2(x)
+        x = self.dropout2(x)
+        x = self.fc3(x)
         return x
 
 try:
@@ -216,17 +220,14 @@ if os.path.exists(ckpt_path):
                 try:
                     model.load_state_dict(checkpoint['model_state_dict'])
                 except RuntimeError as e:
-                    # Handle missing module. or extra module. prefix automatically
                     from collections import OrderedDict
                     state_dict = checkpoint['model_state_dict']
                     new_state_dict = OrderedDict()
 
                     if next(iter(state_dict)).startswith("module."):
-                        # Saved with DDP but loading without DDP
                         for k, v in state_dict.items():
                             new_state_dict[k[len("module."):]] = v
                     else:
-                        # Saved without DDP but loading with DDP
                         for k, v in state_dict.items():
                             new_state_dict["module." + k] = v
 
