@@ -47,10 +47,10 @@ parser.add_argument("--model_name", type=str, default='finetune')
 args = parser.parse_args()
 
 dist.init_process_group(backend='nccl')
-torch.cuda.set_device(args.local_rank)
-device = torch.device("cuda", args.local_rank)
+torch.cuda.set_device(os.environ.get("LOCAL_RANK", -1))
+device = torch.device("cuda", os.environ.get("LOCAL_RANK", -1))
 world_size = dist.get_world_size()
-local_rank = args.local_rank
+local_rank = os.environ.get("LOCAL_RANK", -1)
 is_master = local_rank == 0
 
 SEED = args.seed
