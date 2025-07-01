@@ -24,15 +24,25 @@ parser.add_argument("--model_path", type=str, default='./panglao_pretrained.pth'
 parser.add_argument("--model_name", type=str, default='finetune')
 args = parser.parse_args()
 
+args = parser.parse_args()
 rank = int(os.environ["RANK"])
 local_rank = args.local_rank
 is_master = local_rank == 0
 
 SEED = args.seed
+EPOCHS = args.epoch
 BATCH_SIZE = args.batch_size
+GRADIENT_ACCUMULATION = args.grad_acc
+LEARNING_RATE = args.learning_rate
 SEQ_LEN = args.gene_num + 1
+VALIDATE_EVERY = args.valid_every
+
+PATIENCE = 10
+UNASSIGN_THRES = 0.0
+
 CLASS = args.bin_num + 2
 POS_EMBED_USING = args.pos_embed
+
 model_name = args.model_name
 
 dist.init_process_group(backend='nccl')
@@ -40,14 +50,7 @@ torch.cuda.set_device(local_rank)
 device = torch.device("cuda", local_rank)
 world_size = torch.distributed.get_world_size()
 
-def seed_all(seed):
-    import random
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-
-seed_all(SEED + rank)
+seed_all(SEED + torch.distributed.get_rank())
 
 class SCDataset(Dataset):
     def __init__(self, data, label):
