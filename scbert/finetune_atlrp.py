@@ -30,11 +30,12 @@ import pickle as pkl
 from tqdm import tqdm
 
 import argparse
+
 parser = argparse.ArgumentParser()
-parser.add_argument("--local_rank", type=int, default=-1)
+parser.add_argument("--local_rank", "--local-rank", type=int, default=-1)
 parser.add_argument("--bin_num", type=int, default=5)
 parser.add_argument("--gene_num", type=int, default=16906)
-parser.add_argument("--epoch", type=int, default=19)
+parser.add_argument("--epoch", type=int, default=20)
 parser.add_argument("--seed", type=int, default=2021)
 parser.add_argument("--batch_size", type=int, default=4)
 parser.add_argument("--learning_rate", type=float, default=1e-4)
@@ -43,15 +44,27 @@ parser.add_argument("--valid_every", type=int, default=1)
 parser.add_argument("--pos_embed", type=bool, default=True)
 parser.add_argument("--data_path", type=str, default='./data/Zheng68K.h5ad')
 parser.add_argument("--model_path", type=str, default='./panglao_pretrained.pth')
+parser.add_argument("--ckpt_dir", type=str, default='./ckpts/')
 parser.add_argument("--model_name", type=str, default='finetune')
-args = parser.parse_args()
 
-dist.init_process_group(backend='nccl')
-torch.cuda.set_device(os.environ.get("LOCAL_RANK", -1))
-device = torch.device("cuda", os.environ.get("LOCAL_RANK", -1))
-world_size = dist.get_world_size()
-local_rank = os.environ.get("LOCAL_RANK", -1)
+args = parser.parse_args()
+rank = int(os.environ["RANK"])
+local_rank = args.local_rank
 is_master = local_rank == 0
+
+SEED = args.seed
+EPOCHS = args.epoch
+BATCH_SIZE = args.batch_size
+GRADIENT_ACCUMULATION = args.grad_acc
+LEARNING_RATE = args.learning_rate
+SEQ_LEN = args.gene_num + 1
+VALIDATE_EVERY = args.valid_every
+
+PATIENCE = 10
+UNASSIGN_THRES = 0.0
+
+CLASS = args.bin_num + 2
+POS_EMBED_USING = args.pos_embed
 
 SEED = args.seed
 EPOCHS = args.epoch
