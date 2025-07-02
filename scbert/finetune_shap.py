@@ -1,5 +1,4 @@
 import os
-import argparse
 import numpy as np
 import pandas as pd
 import torch
@@ -10,6 +9,7 @@ import pickle as pkl
 from performer_pytorch import PerformerLM
 import shap
 from tqdm import tqdm
+from sklearn.model_selection import StratifiedShuffleSplit
 
 class Identity(nn.Module):
     def __init__(self, dropout=0., h_dim=100, out_dim=10):
@@ -48,7 +48,6 @@ class SCDataset(Dataset):
         full_seq = self.data[index].toarray()[0]
         full_seq[full_seq > (CLASS - 2)] = CLASS - 2
         full_seq = torch.from_numpy(full_seq).long()
-        full_seq = torch.cat((full_seq, torch.tensor([0])))
         seq_label = self.label[index]
         return full_seq, seq_label
 
@@ -84,7 +83,6 @@ os.makedirs(CACHE_DIR, exist_ok=True)
 
 data, label, label_dict = load_data(DATA_PATH)
 
-from sklearn.model_selection import StratifiedShuffleSplit
 sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=2021)
 index_train, index_val = next(sss.split(data, label))
 data_val, label_val = data[index_val], label[index_val]
@@ -148,7 +146,6 @@ model = PerformerLM(
 model.to_out = Identity(dropout=0., h_dim=128, out_dim=label_dict.shape[0])
 checkpoint = torch.load(MODEL_PATH, map_location=DEVICE)
 model.load_state_dict(checkpoint['model_state_dict'])
-
 model.eval()
 
 target_idx = 0
@@ -171,4 +168,6 @@ df_bottom = pd.DataFrame(bottom_genes, columns=["gene", "shap_value"])
 df_top["rank"] = "top"
 df_bottom["rank"] = "bottom"
 df_shap = pd.concat([df_top, df_bottom])
+
+os.makedirs("results", exist_ok=True)
 df_shap.to_csv("results/shap_single_sample.csv", index=False)
