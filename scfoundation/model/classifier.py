@@ -1,87 +1,107 @@
 import numpy as np
 import torch
-import torch.nn as nn
-import torch.optim as optim
+from torch import nn
+from torch.utils.data import Dataset, DataLoader
 from sklearn.model_selection import train_test_split
-from torch.utils.data import DataLoader, TensorDataset
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
-import pandas as pd
+from sklearn.preprocessing import LabelEncoder
+import scanpy as sc
 from tqdm import tqdm
+import os
+import sys
+sys.path.append("../model/")
+from load import *
 
-embedding_path = "/data1/data/corpus/scDATA/scfoundation/cell-anno_cell-anno_singlecell_cell_embedding_t4_resolution.npy"
-LABEL_PATH = "/data1/data/corpus/scDATA/scfoundation/cell_type_labels.npy"
-ANNOT_PATH = "/data1/data/corpus/scDATA/scfoundation/cell-anno.csv"
+class CellEmbeddingDataset(Dataset):
+    def __init__(self, embeddings, labels):
+        self.embeddings = embeddings
+        self.labels = labels
+    def __len__(self):
+        return len(self.labels)
+    def __getitem__(self, idx):
+        return torch.tensor(self.embeddings[idx]).float(), self.labels[idx]
 
-BATCH_SIZE = 128
-EPOCHS = 10
-LR = 1e-4
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-SEED = 42
-
-torch.manual_seed(SEED)
-np.random.seed(SEED)
-
-X = np.load(embedding_path)
-df = pd.read_csv(ANNOT_PATH)
-df = df.loc[:, ["cell_type"]]
-unique_classes = sorted(df["cell_type"].unique())
-class_to_id = {cls: i for i, cls in enumerate(unique_classes)}
-y = df["cell_type"].map(class_to_id).values
-np.save(LABEL_PATH, y)
-
-X = torch.tensor(X, dtype=torch.float32)
-y = torch.tensor(y, dtype=torch.long)
-
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=SEED)
-train_loader = DataLoader(TensorDataset(X_train, y_train), batch_size=BATCH_SIZE, shuffle=True)
-test_loader = DataLoader(TensorDataset(X_test, y_test), batch_size=BATCH_SIZE)
-
-class EmbeddingClassifier(nn.Module):
-    def __init__(self, input_dim, n_classes):
+class LinearProbingClassifier(nn.Module):
+    def __init__(self, input_dim, num_classes):
         super().__init__()
-        self.norm = nn.BatchNorm1d(input_dim, affine=False, eps=1e-6)
         self.fc = nn.Sequential(
             nn.Linear(input_dim, 256),
             nn.ReLU(),
-            nn.Linear(256, n_classes)
+            nn.Linear(256, num_classes)
         )
     def forward(self, x):
-        x = self.norm(x)
         return self.fc(x)
 
-model = EmbeddingClassifier(input_dim=X.shape[1], n_classes=len(unique_classes)).to(DEVICE)
-criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=LR)
+def load_labels(path):
+    adata = sc.read_h5ad(path)
+    labels = adata.obs['celltype'].values
+    le = LabelEncoder()
+    labels_encoded = le.fit_transform(labels)
+    return labels_encoded, le
 
-for epoch in range(EPOCHS):
+def train_epoch(model, loader, optimizer, criterion, device):
     model.train()
     total_loss = 0
-    pbar = tqdm(train_loader, desc=f"Epoch {epoch+1}/{EPOCHS}", leave=False)
-    for xb, yb in pbar:
-        xb, yb = xb.to(DEVICE), yb.to(DEVICE)
-        logits = model(xb)
-        loss = criterion(logits, yb)
+    total_correct = 0
+    total = 0
+    for x, y in tqdm(loader, desc="Training"):
+        x, y = x.to(device), y.to(device)
         optimizer.zero_grad()
+        logits = model(x)
+        loss = criterion(logits, y)
         loss.backward()
         optimizer.step()
-        total_loss += loss.item()
-        pbar.set_postfix(loss=total_loss / (pbar.n + 1))
-    print(f"Epoch {epoch+1} loss: {total_loss/len(train_loader):.4f}")
+        total_loss += loss.item() * x.size(0)
+        preds = torch.argmax(logits, dim=1)
+        total_correct += (preds == y).sum().item()
+        total += x.size(0)
+    return total_loss/total, total_correct/total
 
+def eval_epoch(model, loader, criterion, device):
     model.eval()
-    all_preds = []
-    all_targets = []
+    total_loss = 0
+    total_correct = 0
+    total = 0
     with torch.no_grad():
-        pbar_test = tqdm(test_loader, desc="Eval", leave=False)
-        for xb, yb in pbar_test:
-            xb, yb = xb.to(DEVICE), yb.to(DEVICE)
-            logits = model(xb)
+        for x, y in tqdm(loader, desc="Evaluating"):
+            x, y = x.to(device), y.to(device)
+            logits = model(x)
+            loss = criterion(logits, y)
+            total_loss += loss.item() * x.size(0)
             preds = torch.argmax(logits, dim=1)
-            all_preds.append(preds.cpu())
-            all_targets.append(yb.cpu())
-    all_preds = torch.cat(all_preds)
-    all_targets = torch.cat(all_targets)
-    acc = accuracy_score(all_targets, all_preds)
-    print(f"Epoch {epoch+1} Test Accuracy: {acc:.4f}")
+            total_correct += (preds == y).sum().item()
+            total += x.size(0)
+    return total_loss/total, total_correct/total
 
-print(classification_report(all_targets, all_preds, target_names=unique_classes))
+def main():
+    embedding_path = '/data1/data/corpus/scDATA/scfoundation/cell-anno_cell-anno_singlecell_cell_embedding_t4_resolution.npy'
+    label_path = '/data1/data/corpus/scDATA/scfoundation/Zheng68K_foundation.h5ad'
+
+    embeddings = np.load(embedding_path)
+    labels, label_encoder = load_labels(label_path)
+
+    assert embeddings.shape[0] == labels.shape[0]
+
+    train_x, test_x, train_y, test_y = train_test_split(embeddings, labels, test_size=0.2, random_state=42, stratify=labels)
+
+    train_dataset = CellEmbeddingDataset(train_x, train_y)
+    test_dataset = CellEmbeddingDataset(test_x, test_y)
+
+    train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=128)
+
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    model = LinearProbingClassifier(input_dim=embeddings.shape[1], num_classes=len(label_encoder.classes_))
+    model.to(device)
+
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    criterion = nn.CrossEntropyLoss()
+
+    epochs = 10
+    for epoch in range(epochs):
+        train_loss, train_acc = train_epoch(model, train_loader, optimizer, criterion, device)
+        val_loss, val_acc = eval_epoch(model, test_loader, criterion, device)
+        print(f"Epoch {epoch+1}/{epochs} - Train loss: {train_loss:.4f} Acc: {train_acc:.4f} - Val loss: {val_loss:.4f} Acc: {val_acc:.4f}")
+
+if __name__ == '__main__':
+    main()
