@@ -170,7 +170,7 @@ try:
         logits = net.to_out(reps)
         logits[0, lbl].backward()
 
-        rel = (reps.grad * reps).sum(dim=-1).squeeze().cpu().numpy()
+        rel = (reps.grad * reps).sum(dim=-1).squeeze().detach().cpu().numpy()
         rel = rel / (np.max(np.abs(rel)) + 1e-12)
         relevances.append(rel)
     relevances = np.stack(relevances)[:, :-1]
