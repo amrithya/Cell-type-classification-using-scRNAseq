@@ -160,7 +160,12 @@ try:
     lbls = torch.cat(lbls)[:200]
 
     relevances = []
-    for seq, lbl in zip(seqs, lbls):
+    iterator = zip(seqs, lbls)
+    if is_master:
+        from tqdm import tqdm
+        iterator = tqdm(iterator, total=len(seqs), desc="Calculating relevance")
+
+    for seq, lbl in iterator:
         net.zero_grad(set_to_none=True)
         seq_input = seq.unsqueeze(0).to(device)
 
