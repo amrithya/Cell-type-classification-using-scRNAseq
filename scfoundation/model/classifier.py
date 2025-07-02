@@ -157,7 +157,7 @@ def main():
     report = classification_report(all_targets, all_preds, target_names=label_encoder.classes_)
     print("Classification Report:\n", report)
 
-    shap_results = interpret_with_shap(model.fc, embeddings, adata, background_samples=100, n_genes=15)
+    shap_results = interpret_with_shap(model, embeddings, adata, background_samples=100, n_genes=15)
     print("\nTop 15 Genes (SHAP):")
     print(shap_results['top_genes'])
     print("\nBottom 15 Genes (SHAP):")
