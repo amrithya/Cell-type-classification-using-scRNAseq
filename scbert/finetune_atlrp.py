@@ -149,16 +149,28 @@ try:
 
     net = model.module if isinstance(model, DDP) else model
 
-    seqs, lbls = [], []
-    for x_v, y_v in val_loader:
-        x_v = x_v.to(device)
-        y_v = y_v.to(device)
-        seqs.append(x_v)
-        lbls.append(y_v)
-        if sum(len(s) for s in seqs) >= 200:
-            break
-    seqs = torch.cat(seqs)[:200]
-    lbls = torch.cat(lbls)[:200]
+    correct_seqs = []
+    correct_lbls = []
+
+    with torch.no_grad():
+        for x_v, y_v in val_loader:
+            x_v = x_v.to(device)
+            y_v = y_v.to(device)
+            reps = net(x_v, return_encodings=True)
+            ogits = net.to_out(reps)
+            preds = logits.argmax(dim=1)
+            correct_mask = preds == y_v
+            if correct_mask.any():
+                correct_seqs.append(x_v[correct_mask])
+                correct_lbls.append(y_v[correct_mask])
+
+    if len(correct_seqs) == 0:
+        if is_master:
+            print("[WARNING] No correctly predicted samples found.")
+        exit()
+
+    seqs = torch.cat(correct_seqs)
+    lbls = torch.cat(correct_lbls)
 
     relevances = []
     iterator = zip(seqs, lbls)
