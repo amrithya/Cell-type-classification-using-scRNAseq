@@ -6,8 +6,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import classification_report
 import scanpy as sc
-from tqdm import tqdm
 import shap
+from tqdm import tqdm
 
 class CellEmbeddingDataset(Dataset):
     def __init__(self, embeddings, labels):
@@ -81,47 +81,25 @@ def eval_epoch(model, loader, criterion, device):
     all_targets = torch.cat(all_targets).numpy()
     return avg_loss, avg_acc, all_preds, all_targets
 
-def interpret_with_shap(model, embeddings, adata, background_samples=100, n_genes=15):
-    gene_names = np.array(adata.var_names)
-
-    device = next(model.parameters()).device
-    model.eval()
-
-    background = embeddings[np.random.choice(len(embeddings), background_samples, replace=False)]
-    explainer = shap.DeepExplainer(model, torch.tensor(background).float().to(device))
-    
-    test_samples = torch.tensor(embeddings[:1000]).float().to(device)
-    shap_values = explainer.shap_values(test_samples)
-
-    if isinstance(shap_values, list):
-        mean_shap = np.mean(np.array(shap_values), axis=(0, 1))
-    else:
-        mean_shap = np.mean(shap_values, axis=0)
-
-    sorted_dims = np.argsort(mean_shap)
-    top_dims = sorted_dims[-n_genes:]
-    bottom_dims = sorted_dims[:n_genes]
-
-    token_weights = model.fc[0].weight.detach().cpu().numpy()
-
-    def get_gene_scores(dimensions):
-        scores = np.zeros(len(gene_names))
-        for dim in dimensions:
-            scores += token_weights[:, dim].mean() * mean_shap[dim]
-        return scores
-
-    top_scores = get_gene_scores(top_dims)
-    bottom_scores = get_gene_scores(bottom_dims)
-
-    top_genes = gene_names[np.argsort(top_scores)[-n_genes:]]
-    bottom_genes = gene_names[np.argsort(bottom_scores)[:n_genes]]
-
+def interpret_with_shap(shap_layer, embeddings, adata, token_weights, background_samples=100, n_genes=15):
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    background = torch.tensor(embeddings[np.random.choice(len(embeddings), background_samples, replace=False)]).float().to(device)
+    explainer = shap.DeepExplainer(shap_layer, background)
+    full_input = torch.tensor(embeddings).float().to(device)
+    shap_values = explainer.shap_values(full_input)
+    mean_shap = np.mean(shap_values[0], axis=0)
+    scores = np.zeros(mean_shap.shape[0])
+    for dim in range(token_weights.shape[1]):
+        scores += token_weights[:, dim].mean() * mean_shap
+    top_gene_ids = np.argsort(scores)[-n_genes:][::-1]
+    bottom_gene_ids = np.argsort(scores)[:n_genes]
+    top_gene_names = adata.var_names[top_gene_ids].tolist()
+    bottom_gene_names = adata.var_names[bottom_gene_ids].tolist()
     return {
-        'top_genes': top_genes,
-        'bottom_genes': bottom_genes,
-        'shap_values': mean_shap,
-        'top_dims': top_dims,
-        'bottom_dims': bottom_dims
+        'top_genes': top_gene_names,
+        'bottom_genes': bottom_gene_names,
+        'top_scores': scores[top_gene_ids].tolist(),
+        'bottom_scores': scores[bottom_gene_ids].tolist()
     }
 
 def main():
@@ -153,15 +131,13 @@ def main():
 
     val_loss, val_acc, all_preds, all_targets = eval_epoch(model, test_loader, criterion, device)
     print(f"Final Eval - Val loss: {val_loss:.4f} Acc: {val_acc:.4f}")
-
     report = classification_report(all_targets, all_preds, target_names=label_encoder.classes_)
     print("Classification Report:\n", report)
 
-    shap_results = interpret_with_shap(model, embeddings, adata, background_samples=100, n_genes=15)
-    print("\nTop 15 Genes (SHAP):")
-    print(shap_results['top_genes'])
-    print("\nBottom 15 Genes (SHAP):")
-    print(shap_results['bottom_genes'])
+    token_weights = model.fc[0].weight.detach().cpu().numpy()
+    shap_results = interpret_with_shap(model.fc[0], embeddings, adata, token_weights, background_samples=100, n_genes=15)
+    print("Top Genes:", shap_results['top_genes'])
+    print("Bottom Genes:", shap_results['bottom_genes'])
 
 if __name__ == '__main__':
     main()
