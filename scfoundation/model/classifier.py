@@ -103,7 +103,7 @@ def main():
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
     criterion = nn.CrossEntropyLoss()
 
-    epochs = 10
+    epochs = 20
     for epoch in range(epochs):
         train_loss, train_acc = train_epoch(model, train_loader, optimizer, criterion, device)
         print(f"Epoch {epoch+1}/{epochs} - Train loss: {train_loss:.4f} Acc: {train_acc:.4f}")
