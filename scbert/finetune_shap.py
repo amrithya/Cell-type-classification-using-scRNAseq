@@ -12,11 +12,11 @@ from tqdm import tqdm
 from sklearn.model_selection import StratifiedShuffleSplit
 
 class Identity(torch.nn.Module):
-    def __init__(self, dropout = 0., h_dim = 100, out_dim = 10):
+    def __init__(self, dropout=0., h_dim=100, out_dim=10):
         super(Identity, self).__init__()
         self.conv1 = nn.Conv2d(1, 1, (1, 200))
         self.act = nn.ReLU()
-        self.fc1 = nn.Linear(in_features=SEQ_LEN, out_features=512, bias=True)
+        self.fc1 = nn.Linear(in_features=16908, out_features=512, bias=True)
         self.act1 = nn.ReLU()
         self.dropout1 = nn.Dropout(dropout)
         self.fc2 = nn.Linear(in_features=512, out_features=h_dim, bias=True)
@@ -28,7 +28,8 @@ class Identity(torch.nn.Module):
         x = x[:,None,:,:]
         x = self.conv1(x)
         x = self.act(x)
-        x = x.view(x.shape[0],-1)
+        x = x.squeeze(1)
+        x = x.view(x.size(0), -1)
         x = self.fc1(x)
         x = self.act1(x)
         x = self.dropout1(x)
