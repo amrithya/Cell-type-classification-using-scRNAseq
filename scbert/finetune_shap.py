@@ -138,7 +138,7 @@ def model_predict(x):
         probs = torch.nn.functional.softmax(logits, dim=-1)
     return probs.cpu().numpy()
 
-background_size = min(50, correct_inputs_np.shape[0])
+background_size = 10
 background = correct_inputs_np[np.random.choice(correct_inputs_np.shape[0], background_size, replace=False)]
 
 explainer = shap.KernelExplainer(model_predict, background)
