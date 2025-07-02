@@ -86,6 +86,28 @@ def save_ckpt(epoch, model, optimizer, scheduler, losses, model_name):
     )
     print(f"[INFO] Checkpoint saved to {save_path} at epoch {epoch}")
 
+
+def save_ckpt_atlrp(epoch, model, optimizer, scheduler, losses, model_name):
+    """
+    Save checkpoint including epoch, model, optimizer, scheduler states and losses.
+    """
+    save_path = f"/data1/data/corpus/scMODEL/{model_name}_atlrp_model_Zheng68K.pkl"
+    ckpt_dir = os.path.dirname(save_path)
+    if not os.path.exists(ckpt_dir):
+        os.makedirs(ckpt_dir)
+
+    torch.save(
+        {
+            'epoch': epoch,
+            'model_state_dict': model.module.state_dict() if hasattr(model, 'module') else model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'scheduler_state_dict': scheduler.state_dict(),
+            'losses': losses,
+        },
+        save_path
+    )
+    print(f"[INFO] Checkpoint saved to {save_path} at epoch {epoch}")
+
 def save_simple_ckpt(model, model_name, ckpt_folder):
     """
     save checkpoint
