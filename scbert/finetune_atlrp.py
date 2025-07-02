@@ -74,15 +74,16 @@ class SCDataset(Dataset):
 
 try:
     try:
-        data = sc.read_h5ad(args.data_path)
-        label_dict, label = np.unique(np.array(data.obs['celltype']), return_inverse=True)
+        adata = sc.read_h5ad(args.data_path)
+        gene_names = list(adata.var_names)
+        label_dict, label = np.unique(np.array(adata.obs['celltype']), return_inverse=True)
         if is_master:
             with open('label_dict', 'wb') as fp:
                 pkl.dump(label_dict, fp)
             with open('label', 'wb') as fp:
                 pkl.dump(label, fp)
         label = torch.from_numpy(label)
-        data = data.X
+        data = adata.X
     except Exception as e:
         if is_master:
             print(f"[ERROR] Failed to load data: {e}")
@@ -182,13 +183,13 @@ try:
 
     records = []
     for cls in np.unique(lbls.cpu()):
-        arr = np.mean(np.abs(relevances[lbls.cpu() == cls]), axis=0)
+        arr = np.mean(relevances[lbls.cpu() == cls], axis=0)
         top15 = arr.argsort()[-15:][::-1]
         bot15 = arr.argsort()[:15]
         for rank, g in enumerate(top15, 1):
-            records.append((label_dict[cls], rank, g, arr[g]))
+            records.append((label_dict[cls], rank, gene_names[g], arr[g]))
         for rank, g in enumerate(bot15[::-1], 1):
-            records.append((label_dict[cls], -rank, g, arr[g]))
+            records.append((label_dict[cls], -rank, gene_names[g], arr[g]))
 
     df = pd.DataFrame(records, columns=['class', 'rank', 'gene', 'value'])
     if is_master:
