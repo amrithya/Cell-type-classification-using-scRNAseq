@@ -1,22 +1,102 @@
 import os
+import gc
+import argparse
+import json
+import random
+import math
+from functools import reduce
 import numpy as np
 import pandas as pd
+from scipy import sparse
+from sklearn.model_selection import train_test_split, ShuffleSplit, StratifiedShuffleSplit, StratifiedKFold
+from sklearn.metrics import accuracy_score, f1_score, confusion_matrix, precision_recall_fscore_support, classification_report
 import torch
-import torch.nn as nn
+from torch import nn
+from torch.optim import Adam, SGD, AdamW
+from torch.nn import functional as F
+from torch.optim.lr_scheduler import StepLR, CosineAnnealingWarmRestarts, CyclicLR
 from torch.utils.data import DataLoader, Dataset
-import scanpy as sc
-import pickle as pkl
+from torch.utils.data.distributed import DistributedSampler
+from torch.nn.parallel import DistributedDataParallel as DDP
+import torch.distributed as dist
 from performer_pytorch import PerformerLM
-import shap
+import scanpy as sc
+import anndata as ad
+from utils import *
+import pickle as pkl
 from tqdm import tqdm
+import shap
+
 from sklearn.model_selection import StratifiedShuffleSplit
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--local_rank", "--local-rank", type=int, default=-1)
+parser.add_argument("--bin_num", type=int, default=5)
+parser.add_argument("--gene_num", type=int, default=16906)
+parser.add_argument("--epoch", type=int, default=20)
+parser.add_argument("--seed", type=int, default=2021)
+parser.add_argument("--batch_size", type=int, default=4)
+parser.add_argument("--learning_rate", type=float, default=1e-4)
+parser.add_argument("--grad_acc", type=int, default=60)
+parser.add_argument("--valid_every", type=int, default=1)
+parser.add_argument("--pos_embed", type=bool, default=True)
+parser.add_argument("--data_path", type=str, default='/data1/data/corpus/scDATA/Zheng68K.h5ad')
+parser.add_argument("--model_path", type=str, default='/data1/data/corpus/scMODEL/finetune_full_model_Zheng68K.pkl')
+parser.add_argument("--ckpt_dir", type=str, default='./ckpts/')
+parser.add_argument("--model_name", type=str, default='finetune')
+
+args = parser.parse_args()
+rank = int(os.environ["RANK"])
+local_rank = args.local_rank
+is_master = local_rank == 0
+
+SEED = args.seed
+EPOCHS = args.epoch
+BATCH_SIZE = args.batch_size
+GRADIENT_ACCUMULATION = args.grad_acc
+LEARNING_RATE = args.learning_rate
+SEQ_LEN = args.gene_num + 1
+VALIDATE_EVERY = args.valid_every
+
+PATIENCE = 10
+UNASSIGN_THRES = 0.0
+
+CLASS = args.bin_num + 2
+POS_EMBED_USING = args.pos_embed
+
+model_name = args.model_name
+
+dist.init_process_group(backend='nccl')
+torch.cuda.set_device(local_rank)
+device = torch.device("cuda", local_rank)
+world_size = torch.distributed.get_world_size()
+
+seed_all(SEED + torch.distributed.get_rank())
+
+class SCDataset(Dataset):
+    def __init__(self, data, label):
+        super().__init__()
+        self.data = data
+        self.label = label
+
+    def __getitem__(self, index):
+        rand_start = random.randint(0, self.data.shape[0]-1)
+        full_seq = self.data[rand_start].toarray()[0]
+        full_seq[full_seq > (CLASS - 2)] = CLASS - 2
+        full_seq = torch.from_numpy(full_seq).long()
+        full_seq = torch.cat((full_seq, torch.tensor([0]))).to(device)
+        seq_label = self.label[rand_start]
+        return full_seq, seq_label
+
+    def __len__(self):
+        return self.data.shape[0]
+
 class Identity(torch.nn.Module):
-    def __init__(self, dropout=0., h_dim=100, out_dim=10):
+    def __init__(self, dropout = 0., h_dim = 100, out_dim = 10):
         super(Identity, self).__init__()
         self.conv1 = nn.Conv2d(1, 1, (1, 200))
         self.act = nn.ReLU()
-        self.fc1 = nn.Linear(in_features=16908, out_features=512, bias=True)
+        self.fc1 = nn.Linear(in_features=SEQ_LEN, out_features=512, bias=True)
         self.act1 = nn.ReLU()
         self.dropout1 = nn.Dropout(dropout)
         self.fc2 = nn.Linear(in_features=512, out_features=h_dim, bias=True)
@@ -28,8 +108,7 @@ class Identity(torch.nn.Module):
         x = x[:,None,:,:]
         x = self.conv1(x)
         x = self.act(x)
-        x = x.squeeze(1)
-        x = x.view(x.size(0), -1)
+        x = x.view(x.shape[0],-1)
         x = self.fc1(x)
         x = self.act1(x)
         x = self.dropout1(x)
@@ -38,22 +117,6 @@ class Identity(torch.nn.Module):
         x = self.dropout2(x)
         x = self.fc3(x)
         return x
-
-class SCDataset(Dataset):
-    def __init__(self, data, label):
-        super().__init__()
-        self.data = data
-        self.label = label
-
-    def __getitem__(self, index):
-        full_seq = self.data[index].toarray()[0]
-        full_seq[full_seq > (CLASS - 2)] = CLASS - 2
-        full_seq = torch.from_numpy(full_seq).long()
-        seq_label = self.label[index]
-        return full_seq, seq_label
-
-    def __len__(self):
-        return self.data.shape[0]
 
 def load_data(data_path):
     data = sc.read_h5ad(data_path)
@@ -73,12 +136,9 @@ def model_predict(x):
         probs = torch.nn.functional.softmax(logits, dim=-1)
     return probs.cpu().numpy()
 
-CLASS = 7 
-SEQ_LEN = 16907
-DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-BATCH_SIZE = 4
-MODEL_PATH = '/data1/data/corpus/scMODEL/finetune_full_model_Zheng68K.pkl'
-DATA_PATH = '/data1/data/corpus/scDATA/Zheng68K.h5ad'
+
+MODEL_PATH = args.model_path
+DATA_PATH = args.data_path
 CACHE_DIR = "cache"
 os.makedirs(CACHE_DIR, exist_ok=True)
 
@@ -105,8 +165,8 @@ else:
         g2v_position_emb=True
     )
     model.to_out = Identity(dropout=0., h_dim=128, out_dim=label_dict.shape[0])
-    model = model.to(DEVICE)
-    checkpoint = torch.load(MODEL_PATH, map_location=DEVICE)
+    model = model.to(device)
+    checkpoint = torch.load(MODEL_PATH, map_location=device)
     model.load_state_dict(checkpoint['model_state_dict'])
     model.eval()
 
@@ -116,7 +176,7 @@ else:
 
     with torch.no_grad():
         for x, y in tqdm(val_loader, desc="Validation Batches"):
-            x = x.to(DEVICE)
+            x = x.to(device)
             logits = model(x)
             preds = torch.argmax(logits, dim=1).cpu()
             all_inputs.append(x.cpu())
@@ -145,7 +205,7 @@ model = PerformerLM(
     g2v_position_emb=True
 )
 model.to_out = Identity(dropout=0., h_dim=128, out_dim=label_dict.shape[0])
-checkpoint = torch.load(MODEL_PATH, map_location=DEVICE)
+checkpoint = torch.load(MODEL_PATH, map_location=device)
 model.load_state_dict(checkpoint['model_state_dict'])
 model.eval()
 
