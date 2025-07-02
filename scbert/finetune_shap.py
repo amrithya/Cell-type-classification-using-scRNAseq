@@ -13,6 +13,7 @@ from performer_pytorch import PerformerLM
 from utils import *
 import shap
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 class Identity(nn.Module):
     def __init__(self, dropout=0., h_dim=100, out_dim=10):
@@ -129,7 +130,7 @@ correct_labels = all_labels[correct_mask]
 correct_inputs_np = correct_inputs[:, :-1].numpy()
 
 def model_predict(x):
-    x_tensor = torch.from_numpy(x).float().to("cpu")
+    x_tensor = torch.from_numpy(x).long().to("cpu")
     model_cpu = model.to("cpu")
     model_cpu.eval()
     with torch.no_grad():
@@ -183,4 +184,30 @@ for class_idx in tqdm(range(CLASS), desc="Classes for SHAP"):
 df_shap = pd.DataFrame(top_bottom_genes, columns=['class', 'rank', 'gene', 'mean_shap'])
 df_shap.to_csv(f"results/top_bottom15_genes_shap_only.csv", index=False)
 
-print("SHAP analysis completed and saved.")
+sample_idx = 0
+sample_to_explain = correct_inputs_np[sample_idx:sample_idx+1]
+
+explainer_single = shap.KernelExplainer(model_predict, background)
+
+shap_values_single = explainer_single.shap_values(sample_to_explain, nsamples=100)
+
+class_idx = correct_labels.numpy()[sample_idx]
+
+shap_vals_sample = shap_values_single[class_idx][0]
+
+top_15_idx = np.argsort(shap_vals_sample)[-15:][::-1]
+bottom_15_idx = np.argsort(shap_vals_sample)[:15]
+
+print("Top 15 genes:")
+for i in top_15_idx:
+    print(f"{gene_names[i]}: {shap_vals_sample[i]}")
+
+print("\nBottom 15 genes:")
+for i in bottom_15_idx:
+    print(f"{gene_names[i]}: {shap_vals_sample[i]}")
+
+plt.bar(range(len(shap_vals_sample)), shap_vals_sample)
+plt.xlabel("Gene Index")
+plt.ylabel("SHAP value")
+plt.title(f"SHAP values for sample {sample_idx}, class {class_idx}")
+plt.show()
