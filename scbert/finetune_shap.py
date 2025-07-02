@@ -5,15 +5,11 @@ import pandas as pd
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset
-from torch.nn.parallel import DistributedDataParallel as DDP
-import torch.distributed as dist
 import scanpy as sc
 import pickle as pkl
 from performer_pytorch import PerformerLM
-from utils import *
 import shap
 from tqdm import tqdm
-import matplotlib.pyplot as plt
 
 class Identity(nn.Module):
     def __init__(self, dropout=0., h_dim=100, out_dim=10):
@@ -68,8 +64,14 @@ def load_data(data_path):
         pkl.dump(label, fp)
     return data.X, torch.from_numpy(label), label_dict
 
-def get_unwrapped_model(model_ddp):
-    return model_ddp.module if hasattr(model_ddp, 'module') else model_ddp
+def model_predict(x):
+    x_tensor = torch.from_numpy(x).long().to("cpu")
+    model_cpu = model.to("cpu")
+    model_cpu.eval()
+    with torch.no_grad():
+        logits = model_cpu(x_tensor)
+        probs = torch.nn.functional.softmax(logits, dim=-1)
+    return probs.cpu().numpy()
 
 CLASS = 7 
 SEQ_LEN = 16907
@@ -77,6 +79,8 @@ DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 BATCH_SIZE = 4
 MODEL_PATH = '/data1/data/corpus/scMODEL/finetune_full_model_Zheng68K.pkl'
 DATA_PATH = '/data1/data/corpus/scDATA/Zheng68K.h5ad'
+CACHE_DIR = "cache"
+os.makedirs(CACHE_DIR, exist_ok=True)
 
 data, label, label_dict = load_data(DATA_PATH)
 
@@ -88,6 +92,50 @@ data_val, label_val = data[index_val], label[index_val]
 val_dataset = SCDataset(data_val, label_val)
 val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
+if os.path.exists(f"{CACHE_DIR}/correct_inputs.npy") and os.path.exists(f"{CACHE_DIR}/correct_labels.npy"):
+    correct_inputs_np = np.load(f"{CACHE_DIR}/correct_inputs.npy")
+    correct_labels = torch.from_numpy(np.load(f"{CACHE_DIR}/correct_labels.npy"))
+else:
+    model = PerformerLM(
+        num_tokens=CLASS,
+        dim=200,
+        depth=6,
+        max_seq_len=SEQ_LEN,
+        heads=10,
+        local_attn_heads=0,
+        g2v_position_emb=True
+    )
+    model.to_out = Identity(dropout=0., h_dim=128, out_dim=label_dict.shape[0])
+    model = model.to(DEVICE)
+    checkpoint = torch.load(MODEL_PATH, map_location=DEVICE)
+    model.load_state_dict(checkpoint['model_state_dict'])
+    model.eval()
+
+    all_inputs = []
+    all_labels = []
+    all_preds = []
+
+    with torch.no_grad():
+        for x, y in tqdm(val_loader, desc="Validation Batches"):
+            x = x.to(DEVICE)
+            logits = model(x)
+            preds = torch.argmax(logits, dim=1).cpu()
+            all_inputs.append(x.cpu())
+            all_labels.append(y)
+            all_preds.append(preds)
+
+    all_inputs = torch.cat(all_inputs)
+    all_labels = torch.cat(all_labels)
+    all_preds = torch.cat(all_preds)
+
+    correct_mask = all_preds == all_labels
+    correct_inputs = all_inputs[correct_mask]
+    correct_labels = all_labels[correct_mask]
+    correct_inputs_np = correct_inputs[:, :-1].numpy()
+
+    np.save(f"{CACHE_DIR}/correct_inputs.npy", correct_inputs_np)
+    np.save(f"{CACHE_DIR}/correct_labels.npy", correct_labels.numpy())
+
 model = PerformerLM(
     num_tokens=CLASS,
     dim=200,
@@ -97,117 +145,30 @@ model = PerformerLM(
     local_attn_heads=0,
     g2v_position_emb=True
 )
-
 model.to_out = Identity(dropout=0., h_dim=128, out_dim=label_dict.shape[0])
-model = model.to(DEVICE)
-
 checkpoint = torch.load(MODEL_PATH, map_location=DEVICE)
 model.load_state_dict(checkpoint['model_state_dict'])
 
 model.eval()
 
-all_inputs = []
-all_labels = []
-all_preds = []
-
-with torch.no_grad():
-    for x, y in tqdm(val_loader, desc="Validation Batches"):
-        x = x.to(DEVICE)
-        logits = model(x)
-        preds = torch.argmax(logits, dim=1).cpu()
-        all_inputs.append(x.cpu())
-        all_labels.append(y)
-        all_preds.append(preds)
-
-all_inputs = torch.cat(all_inputs)
-all_labels = torch.cat(all_labels)
-all_preds = torch.cat(all_preds)
-
-correct_mask = all_preds == all_labels
-correct_inputs = all_inputs[correct_mask]
-correct_labels = all_labels[correct_mask]
-
-correct_inputs_np = correct_inputs[:, :-1].numpy()
-
-def model_predict(x):
-    x_tensor = torch.from_numpy(x).long().to("cpu")
-    model_cpu = model.to("cpu")
-    model_cpu.eval()
-    with torch.no_grad():
-        logits = model_cpu(x_tensor)
-        probs = torch.nn.functional.softmax(logits, dim=-1)
-    return probs.cpu().numpy()
-
-background_size = 10
-background = correct_inputs_np[np.random.choice(correct_inputs_np.shape[0], background_size, replace=False)]
+target_idx = 0
+target_sample = correct_inputs_np[target_idx:target_idx+1]
+background = correct_inputs_np[np.random.choice(correct_inputs_np.shape[0], 10, replace=False)]
 
 explainer = shap.KernelExplainer(model_predict, background)
+shap_vals = explainer.shap_values(target_sample, nsamples=100)
 
 gene_names = [f"gene_{i}" for i in range(SEQ_LEN - 1)]
+shap_val_target = shap_vals[np.argmax(model_predict(target_sample))]
+top_15_idx = np.argsort(shap_val_target)[-15:][::-1]
+bottom_15_idx = np.argsort(shap_val_target)[:15]
 
-top_bottom_genes = []
+top_genes = [(gene_names[i], shap_val_target[i]) for i in top_15_idx]
+bottom_genes = [(gene_names[i], shap_val_target[i]) for i in bottom_15_idx]
 
-for class_idx in tqdm(range(CLASS), desc="Classes for SHAP"):
-    class_indices = (correct_labels.numpy() == class_idx)
-    if not np.any(class_indices):
-        continue
-    class_inputs = correct_inputs_np[class_indices]
-
-    shap_vals_accum = []
-    batch_size = 10
-    for j in tqdm(range(0, class_inputs.shape[0], batch_size), desc=f"Class {class_idx} SHAP batches", leave=False):
-        batch = class_inputs[j:j+batch_size]
-        try:
-            shap_vals_batch = explainer.shap_values(batch, nsamples=100)
-            shap_vals_accum.append(shap_vals_batch[class_idx])
-        except Exception as e:
-            print(f"SHAP batch error: {e}")
-            continue
-
-    if len(shap_vals_accum) == 0:
-        continue
-
-    class_shap_vals = np.vstack(shap_vals_accum)
-    mean_shap = np.mean(class_shap_vals, axis=0)
-
-    top_15_idx = np.argsort(mean_shap)[-15:][::-1]
-    bottom_15_idx = np.argsort(mean_shap)[:15]
-
-    top_genes = [(gene_names[i], mean_shap[i]) for i in top_15_idx]
-    bottom_genes = [(gene_names[i], mean_shap[i]) for i in bottom_15_idx]
-
-    for gene, val in top_genes:
-        top_bottom_genes.append([class_idx, 'top', gene, val])
-    for gene, val in bottom_genes:
-        top_bottom_genes.append([class_idx, 'bottom', gene, val])
-
-df_shap = pd.DataFrame(top_bottom_genes, columns=['class', 'rank', 'gene', 'mean_shap'])
-df_shap.to_csv(f"results/top_bottom15_genes_shap_only.csv", index=False)
-
-sample_idx = 0
-sample_to_explain = correct_inputs_np[sample_idx:sample_idx+1]
-
-explainer_single = shap.KernelExplainer(model_predict, background)
-
-shap_values_single = explainer_single.shap_values(sample_to_explain, nsamples=100)
-
-class_idx = correct_labels.numpy()[sample_idx]
-
-shap_vals_sample = shap_values_single[class_idx][0]
-
-top_15_idx = np.argsort(shap_vals_sample)[-15:][::-1]
-bottom_15_idx = np.argsort(shap_vals_sample)[:15]
-
-print("Top 15 genes:")
-for i in top_15_idx:
-    print(f"{gene_names[i]}: {shap_vals_sample[i]}")
-
-print("\nBottom 15 genes:")
-for i in bottom_15_idx:
-    print(f"{gene_names[i]}: {shap_vals_sample[i]}")
-
-plt.bar(range(len(shap_vals_sample)), shap_vals_sample)
-plt.xlabel("Gene Index")
-plt.ylabel("SHAP value")
-plt.title(f"SHAP values for sample {sample_idx}, class {class_idx}")
-plt.show()
+df_top = pd.DataFrame(top_genes, columns=["gene", "shap_value"])
+df_bottom = pd.DataFrame(bottom_genes, columns=["gene", "shap_value"])
+df_top["rank"] = "top"
+df_bottom["rank"] = "bottom"
+df_shap = pd.concat([df_top, df_bottom])
+df_shap.to_csv("results/shap_single_sample.csv", index=False)
