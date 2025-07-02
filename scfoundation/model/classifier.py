@@ -7,6 +7,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import classification_report
 import scanpy as sc
 from tqdm import tqdm
+import shap
 
 class CellEmbeddingDataset(Dataset):
     def __init__(self, embeddings, labels):
@@ -26,18 +27,17 @@ class LinearProbingClassifier(nn.Module):
             nn.ReLU(),
             nn.Linear(256, num_classes)
         )
-
     def forward(self, x):
         x = self.norm(x)
         logits = self.fc(x)
         return logits
-    
+
 def load_labels(path):
     adata = sc.read_h5ad(path)
     labels = adata.obs['celltype'].values
     le = LabelEncoder()
     labels_encoded = le.fit_transform(labels)
-    return labels_encoded, le
+    return labels_encoded, le, adata
 
 def train_epoch(model, loader, optimizer, criterion, device):
     model.train()
@@ -81,12 +81,55 @@ def eval_epoch(model, loader, criterion, device):
     all_targets = torch.cat(all_targets).numpy()
     return avg_loss, avg_acc, all_preds, all_targets
 
+def interpret_with_shap(model, embeddings, adata, background_samples=100, n_genes=15):
+    gene_names = np.array(adata.var_names)
+
+    device = next(model.parameters()).device
+    model.eval()
+
+    background = embeddings[np.random.choice(len(embeddings), background_samples, replace=False)]
+    explainer = shap.DeepExplainer(model, torch.tensor(background).float().to(device))
+    
+    test_samples = torch.tensor(embeddings[:1000]).float().to(device)
+    shap_values = explainer.shap_values(test_samples)
+
+    if isinstance(shap_values, list):
+        mean_shap = np.mean(np.array(shap_values), axis=(0, 1))
+    else:
+        mean_shap = np.mean(shap_values, axis=0)
+
+    sorted_dims = np.argsort(mean_shap)
+    top_dims = sorted_dims[-n_genes:]
+    bottom_dims = sorted_dims[:n_genes]
+
+    token_weights = model.fc[0].weight.detach().cpu().numpy()
+
+    def get_gene_scores(dimensions):
+        scores = np.zeros(len(gene_names))
+        for dim in dimensions:
+            scores += token_weights[:, dim].mean() * mean_shap[dim]
+        return scores
+
+    top_scores = get_gene_scores(top_dims)
+    bottom_scores = get_gene_scores(bottom_dims)
+
+    top_genes = gene_names[np.argsort(top_scores)[-n_genes:]]
+    bottom_genes = gene_names[np.argsort(bottom_scores)[:n_genes]]
+
+    return {
+        'top_genes': top_genes,
+        'bottom_genes': bottom_genes,
+        'shap_values': mean_shap,
+        'top_dims': top_dims,
+        'bottom_dims': bottom_dims
+    }
+
 def main():
     embedding_path = '/data1/data/corpus/scDATA/scfoundation/cell-anno_cell-anno_singlecell_cell_embedding_t4_resolution.npy'
     label_path = '/data1/data/corpus/scDATA/scfoundation/Zheng68K_foundation.h5ad'
 
     embeddings = np.load(embedding_path)
-    labels, label_encoder = load_labels(label_path)
+    labels, label_encoder, adata = load_labels(label_path)
     assert embeddings.shape[0] == labels.shape[0]
 
     train_x, test_x, train_y, test_y = train_test_split(
@@ -113,6 +156,12 @@ def main():
 
     report = classification_report(all_targets, all_preds, target_names=label_encoder.classes_)
     print("Classification Report:\n", report)
+
+    shap_results = interpret_with_shap(model.fc, embeddings, adata, background_samples=100, n_genes=15)
+    print("\nTop 15 Genes (SHAP):")
+    print(shap_results['top_genes'])
+    print("\nBottom 15 Genes (SHAP):")
+    print(shap_results['bottom_genes'])
 
 if __name__ == '__main__':
     main()
