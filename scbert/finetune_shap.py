@@ -129,7 +129,7 @@ else:
     correct_mask = all_preds == all_labels
     correct_inputs = all_inputs[correct_mask]
     correct_labels = all_labels[correct_mask]
-    correct_inputs_np = correct_inputs[:, :-1].numpy()
+    correct_inputs_np = correct_inputs.numpy()
 
     np.save(f"{CACHE_DIR}/correct_inputs.npy", correct_inputs_np)
     np.save(f"{CACHE_DIR}/correct_labels.npy", correct_labels.numpy())
