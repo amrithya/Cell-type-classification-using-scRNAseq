@@ -142,17 +142,11 @@ try:
             print(f"[ERROR] Failed to load checkpoint: {e}")
         raise
 
-    
     model = model.to(device)
     model = DDP(model, device_ids=[local_rank], output_device=local_rank)
     model.eval()
 
     net = model.module if isinstance(model, DDP) else model
-
-    for m in net.performer.modules():
-        if isinstance(m, nn.Linear):
-            m.register_forward_hook(lambda mod, inp, out: setattr(mod, "_x", inp[0].detach()))
-            m.register_full_backward_hook(lambda mod, gi, go: setattr(mod, "_rel", (mod._x * go[0]).sum(dim=-1).detach()))
 
     seqs, lbls = [], []
     for x_v, y_v in val_loader:
@@ -169,14 +163,13 @@ try:
     for seq, lbl in zip(seqs, lbls):
         net.zero_grad(set_to_none=True)
         seq_input = seq.unsqueeze(0).to(device)
-    
+
         reps = net(seq_input, return_encodings=True)
         reps.retain_grad()
-    
+
         logits = net.to_out(reps)
-    
         logits[0, lbl].backward()
-    
+
         rel = (reps.grad * reps).sum(dim=-1).squeeze().cpu().numpy()
         rel = rel / (np.max(np.abs(rel)) + 1e-12)
         relevances.append(rel)
