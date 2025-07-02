@@ -20,4 +20,10 @@ else:
     df = pd.read_csv(csv_path, nrows=1)
     column_names = df.columns.tolist()
 
-print(column_names)
+    embedding_path = "/data1/data/corpus/scDATA/scfoundation/cell-anno_cell-anno_singlecell_cell_embedding_t4_resolution.npy"
+    embeddings = np.load(embedding_path)
+
+    print("Embedding shape:", embeddings.shape)
+    print("Sample values:\n", embeddings[:2])
+
+
