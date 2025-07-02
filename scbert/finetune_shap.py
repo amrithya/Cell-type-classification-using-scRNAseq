@@ -54,7 +54,6 @@ class SCDataset(Dataset):
     def __init__(self, data, label):
         self.data = data
         self.label = label
-
     def __getitem__(self, index):
         rand_start = random.randint(0, self.data.shape[0]-1)
         full_seq = self.data[rand_start].toarray()[0]
@@ -63,7 +62,6 @@ class SCDataset(Dataset):
         full_seq = torch.cat((full_seq, torch.tensor([0]))).to(device)
         seq_label = self.label[rand_start]
         return full_seq, seq_label
-
     def __len__(self):
         return self.data.shape[0]
 
@@ -79,7 +77,6 @@ class Identity(nn.Module):
         self.act2 = nn.ReLU()
         self.dropout2 = nn.Dropout(dropout)
         self.fc3 = nn.Linear(h_dim, out_dim)
-
     def forward(self, x):
         x = x[:, None, :, :]
         x = self.conv1(x)
@@ -112,7 +109,6 @@ if __name__ == "__main__":
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
     CACHE_DIR = "cache"
     os.makedirs(CACHE_DIR, exist_ok=True)
-
     if os.path.exists(f"{CACHE_DIR}/correct_inputs.npy") and os.path.exists(f"{CACHE_DIR}/correct_labels.npy"):
         correct_inputs_np = np.load(f"{CACHE_DIR}/correct_inputs.npy")
         correct_labels = torch.from_numpy(np.load(f"{CACHE_DIR}/correct_labels.npy"))
@@ -151,10 +147,8 @@ if __name__ == "__main__":
         correct_inputs_np = correct_inputs.numpy()
         np.save(f"{CACHE_DIR}/correct_inputs.npy", correct_inputs_np)
         np.save(f"{CACHE_DIR}/correct_labels.npy", correct_labels.numpy())
-
     if args.local_rank != -1:
         dist.destroy_process_group()
-
     if is_master:
         model = PerformerLM(
             num_tokens=args.bin_num + 2,
@@ -172,16 +166,15 @@ if __name__ == "__main__":
         model.eval()
         target_idx = 0
         target_sample = correct_inputs_np[target_idx:target_idx+1]
-        background_samples = min(50, correct_inputs_np.shape[0])
+        background_samples = min(10, correct_inputs_np.shape[0])
         background = correct_inputs_np[np.random.choice(correct_inputs_np.shape[0], background_samples, replace=False)]
         background_tensor = torch.from_numpy(background).long().to(device)
         target_tensor = torch.from_numpy(target_sample).long().to(device)
         torch.cuda.empty_cache()
         gc.collect()
         try:
-            print("Starting SHAP analysis with DeepExplainer...")
-            explainer = shap.DeepExplainer(model, background_tensor)
-            batch_size = 5
+            explainer = shap.GradientExplainer(model, background_tensor)
+            batch_size = 1
             shap_values = []
             for i in range(0, len(target_tensor), batch_size):
                 batch = target_tensor[i:i+batch_size]
@@ -203,9 +196,6 @@ if __name__ == "__main__":
                 df_shap = pd.concat([df_top, df_bottom])
                 os.makedirs("results", exist_ok=True)
                 df_shap.to_csv(f"results/shap_sample_{i}.csv", index=False)
-                print(f"Saved SHAP results for sample {i}")
         except Exception as e:
-            print(f"SHAP analysis failed: {str(e)}")
             with open("shap_error.log", "w") as f:
                 f.write(str(e))
-        print("SHAP analysis completed.")
