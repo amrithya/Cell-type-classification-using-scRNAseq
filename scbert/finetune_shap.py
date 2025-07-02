@@ -129,11 +129,13 @@ correct_labels = all_labels[correct_mask]
 correct_inputs_np = correct_inputs[:, :-1].numpy()
 
 def model_predict(x):
-    x_tensor = torch.tensor(x, dtype=torch.long).to(DEVICE)
+    x_tensor = torch.from_numpy(x).float().to("cpu")
+    model_cpu = model.to("cpu")
+    model_cpu.eval()
     with torch.no_grad():
-        logits = model(x_tensor)
-        probs = torch.nn.functional.softmax(logits, dim=-1).cpu().numpy()
-    return probs
+        logits = model_cpu(x_tensor)
+        probs = torch.nn.functional.softmax(logits, dim=-1)
+    return probs.cpu().numpy()
 
 background_size = min(50, correct_inputs_np.shape[0])
 background = correct_inputs_np[np.random.choice(correct_inputs_np.shape[0], background_size, replace=False)]

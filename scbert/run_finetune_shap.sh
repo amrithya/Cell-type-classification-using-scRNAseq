@@ -14,7 +14,7 @@
 export CUDA_LAUNCH_BLOCKING=1
 export NCCL_DEBUG=INFO
 export NCCL_IB_DISABLE=1
-
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
 MASTER_PORT=$(python -c "import socket; s=socket.socket(); s.bind(('',0)); print(s.getsockname()[1]); s.close()")
 
