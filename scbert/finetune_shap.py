@@ -16,7 +16,8 @@ class Identity(nn.Module):
         super().__init__()
         self.conv1 = nn.Conv2d(1, 1, (1, 200))
         self.act = nn.ReLU()
-        self.fc1 = nn.Linear(in_features=SEQ_LEN, out_features=512)
+        conv_output_width = SEQ_LEN - 200 + 1
+        self.fc1 = nn.Linear(in_features=conv_output_width, out_features=512)
         self.act1 = nn.ReLU()
         self.dropout1 = nn.Dropout(dropout)
         self.fc2 = nn.Linear(in_features=512, out_features=h_dim)
