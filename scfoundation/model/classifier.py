@@ -18,22 +18,20 @@ class CellEmbeddingDataset(Dataset):
         return torch.tensor(self.embeddings[idx]).float(), self.labels[idx]
 
 class LinearProbingClassifier(nn.Module):
-    def __init__(self, input_dim, num_classes, dropout=0.1):
+    def __init__(self, input_dim, num_classes):
         super().__init__()
-        self.norm = nn.BatchNorm1d(input_dim, affine=True, eps=1e-6)
-        self.dropout = nn.Dropout(dropout)
+        self.norm = nn.BatchNorm1d(input_dim, affine=False, eps=1e-6)
         self.fc = nn.Sequential(
             nn.Linear(input_dim, 256),
             nn.ReLU(),
-            nn.Dropout(dropout),
             nn.Linear(256, num_classes)
         )
+
     def forward(self, x):
         x = self.norm(x)
-        x = self.dropout(x)
         logits = self.fc(x)
         return logits
-
+    
 def load_labels(path):
     adata = sc.read_h5ad(path)
     labels = adata.obs['celltype'].values
