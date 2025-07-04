@@ -11,6 +11,7 @@ from tqdm import tqdm
 
 class CellEmbeddingDataset(Dataset):
     def __init__(self, embeddings, labels):
+        print(f"[DEBUG] Creating dataset with {len(labels)} samples")
         self.embeddings = embeddings
         self.labels = labels
     def __len__(self):
@@ -21,6 +22,7 @@ class CellEmbeddingDataset(Dataset):
 class LinearProbingClassifier(nn.Module):
     def __init__(self, input_dim, num_classes):
         super().__init__()
+        print(f"[DEBUG] Initializing model with input dim: {input_dim}, num classes: {num_classes}")
         self.norm = nn.BatchNorm1d(input_dim, affine=False, eps=1e-6)
         self.fc = nn.Sequential(
             nn.Linear(input_dim, 256),
@@ -33,10 +35,13 @@ class LinearProbingClassifier(nn.Module):
         return logits
 
 def load_labels(path):
+    print(f"[DEBUG] Loading labels from {path}")
     adata = sc.read_h5ad(path)
     labels = adata.obs['celltype'].values
+    print(f"[DEBUG] Loaded {len(labels)} labels")
     le = LabelEncoder()
     labels_encoded = le.fit_transform(labels)
+    print(f"[DEBUG] Encoded labels into {len(np.unique(labels_encoded))} classes")
     return labels_encoded, le, adata
 
 def train_epoch(model, loader, optimizer, criterion, device):
@@ -55,6 +60,7 @@ def train_epoch(model, loader, optimizer, criterion, device):
         preds = torch.argmax(logits, dim=1)
         total_correct += (preds == y).sum().item()
         total += x.size(0)
+    print(f"[DEBUG] Training - Loss: {total_loss:.4f}, Accuracy: {total_correct/total:.4f}")
     return total_loss / total, total_correct / total
 
 def eval_epoch(model, loader, criterion, device):
@@ -77,16 +83,19 @@ def eval_epoch(model, loader, criterion, device):
             all_targets.append(y.cpu())
     avg_loss = total_loss / total
     avg_acc = total_correct / total
+    print(f"[DEBUG] Evaluation - Loss: {avg_loss:.4f}, Accuracy: {avg_acc:.4f}")
     all_preds = torch.cat(all_preds).numpy()
     all_targets = torch.cat(all_targets).numpy()
     return avg_loss, avg_acc, all_preds, all_targets
 
 def interpret_with_shap(shap_layer, embeddings, adata, token_weights, background_samples=100, n_genes=15):
+    print(f"[DEBUG] Running SHAP interpretation with {background_samples} background samples")
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     background = torch.tensor(embeddings[np.random.choice(len(embeddings), background_samples, replace=False)]).float().to(device)
     explainer = shap.DeepExplainer(shap_layer, background)
     full_input = torch.tensor(embeddings).float().to(device)
     shap_values = explainer.shap_values(full_input)
+    print(f"[DEBUG] SHAP values shape: {np.array(shap_values[0]).shape}")
     mean_shap = np.mean(shap_values[0], axis=0)
     scores = np.zeros(mean_shap.shape[0])
     for dim in tqdm(range(token_weights.shape[1]), desc="Aggregating SHAP scores"):
@@ -106,12 +115,15 @@ def main():
     embedding_path = '/data1/data/corpus/scDATA/scfoundation/cell-anno_cell-anno_singlecell_cell_embedding_t4_resolution.npy'
     label_path = '/data1/data/corpus/scDATA/scfoundation/Zheng68K_foundation.h5ad'
 
+    print("[DEBUG] Loading embeddings and labels")
     embeddings = np.load(embedding_path)
     labels, label_encoder, adata = load_labels(label_path)
-    assert embeddings.shape[0] == labels.shape[0]
+    print(f"[DEBUG] Embedding shape: {embeddings.shape}")
+    assert embeddings.shape[0] == labels.shape[0], "[ERROR] Mismatch in embedding and label count"
 
     train_x, test_x, train_y, test_y = train_test_split(
         embeddings, labels, test_size=0.2, random_state=42, stratify=labels)
+    print(f"[DEBUG] Train size: {len(train_y)}, Test size: {len(test_y)}")
 
     train_dataset = CellEmbeddingDataset(train_x, train_y)
     test_dataset = CellEmbeddingDataset(test_x, test_y)
@@ -120,12 +132,14 @@ def main():
     test_loader = DataLoader(test_dataset, batch_size=128, pin_memory=True)
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f"[DEBUG] Using device: {device}")
     model = LinearProbingClassifier(input_dim=embeddings.shape[1], num_classes=len(label_encoder.classes_)).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
     criterion = nn.CrossEntropyLoss()
 
     epochs = 20
     for epoch in range(epochs):
+        print(f"[DEBUG] Starting epoch {epoch + 1}")
         train_loss, train_acc = train_epoch(model, train_loader, optimizer, criterion, device)
         print(f"Epoch {epoch+1}/{epochs} - Train loss: {train_loss:.4f} Acc: {train_acc:.4f}")
 
@@ -134,10 +148,9 @@ def main():
     report = classification_report(all_targets, all_preds, target_names=label_encoder.classes_)
     print("Classification Report:\n", report)
 
+    print("[DEBUG] Extracting first FC layer weights for SHAP interpretation")
     token_weights = model.fc[0].weight.detach().cpu().numpy()
     shap_results = interpret_with_shap(model.fc[0], embeddings, adata, token_weights, background_samples=100, n_genes=15)
-    print("Top Genes:", shap_results['top_genes'])
-    print("Bottom Genes:", shap_results['bottom_genes'])
 
 if __name__ == '__main__':
     main()
