@@ -89,7 +89,7 @@ def interpret_with_shap(shap_layer, embeddings, adata, token_weights, background
     shap_values = explainer.shap_values(full_input)
     mean_shap = np.mean(shap_values[0], axis=0)
     scores = np.zeros(mean_shap.shape[0])
-    for dim in range(token_weights.shape[1]):
+    for dim in tqdm(range(token_weights.shape[1]), desc="Aggregating SHAP scores"):
         scores += token_weights[:, dim].mean() * mean_shap
     top_gene_ids = np.argsort(scores)[-n_genes:][::-1]
     bottom_gene_ids = np.argsort(scores)[:n_genes]
