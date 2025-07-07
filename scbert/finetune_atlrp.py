@@ -13,7 +13,6 @@ import pickle as pkl
 from performer_pytorch import PerformerLM
 from utils import *
 from collections import defaultdict
-from sklearn.model_selection import train_test_split
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--local_rank", "--local-rank", type=int, default=-1)
@@ -75,18 +74,25 @@ class SCDataset(Dataset):
         return self.data.shape[0]
 
 try:
-    adata = sc.read_h5ad(args.data_path)
-    gene_names = list(adata.var_names)
-    label_dict, label = np.unique(np.array(adata.obs['celltype']), return_inverse=True)
-    if is_master:
-        with open('label_dict', 'wb') as fp:
-            pkl.dump(label_dict, fp)
-        with open('label', 'wb') as fp:
-            pkl.dump(label, fp)
-    label = torch.from_numpy(label)
-    data = adata.X
+    try:
+        adata = sc.read_h5ad(args.data_path)
+        gene_names = list(adata.var_names)
+        label_dict, label = np.unique(np.array(adata.obs['celltype']), return_inverse=True)
+        if is_master:
+            with open('label_dict', 'wb') as fp:
+                pkl.dump(label_dict, fp)
+            with open('label', 'wb') as fp:
+                pkl.dump(label, fp)
+        label = torch.from_numpy(label)
+        data = adata.X
+    except Exception as e:
+        if is_master:
+            print(f"[ERROR] Failed to load data: {e}")
+        raise
 
-    train_idx, val_idx = train_test_split(np.arange(len(label)), test_size=0.1, random_state=SEED, stratify=label)
+    sss_indices = np.arange(len(label))
+    train_idx = sss_indices
+    val_idx = sss_indices
     val_dataset = SCDataset(data[val_idx], label[val_idx])
     val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
@@ -130,12 +136,18 @@ try:
     model.to_out = Identity(dropout=0., h_dim=128, out_dim=label_dict.shape[0])
 
     ckpt_path = f"/data1/data/corpus/scMODEL/{model_name}_full_model_Zheng68K.pkl"
-    ckpt = torch.load(ckpt_path, map_location='cpu')
-    model.load_state_dict(ckpt['model_state_dict'])
+    try:
+        ckpt = torch.load(ckpt_path, map_location='cpu')
+        model.load_state_dict(ckpt['model_state_dict'])
+    except Exception as e:
+        if is_master:
+            print(f"[ERROR] Failed to load checkpoint: {e}")
+        raise
 
     model = model.to(device)
     model = DDP(model, device_ids=[local_rank], output_device=local_rank)
     model.eval()
+
     net = model.module if isinstance(model, DDP) else model
 
     class_total = defaultdict(int)
@@ -194,14 +206,16 @@ try:
     for seq, lbl in iterator:
         net.zero_grad(set_to_none=True)
         seq_input = seq.unsqueeze(0).to(device)
+
         reps = net(seq_input, return_encodings=True)
         reps.retain_grad()
+
         logits = net.to_out(reps)
         logits[0, lbl].backward()
-        rel = (reps.grad * reps).sum(dim=-1).squeeze().detach().cpu().numpy()
-        rel = rel / (np.max((rel)) + 1e-12)
-        relevances.append(rel)
 
+        rel = (reps.grad * reps).sum(dim=-1).squeeze().detach().cpu().numpy()
+        rel = rel / (np.max(np.abs(rel)) + 1e-12)
+        relevances.append(rel)
     relevances = np.stack(relevances)[:, :-1]
 
     records = []
