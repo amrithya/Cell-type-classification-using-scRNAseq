@@ -5,6 +5,7 @@ import numpy as np
 import scanpy as sc
 import torch
 from performer_pytorch import PerformerLM
+from tqdm import tqdm
 
 parser = argparse.ArgumentParser() 
 parser.add_argument("--bin_num", type=int, default=5)
@@ -68,7 +69,7 @@ for cellind in cellinds:
     model.eval()
     with torch.no_grad():
         final_mtx = torch.zeros(batch_size, data_alpha.shape[1]+1).to(device)
-        for index in range(batch_size):
+        for index in tqdm(range(batch_size), desc=f"Processing {cellind}"):
             full_seq = data_alpha[index].toarray()[0]
             full_seq[full_seq > (CLASS - 2)] = CLASS - 2
             full_seq = torch.from_numpy(full_seq).long()
