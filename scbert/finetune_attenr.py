@@ -124,6 +124,8 @@ try:
     class Identity(nn.Module):
         def __init__(self, dropout=0., h_dim=100, out_dim=10):
             super().__init__()
+            self.conv1 = nn.Conv2d(1, 1, (1, 200))
+            self.act = nn.ReLU()
             self.fc1 = nn.Linear(in_features=SEQ_LEN, out_features=512)
             self.act1 = nn.ReLU()
             self.dropout1 = nn.Dropout(dropout)
@@ -133,9 +135,10 @@ try:
             self.fc3 = nn.Linear(in_features=h_dim, out_features=out_dim)
 
         def forward(self, x):
-            x = self.to_out(x)
-            x = x.permute(0, 2, 1)
-            x = x.reshape(-1, 16907)
+            x = x[:, None, :, :]
+            x = self.conv1(x)
+            x = self.act(x)
+            x = x.view(x.shape[0], -1)
             x = self.fc1(x)
             x = self.act1(x)
             x = self.dropout1(x)
