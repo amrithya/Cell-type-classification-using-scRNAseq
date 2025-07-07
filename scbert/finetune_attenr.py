@@ -141,18 +141,25 @@ try:
             self.fc3 = nn.Linear(in_features=h_dim, out_features=out_dim)
 
         def forward(self, x):
+            print("input x shape:", x.shape)
             x = x.permute(0, 2, 1)
+            print("after permute:", x.shape)
             x = x.unsqueeze(1)
+            print("after unsqueeze:", x.shape)
             x = self.conv1(x)
-            x = self.act(x)
+            print("after conv1:", x.shape)
             x = x.view(x.shape[0], -1)
+            print("after flatten:", x.shape)
             x = self.fc1(x)
+            print("after fc1:", x.shape)
             x = self.act1(x)
             x = self.dropout1(x)
             x = self.fc2(x)
+            print("after fc2:", x.shape)
             x = self.act2(x)
             x = self.dropout2(x)
             x = self.fc3(x)
+            print("after fc3:", x.shape)
             return x
 
     model.to_out = Identity(dropout=0., h_dim=128, out_dim=label_dict.shape[0])
