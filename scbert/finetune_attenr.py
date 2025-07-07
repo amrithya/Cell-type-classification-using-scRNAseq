@@ -189,6 +189,7 @@ try:
             x_v = x_v.to(device)
             y_v = y_v.to(device)
             reps, _ = net(x_v, return_encodings=True)
+            print(f"reps shape: {reps.shape}")
             logits = net.to_out(reps)
             preds = logits.argmax(dim=1)
             for label_, pred_ in zip(y_v.cpu().numpy(), preds.cpu().numpy()):
