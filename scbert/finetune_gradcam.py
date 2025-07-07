@@ -266,7 +266,7 @@ try:
                 records.append([label_dict[c], rank, gene_names[gene_idx], mean_scores[gene_idx]])
 
     df = pd.DataFrame(records, columns=['class', 'rank', 'gene', 'value'])
-    df.to_csv("class_top_bottom_genes.csv", index=False)
+    df.to_csv("gradcam_class_top_bottom_genes.csv", index=False)
     if is_master:
         print("Saved class-wise top and bottom genes to class_top_bottom_genes.csv")
 
