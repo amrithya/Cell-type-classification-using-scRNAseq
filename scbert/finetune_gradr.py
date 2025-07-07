@@ -4,6 +4,7 @@ import argparse
 import numpy as np
 import pandas as pd
 import torch
+from tqdm import tqdm
 import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset
 from torch.nn.parallel import DistributedDataParallel as DDP
@@ -145,7 +146,10 @@ try:
     class_correct = defaultdict(int)
 
     with torch.no_grad():
-        for x_v, y_v in val_loader:
+        iter_val_loader = val_loader
+        if is_master:
+            iter_val_loader = tqdm(val_loader, desc="Validation Accuracy")
+        for x_v, y_v in iter_val_loader:
             x_v = x_v.to(device)
             y_v = y_v.to(device)
             reps = net(x_v, return_encodings=True)
@@ -169,7 +173,10 @@ try:
     correct_lbls = []
 
     with torch.no_grad():
-        for x_v, y_v in val_loader:
+        iter_val_loader = val_loader
+        if is_master:
+            iter_val_loader = tqdm(val_loader, desc="Collecting Correct Predictions")
+        for x_v, y_v in iter_val_loader:
             x_v = x_v.to(device)
             y_v = y_v.to(device)
             reps = net(x_v, return_encodings=True)
@@ -189,12 +196,16 @@ try:
     lbls = torch.cat(correct_lbls)
 
     relevances = []
-    iterator = zip(seqs, lbls)
+    length = len(seqs)
     if is_master:
-        from tqdm import tqdm
-        iterator = tqdm(iterator, total=len(seqs), desc="Calculating relevance")
+        iterator = tqdm(range(length), desc="Calculating Relevance")
+    else:
+        iterator = range(length)
 
-    for seq, lbl in iterator:
+    for i in iterator:
+        seq = seqs[i]
+        lbl = lbls[i]
+
         net.zero_grad(set_to_none=True)
         seq_input = seq.unsqueeze(0).to(device)
 
