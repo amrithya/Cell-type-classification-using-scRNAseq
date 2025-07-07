@@ -13,6 +13,7 @@ import pickle as pkl
 from performer_pytorch import PerformerLM
 from utils import *
 from collections import defaultdict
+from tqdm import tqdm
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--local_rank", "--local-rank", type=int, default=-1)
@@ -75,11 +76,16 @@ class SCDataset(Dataset):
 
 class PerformerLMWithAttn(PerformerLM):
     def forward(self, x, return_attn=False, return_encodings=False):
-        out, attn_weights = super().forward(x, return_attn=True)
+        out = super().forward(x)
+        last_attn = None
+        if hasattr(self, 'performer') and hasattr(self.performer, 'layers'):
+            last_layer = self.performer.layers[-1]
+            if hasattr(last_layer, 'attn') and hasattr(last_layer.attn, 'last_attn'):
+                last_attn = last_layer.attn.last_attn
         if return_encodings:
-            return out, attn_weights
+            return out, last_attn
         if return_attn:
-            return attn_weights
+            return last_attn
         return out
 
 try:
@@ -169,10 +175,10 @@ try:
             reps, _ = net(x_v, return_encodings=True)
             logits = net.to_out(reps)
             preds = logits.argmax(dim=1)
-            for label, pred in zip(y_v.cpu().numpy(), preds.cpu().numpy()):
-                class_total[label] += 1
-                if label == pred:
-                    class_correct[label] += 1
+            for label_, pred_ in zip(y_v.cpu().numpy(), preds.cpu().numpy()):
+                class_total[label_] += 1
+                if label_ == pred_:
+                    class_correct[label_] += 1
 
     if is_master:
         print("Per-class Accuracy Report")
@@ -181,7 +187,7 @@ try:
             correct = class_correct.get(idx, 0)
             total = class_total.get(idx, 0)
             acc = correct / total if total > 0 else 0.0
-            print(class_name + "\t" + str(correct) + "\t" + str(total) + "\t" + str(round(acc * 100, 2)) + "%")
+            print(f"{class_name}\t{correct}\t{total}\t{round(acc * 100, 2)}%")
 
     correct_seqs = []
     correct_lbls = []
@@ -201,7 +207,8 @@ try:
     if len(correct_seqs) == 0:
         if is_master:
             print("[WARNING] No correctly predicted samples found.")
-        exit()
+        import sys
+        sys.exit(0)
 
     seqs = torch.cat(correct_seqs)
     lbls = torch.cat(correct_lbls)
@@ -209,17 +216,13 @@ try:
     relevances = []
     iterator = zip(seqs, lbls)
     if is_master:
-        from tqdm import tqdm
         iterator = tqdm(iterator, total=len(seqs), desc="Calculating attention-weighted relevance")
 
     for seq, lbl in iterator:
         seq_input = seq.unsqueeze(0).to(device)
         with torch.no_grad():
             reps, attn_weights = net(seq_input, return_encodings=True)
-
-        cls_attn = attn_weights[:, :, 0, 0, 1:]
-        cls_attn = cls_attn.mean(dim=(0, 1))
-        cls_attn = cls_attn.cpu().numpy()
+        cls_attn = attn_weights[0, 0, 0, 1:].cpu().numpy()
         cls_attn = cls_attn / (np.max(np.abs(cls_attn)) + 1e-12)
         relevances.append(cls_attn)
 
@@ -227,17 +230,21 @@ try:
 
     records = []
     for cls in np.unique(lbls.cpu()):
-        arr = np.mean(relevances[lbls.cpu() == cls], axis=0)
-        top15 = arr.argsort()[-15:][::-1]
-        bot15 = arr.argsort()[:15]
+        cls_relevances = relevances[lbls.cpu() == cls]
+        avg_relevance = np.mean(cls_relevances, axis=0)
+        top15 = avg_relevance.argsort()[-15:][::-1]
+        bot15 = avg_relevance.argsort()[:15]
         for rank, g in enumerate(top15, 1):
-            records.append((label_dict[cls], rank, gene_names[g], arr[g]))
+            records.append((label_dict[cls], rank, gene_names[g], avg_relevance[g]))
         for rank, g in enumerate(bot15[::-1], 1):
-            records.append((label_dict[cls], -rank, gene_names[g], arr[g]))
+            records.append((label_dict[cls], -rank, gene_names[g], avg_relevance[g]))
 
     df = pd.DataFrame(records, columns=['class', 'rank', 'gene', 'value'])
+
     if is_master:
-        df.to_csv("finetune_attenr_relevance_topbot.csv", index=False)
+        csv_path = os.path.join(args.ckpt_dir, f"{model_name}_attn_relevance_topbot.csv")
+        df.to_csv(csv_path, index=False)
+        print(f"[INFO] Saved attention-weighted relevance to {csv_path}")
 
 finally:
     dist.destroy_process_group()
