@@ -162,40 +162,58 @@ try:
     
     model = DDP(model, device_ids=[local_rank], output_device=local_rank)
 
-    def compute_gradcam(model, data, labels, gene_names):
+    def compute_gradcam(model, data_loader, label_dict, gene_names):
         model.train()
         records = []
+
         token_emb = model.module.token_emb if isinstance(model, DDP) else model.token_emb
-        for batch_data, batch_labels in tqdm(data, desc="Computing GradCAM"):
+
+        for batch_data, batch_labels in tqdm(data_loader, desc="Computing GradCAM"):
             batch_data = batch_data.to(device)
             batch_labels = batch_labels.to(device)
-            batch_data.requires_grad_(True)
+
+            model.zero_grad()
+            if token_emb.weight.grad is not None:
+                token_emb.weight.grad.zero_()
+
             outputs = model(batch_data)
             preds = outputs.argmax(dim=1)
+
             correct_mask = preds == batch_labels
             if correct_mask.sum() == 0:
                 continue
+
             correct_data = batch_data[correct_mask]
             correct_labels = batch_labels[correct_mask]
             correct_preds = preds[correct_mask]
+
             for i in range(len(correct_data)):
                 single_data = correct_data[i].unsqueeze(0)
-                single_data.requires_grad_(True)
+
                 model.zero_grad()
+                if token_emb.weight.grad is not None:
+                    token_emb.weight.grad.zero_()
+
                 output = model(single_data)
+
                 class_score = output[0, correct_preds[i]]
-                class_score.backward()
+                class_score.backward(retain_graph=True)
+
                 gradients = token_emb.weight.grad
                 activations = token_emb(single_data)
+
                 pooled_gradients = torch.mean(gradients, dim=0)
                 weighted_activations = activations * pooled_gradients[None, None, :]
                 heatmap = torch.mean(weighted_activations, dim=-1).squeeze()
                 heatmap = torch.relu(heatmap).cpu().numpy()
+
                 if np.max(heatmap) > 0:
                     heatmap = heatmap / np.max(heatmap)
+
                 sorted_indices = np.argsort(heatmap)
                 top_indices = sorted_indices[-15:][::-1]
                 bottom_indices = sorted_indices[:15]
+
                 records.append({
                     'cell_type': label_dict[correct_preds[i].item()],
                     'cell_type_idx': correct_preds[i].item(),
@@ -204,6 +222,7 @@ try:
                     'top_scores': [heatmap[idx] for idx in top_indices],
                     'bottom_scores': [heatmap[idx] for idx in bottom_indices]
                 })
+
         return records
 
     gradcam_results = compute_gradcam(model, val_loader, label, gene_names)
