@@ -252,16 +252,26 @@ class FastAttention(nn.Module):
         attn_fn = linear_attention if not self.causal else self.causal_linear_fn
         out = attn_fn(q, k, v)
         if output_attentions:
-            v_diag = torch.eye(v.shape[-2]).to(device)
-            v_diag = v_diag.unsqueeze(0).unsqueeze(0).repeat(v.shape[0],v.shape[1],1,1)
+            v_diag = torch.eye(v.shape[-2], device=device)
+            v_diag = v_diag.unsqueeze(0).unsqueeze(0).repeat(v.shape[0], v.shape[1], 1, 1).to(torch.float16)  # <----- added
+            # v_diag = v_diag.unsqueeze(0).unsqueeze(0).repeat(v.shape[0],v.shape[1],1,1)  <---- commented
             # attn_weights = torch.zeros(1, 1, len(inds), len(inds)).to(device).to(torch.float16)
             # attn_weights = torch.zeros(1, q.shape[1], len(inds), len(inds)).to(device).to(torch.float16)
-            attn_weights = torch.zeros(1, 1, q.shape[2], q.shape[2]).to(device).to(torch.float16)
+            # attn_weights = torch.zeros(1, 1, q.shape[2], q.shape[2]).to(device).to(torch.float16) <---- commented
+            attn_weights = torch.zeros(q.shape[0], q.shape[1], q.shape[2], q.shape[2], device=device, dtype=torch.float16) # <----- added
+            # for head_dim in range(q.shape[1]):
+            #     # attn_weights[0, head_dim] = torch.abs(attn_fn(q[:,head_dim].to(torch.float16), k[:,head_dim].to(torch.float16), v_diag[:,head_dim].to(torch.float16)))[0, inds][:, inds]
+            #     attn_weights += torch.abs(attn_fn(q[:,head_dim].to(torch.float16), k[:,head_dim].to(torch.float16), v_diag[:,head_dim].to(torch.float16)))
+            #     # attn_weights += norm_tensor(torch.abs(attn_fn(q[:,head_dim].to(torch.float16), k[:,head_dim].to(torch.float16), v_diag[:,head_dim].to(torch.float16))), dim=-1)
+            # attn_weights /= q.shape[1]
             for head_dim in range(q.shape[1]):
-                # attn_weights[0, head_dim] = torch.abs(attn_fn(q[:,head_dim].to(torch.float16), k[:,head_dim].to(torch.float16), v_diag[:,head_dim].to(torch.float16)))[0, inds][:, inds]
-                attn_weights += torch.abs(attn_fn(q[:,head_dim].to(torch.float16), k[:,head_dim].to(torch.float16), v_diag[:,head_dim].to(torch.float16)))
-                # attn_weights += norm_tensor(torch.abs(attn_fn(q[:,head_dim].to(torch.float16), k[:,head_dim].to(torch.float16), v_diag[:,head_dim].to(torch.float16))), dim=-1)
-            attn_weights /= q.shape[1]
+                attn_weights[:, head_dim] = torch.abs(attn_fn(
+                q[:, head_dim].to(torch.float16),
+                k[:, head_dim].to(torch.float16),
+                v_diag[:, head_dim]
+            ))
+
+            attn_weights = attn_weights.mean(dim=1, keepdim=True)
             return out, attn_weights
         else:
             return out
