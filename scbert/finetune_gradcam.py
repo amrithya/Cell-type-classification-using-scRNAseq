@@ -285,7 +285,9 @@ try:
     df.to_csv(csv_filename, index=False)
     if is_master:
         print(f"Saved GradCAM gene importance to {csv_filename}")
+    dist.destroy_process_group()
 
 except Exception as e:
     if is_master:
         print(f"[ERROR] Exception occurred: {e}")
+    dist.destroy_process_group()
