@@ -171,6 +171,8 @@ try:
     model = DDP(model, device_ids=[local_rank], output_device=local_rank)
     model.eval()
 
+    print(model.module if isinstance(model, DDP) else model)
+    
     net = model.module if isinstance(model, DDP) else model
 
     class GradCAM:
