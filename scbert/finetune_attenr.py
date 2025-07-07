@@ -124,7 +124,9 @@ try:
     class Identity(nn.Module):
         def __init__(self, dropout=0., h_dim=100, out_dim=10):
             super().__init__()
-            self.fc1 = nn.Linear(in_features=200, out_features=512)
+            self.conv1 = nn.Conv2d(1, 1, (1, 200))
+            self.act = nn.ReLU()
+            self.fc1 = nn.Linear(in_features=SEQ_LEN, out_features=512)
             self.act1 = nn.ReLU()
             self.dropout1 = nn.Dropout(dropout)
             self.fc2 = nn.Linear(in_features=512, out_features=h_dim)
@@ -133,6 +135,10 @@ try:
             self.fc3 = nn.Linear(in_features=h_dim, out_features=out_dim)
 
         def forward(self, x):
+            x = x[:, None, :, :]
+            x = self.conv1(x)
+            x = self.act(x)
+            x = x.view(x.shape[0], -1)
             x = self.fc1(x)
             x = self.act1(x)
             x = self.dropout1(x)
@@ -147,7 +153,9 @@ try:
     ckpt_path = f"/data1/data/corpus/scMODEL/{model_name}_full_model_Zheng68K.pkl"
     try:
         ckpt = torch.load(ckpt_path, map_location='cpu')
-        model.load_state_dict(ckpt['model_state_dict'])
+        state_dict = ckpt['model_state_dict']
+        filtered_state_dict = {k: v for k, v in state_dict.items() if not k.startswith('to_out.')}
+        model.load_state_dict(filtered_state_dict, strict=False)
     except Exception as e:
         if is_master:
             print(f"[ERROR] Failed to load checkpoint: {e}")
