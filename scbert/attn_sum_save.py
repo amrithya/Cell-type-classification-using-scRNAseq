@@ -67,10 +67,14 @@ for cellind in cellinds:
     )
     print(f'            =======  Model defined  ======= \n')
 
-    ckpt = torch.load(model_dir, map_location=device)
-    state_dict = ckpt['model_state_dict']
-    state_dict = {k: v for k, v in state_dict.items() if k != "pos_emb.emb.weight"}
-    model.load_state_dict(ckpt['model_state_dict'])
+    ckpt_path = model_dir
+    try:
+        ckpt = torch.load(ckpt_path, map_location='cpu')
+        model.load_state_dict(ckpt['model_state_dict'])
+    except Exception as e:
+        print(f"[ERROR] Failed to load checkpoint: {e}")
+        raise
+    
     model = model.to(device)
     print('            =======  Predict start  ======= \n')
     batch_size = data_alpha.shape[0]
