@@ -12,6 +12,7 @@ import scanpy as sc
 import pickle as pkl
 from performer_pytorch import PerformerLM
 from utils import *
+from collections import defaultdict
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--local_rank", "--local-rank", type=int, default=-1)
@@ -148,6 +149,30 @@ try:
     model.eval()
 
     net = model.module if isinstance(model, DDP) else model
+
+    class_total = defaultdict(int)
+    class_correct = defaultdict(int)
+
+    with torch.no_grad():
+        for x_v, y_v in val_loader:
+            x_v = x_v.to(device)
+            y_v = y_v.to(device)
+            reps = net(x_v, return_encodings=True)
+            logits = net.to_out(reps)
+            preds = logits.argmax(dim=1)
+            for label, pred in zip(y_v.cpu().numpy(), preds.cpu().numpy()):
+                class_total[label] += 1
+                if label == pred:
+                    class_correct[label] += 1
+
+    if is_master:
+        print("Per-class Accuracy Report")
+        print("Class\tCorrect\tTotal\tAccuracy")
+        for idx, class_name in enumerate(label_dict):
+            correct = class_correct.get(idx, 0)
+            total = class_total.get(idx, 0)
+            acc = correct / total if total > 0 else 0.0
+            print(class_name + "\t" + str(correct) + "\t" + str(total) + "\t" + str(round(acc * 100, 2)) + "%")
 
     correct_seqs = []
     correct_lbls = []
