@@ -10,8 +10,8 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 import torch.distributed as dist
 import scanpy as sc
 import pickle as pkl
-from performer_pytorch import PerformerLM
 from utils import *
+from performer_pytorch import PerformerLM
 from collections import defaultdict
 
 parser = argparse.ArgumentParser()
@@ -54,6 +54,7 @@ dist.init_process_group(backend='nccl')
 torch.cuda.set_device(local_rank)
 device = torch.device("cuda", local_rank)
 world_size = dist.get_world_size()
+
 seed_all(SEED + dist.get_rank())
 
 class SCDataset(Dataset):
@@ -74,21 +75,16 @@ class SCDataset(Dataset):
         return self.data.shape[0]
 
 try:
-    try:
-        adata = sc.read_h5ad(args.data_path)
-        gene_names = list(adata.var_names)
-        label_dict, label = np.unique(np.array(adata.obs['celltype']), return_inverse=True)
-        if is_master:
-            with open('label_dict', 'wb') as fp:
-                pkl.dump(label_dict, fp)
-            with open('label', 'wb') as fp:
-                pkl.dump(label, fp)
-        label = torch.from_numpy(label)
-        data = adata.X
-    except Exception as e:
-        if is_master:
-            print(f"[ERROR] Failed to load data: {e}")
-        raise
+    adata = sc.read_h5ad(args.data_path)
+    gene_names = list(adata.var_names)
+    label_dict, label = np.unique(np.array(adata.obs['celltype']), return_inverse=True)
+    if is_master:
+        with open('label_dict', 'wb') as fp:
+            pkl.dump(label_dict, fp)
+        with open('label', 'wb') as fp:
+            pkl.dump(label, fp)
+    label = torch.from_numpy(label)
+    data = adata.X
 
     sss_indices = np.arange(len(label))
     train_idx = sss_indices
@@ -111,13 +107,13 @@ try:
             super().__init__()
             self.conv1 = nn.Conv2d(1, 1, (1, 200))
             self.act = nn.ReLU()
-            self.fc1 = nn.Linear(in_features=SEQ_LEN, out_features=512)
+            self.fc1 = nn.Linear(SEQ_LEN, 512)
             self.act1 = nn.ReLU()
             self.dropout1 = nn.Dropout(dropout)
-            self.fc2 = nn.Linear(in_features=512, out_features=h_dim)
+            self.fc2 = nn.Linear(512, h_dim)
             self.act2 = nn.ReLU()
             self.dropout2 = nn.Dropout(dropout)
-            self.fc3 = nn.Linear(in_features=h_dim, out_features=out_dim)
+            self.fc3 = nn.Linear(h_dim, out_dim)
 
         def forward(self, x):
             x = x[:, None, :, :]
@@ -136,13 +132,8 @@ try:
     model.to_out = Identity(dropout=0., h_dim=128, out_dim=label_dict.shape[0])
 
     ckpt_path = f"/data1/data/corpus/scMODEL/{model_name}_full_model_Zheng68K.pkl"
-    try:
-        ckpt = torch.load(ckpt_path, map_location='cpu')
-        model.load_state_dict(ckpt['model_state_dict'])
-    except Exception as e:
-        if is_master:
-            print(f"[ERROR] Failed to load checkpoint: {e}")
-        raise
+    ckpt = torch.load(ckpt_path, map_location='cpu')
+    model.load_state_dict(ckpt['model_state_dict'])
 
     model = model.to(device)
     model = DDP(model, device_ids=[local_rank], output_device=local_rank)
@@ -160,10 +151,10 @@ try:
             reps = net(x_v, return_encodings=True)
             logits = net.to_out(reps)
             preds = logits.argmax(dim=1)
-            for label, pred in zip(y_v.cpu().numpy(), preds.cpu().numpy()):
-                class_total[label] += 1
-                if label == pred:
-                    class_correct[label] += 1
+            for label_i, pred in zip(y_v.cpu().numpy(), preds.cpu().numpy()):
+                class_total[label_i] += 1
+                if label_i == pred:
+                    class_correct[label_i] += 1
 
     if is_master:
         print("Per-class Accuracy Report")
@@ -172,7 +163,7 @@ try:
             correct = class_correct.get(idx, 0)
             total = class_total.get(idx, 0)
             acc = correct / total if total > 0 else 0.0
-            print(class_name + "\t" + str(correct) + "\t" + str(total) + "\t" + str(round(acc * 100, 2)) + "%")
+            print(f"{class_name}\t{correct}\t{total}\t{round(acc * 100, 2)}%")
 
     correct_seqs = []
     correct_lbls = []
@@ -216,6 +207,7 @@ try:
         rel = (reps.grad * reps).sum(dim=-1).squeeze().detach().cpu().numpy()
         rel = rel / (np.max(np.abs(rel)) + 1e-12)
         relevances.append(rel)
+
     relevances = np.stack(relevances)[:, :-1]
 
     records = []
