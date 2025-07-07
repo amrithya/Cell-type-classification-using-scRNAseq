@@ -68,7 +68,9 @@ for cellind in cellinds:
     print(f'            =======  Model defined  ======= \n')
 
     ckpt = torch.load(model_dir)
-    model.load_state_dict(ckpt['model_state_dict'])
+    state_dict = ckpt['model_state_dict']
+    state_dict = {k: v for k, v in state_dict.items() if k != "pos_emb.emb.weight"}
+    model.load_state_dict(state_dict, strict=False)
     model = model.to(device)
     print('            =======  Predict start  ======= \n')
     batch_size = data_alpha.shape[0]
