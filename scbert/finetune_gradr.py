@@ -230,7 +230,7 @@ try:
 
     df = pd.DataFrame(records, columns=['class', 'rank', 'gene', 'value'])
     if is_master:
-        df.to_csv(f"{model_name}_relevance_topbot.csv", index=False)
+        df.to_csv("finetune_gradr_relevance_topbot.csv", index=False)
 
 finally:
     dist.destroy_process_group()
