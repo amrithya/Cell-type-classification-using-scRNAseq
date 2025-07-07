@@ -184,6 +184,7 @@ try:
         def hook_layers(self):
             def forward_hook(module, input, output):
                 self.activations = output.detach()
+
             def backward_hook(module, grad_in, grad_out):
                 self.gradients = grad_out[0].detach()
 
@@ -191,22 +192,20 @@ try:
             self.target_layer.register_backward_hook(backward_hook)
 
         def __call__(self, x, class_idx):
-            x = x.clone().detach().requires_grad_(True).to(next(self.model.parameters()).device)
+            x = x.to(next(self.model.parameters()).device)
             self.model.zero_grad()
-            outputs = self.model(x)
-            one_hot = torch.zeros_like(outputs)
+            outputs = self.model(x)  # x is token indices, long tensor
             if isinstance(class_idx, torch.Tensor):
                 class_idx = class_idx.cpu().numpy()
             if isinstance(class_idx, (list, np.ndarray)) and len(class_idx) > 1:
-                losses = []
+                loss = 0
                 for i, c in enumerate(class_idx):
-                    losses.append(outputs[i, c])
-                loss = torch.stack(losses).sum()
+                    loss = loss + outputs[i, c]
             else:
                 loss = outputs[0, class_idx] if not isinstance(class_idx, (list,np.ndarray)) else outputs[0,class_idx[0]]
             loss.backward(retain_graph=True)
-            pooled_gradients = torch.mean(self.gradients, dim=[0, 2, 3])
-            activations = self.activations[0]  
+            pooled_gradients = torch.mean(self.gradients, dim=0)
+            activations = self.activations[0]
             for i in range(activations.shape[0]):
                 activations[i, ...] *= pooled_gradients[i]
             heatmap = torch.mean(activations, dim=0).cpu().numpy()
@@ -215,16 +214,18 @@ try:
             heatmap = heatmap.flatten()
             return heatmap
 
-    gradcam = GradCAM(model.module, model.module.to_out.conv1)
+    gradcam = GradCAM(model.module, model.module.performer.token_emb)
 
     records = []
 
     model.eval()
-    for data, labels in tqdm(val_loader, desc="Validation"):
-        data = data.to(device)
-        labels = labels.to(device)
+    with torch.no_grad():
+        class_gene_scores = {c: [] for c in range(CLASS)}
 
-        with torch.no_grad():
+        for data, labels in tqdm(val_loader, desc="Validation"):
+            data = data.to(device)
+            labels = labels.to(device)
+
             outputs = model(data)
             preds = outputs.argmax(dim=1)
 
@@ -236,19 +237,20 @@ try:
             correct_labels = labels[correct_mask]
             correct_preds = preds[correct_mask]
 
-        with torch.enable_grad():
+            model.train()
             cams = gradcam(correct_data, class_idx=correct_preds)
+            model.eval()
+
             if cams.ndim == 2:
                 pass
             elif cams.ndim == 1:
                 cams = cams[None, :]
 
-        class_gene_scores = defaultdict(list)
-        for c in torch.unique(correct_preds):
-            c = c.item()
-            idxs = (correct_preds == c).nonzero(as_tuple=True)[0].cpu().numpy()
-            class_c_scores = cams[idxs]
-            class_gene_scores[c].append(class_c_scores)
+            for c in torch.unique(correct_preds):
+                c = c.item()
+                idxs = (correct_preds == c).nonzero(as_tuple=True)[0].cpu().numpy()
+                class_c_scores = cams[idxs]
+                class_gene_scores[c].append(class_c_scores)
 
         for c in class_gene_scores:
             if len(class_gene_scores[c]) == 0:
@@ -259,18 +261,31 @@ try:
             top15_idx = np.argsort(mean_scores)[-15:][::-1]
             bottom15_idx = np.argsort(mean_scores)[:15]
 
-            for rank, gene_idx in enumerate(top15_idx, 1):
-                records.append([label_dict[c], rank, gene_names[gene_idx], mean_scores[gene_idx]])
+            top15_genes = [gene_names[i] for i in top15_idx]
+            bottom15_genes = [gene_names[i] for i in bottom15_idx]
 
-            for rank, gene_idx in enumerate(bottom15_idx, 16):
-                records.append([label_dict[c], rank, gene_names[gene_idx], mean_scores[gene_idx]])
+            records.append({
+                'class': c,
+                'top15_genes': top15_genes,
+                'bottom15_genes': bottom15_genes,
+                'mean_scores': mean_scores.tolist()
+            })
 
-    df = pd.DataFrame(records, columns=['class', 'rank', 'gene', 'value'])
-    df.to_csv("class_top_bottom_genes.csv", index=False)
+    flat_records = []
+    for rec in records:
+        c = rec['class']
+        mean_scores = rec['mean_scores']
+        for rank, gene in enumerate(rec['top15_genes'], 1):
+            flat_records.append({'class': c, 'rank': rank, 'gene': gene, 'score': mean_scores[top15_idx[rank-1]]})
+        for rank, gene in enumerate(rec['bottom15_genes'], 16):
+            flat_records.append({'class': c, 'rank': rank, 'gene': gene, 'score': mean_scores[bottom15_idx[rank-16]]})
+
+    df = pd.DataFrame(flat_records)
+    csv_filename = f'{model_name}_gradcam_gene_importance.csv'
+    df.to_csv(csv_filename, index=False)
     if is_master:
-        print("Saved class-wise top and bottom genes to class_top_bottom_genes.csv")
+        print(f"Saved GradCAM gene importance to {csv_filename}")
 
 except Exception as e:
     if is_master:
-        print(f"[ERROR] Unexpected error: {e}")
-    raise
+        print(f"[ERROR] Exception occurred: {e}")
