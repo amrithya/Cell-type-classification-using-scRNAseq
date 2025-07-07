@@ -184,6 +184,7 @@ try:
         def hook_layers(self):
             def forward_hook(module, input, output):
                 self.activations = output.detach()
+
             def backward_hook(module, grad_in, grad_out):
                 self.gradients = grad_out[0].detach()
 
@@ -192,27 +193,31 @@ try:
 
         def __call__(self, x, class_idx):
             self.model.zero_grad()
-            x = x.requires_grad_(True)
-            outputs = self.model(x)
-            one_hot = torch.zeros_like(outputs)
+            outputs = self.model(x)  # No requires_grad_ on x
+
             if isinstance(class_idx, torch.Tensor):
                 class_idx = class_idx.cpu().numpy()
+
             if isinstance(class_idx, (list, np.ndarray)) and len(class_idx) > 1:
                 losses = []
                 for i, c in enumerate(class_idx):
                     losses.append(outputs[i, c])
                 loss = torch.stack(losses).sum()
             else:
-                loss = outputs[0, class_idx] if not isinstance(class_idx, (list,np.ndarray)) else outputs[0,class_idx[0]]
+                loss = outputs[0, class_idx] if not isinstance(class_idx, (list, np.ndarray)) else outputs[0, class_idx[0]]
+
             loss.backward(retain_graph=True)
+
             pooled_gradients = torch.mean(self.gradients, dim=[0, 2, 3])
-            activations = self.activations[0]  
+            activations = self.activations[0]
             for i in range(activations.shape[0]):
                 activations[i, ...] *= pooled_gradients[i]
+
             heatmap = torch.mean(activations, dim=0).cpu().numpy()
             heatmap = np.maximum(heatmap, 0)
             heatmap = heatmap / np.max(heatmap) if np.max(heatmap) != 0 else heatmap
             heatmap = heatmap.flatten()
+
             return heatmap
 
     gradcam = GradCAM(model.module, model.module.to_out.conv1)
@@ -223,7 +228,7 @@ try:
     with torch.no_grad():
         class_gene_scores = {c: [] for c in range(CLASS)}
 
-        for data, labels in tqdm(val_loader, desc="Validation Batches"):
+        for data, labels in tqdm(val_loader, desc="Validation batches"):
             data = data.to(device)
             labels = labels.to(device)
 
@@ -242,7 +247,7 @@ try:
             if cams.ndim == 2:
                 pass
             elif cams.ndim == 1:
-                cams = cams[None, :]  
+                cams = cams[None, :]
 
             for c in torch.unique(correct_preds):
                 c = c.item()
@@ -250,7 +255,7 @@ try:
                 class_c_scores = cams[idxs]
                 class_gene_scores[c].append(class_c_scores)
 
-        for c in tqdm(class_gene_scores, desc="Computing class gene scores"):
+        for c in class_gene_scores:
             if len(class_gene_scores[c]) == 0:
                 continue
             scores = np.concatenate(class_gene_scores[c], axis=0)
