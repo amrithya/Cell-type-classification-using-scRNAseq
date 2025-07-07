@@ -52,7 +52,9 @@ data_counts = data.X
 all_mtx = []
 for cellind in cellinds:
     print(cellind)
-    data_alpha = data_counts[index_labels == cellind]
+    mask = (index_labels == cellind).to_numpy()
+    indices = np.where(mask)[0]
+    data_alpha = data_counts[indices]
 
     model = PerformerLM(
         num_tokens = CLASS,
