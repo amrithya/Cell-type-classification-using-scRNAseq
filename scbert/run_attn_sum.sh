@@ -12,6 +12,8 @@
 #SBATCH --error=results/attn_sum_save_%A_%a.err
 #SBATCH --array=1
 
+export CUDA_LAUNCH_BLOCKING=1
+
 poetry run python -u attn_sum_save.py \
     --data_path "/data1/data/corpus/scDATA/Zheng68K.h5ad" \
     --model_path "/data1/data/corpus/scMODEL/finetune_full_model_Zheng68K.pkl" \
