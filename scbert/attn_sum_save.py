@@ -23,8 +23,8 @@ from performer_pytorch import PerformerLM
 import scanpy as sc
 from utils import *
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--bin_num", type=int, default=7, help='Number of bins.')
+parser = argparse.ArgumentParser() 
+parser.add_argument("--bin_num", type=int, default=5, help='Number of bins.')
 parser.add_argument("--gene_num", type=int, default=16906, help='Number of genes.')
 parser.add_argument("--data_path", type=str, default='./data/data.h5ad', help='Path of data for generating the embeddings.')
 parser.add_argument("--model_path", type=str, default='./model.pth', help='Path of model training on the data.')
