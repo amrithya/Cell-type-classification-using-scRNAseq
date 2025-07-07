@@ -120,13 +120,13 @@ try:
     adata = sc.read_h5ad(args.data_path)
     gene_names = list(adata.var_names)
     label_dict, label = np.unique(np.array(adata.obs['celltype']), return_inverse=True)
-    
+
     if is_master:
         with open('label_dict', 'wb') as fp:
             pkl.dump(label_dict, fp)
         with open('label', 'wb') as fp:
             pkl.dump(label, fp)
-    
+
     label = torch.from_numpy(label)
     data = adata.X
 
@@ -150,7 +150,6 @@ try:
         local_attn_heads=0,
         g2v_position_emb=POS_EMBED_USING
     )
-    
     model.to_out = Identity(dropout=0., h_dim=128, out_dim=len(label_dict))
     model = model.to(device)
 
@@ -159,17 +158,17 @@ try:
     state_dict = ckpt['model_state_dict']
     filtered_state_dict = {k: v for k, v in state_dict.items() if not k.startswith('to_out.')}
     model.load_state_dict(filtered_state_dict, strict=False)
-    
+
     model = DDP(model, device_ids=[local_rank], output_device=local_rank)
 
     def compute_gradcam(model, data_loader, label_dict, gene_names):
-        model.eval()
+        model.train()
         records = []
 
         token_emb = model.module.token_emb if isinstance(model, DDP) else model.token_emb
 
-        for batch_idx, (batch_data, batch_labels) in enumerate(tqdm(data_loader, desc="Computing GradCAM")):
-            batch_data = batch_data.to(device).float()  # Ensure float for grad
+        for batch_data, batch_labels in tqdm(data_loader, desc="Computing GradCAM"):
+            batch_data = batch_data.long().to(device)
             batch_labels = batch_labels.to(device)
 
             model.zero_grad()
@@ -188,8 +187,7 @@ try:
             correct_preds = preds[correct_mask]
 
             for i in range(len(correct_data)):
-                single_data = correct_data[i].unsqueeze(0).detach()
-                single_data.requires_grad_(True)
+                single_data = correct_data[i].unsqueeze(0)
 
                 model.zero_grad()
                 if token_emb.weight.grad is not None:
@@ -199,7 +197,7 @@ try:
                 class_score = output[0, correct_preds[i]]
                 class_score.backward()
 
-                gradients = token_emb.weight.grad.detach()
+                gradients = token_emb.weight.grad
                 activations = token_emb(single_data)
 
                 pooled_gradients = torch.mean(gradients, dim=0)
@@ -226,7 +224,7 @@ try:
         return records
 
     gradcam_results = compute_gradcam(model, val_loader, label_dict, gene_names)
-    
+
     if is_master:
         flat_records = []
         for rec in gradcam_results:
@@ -236,7 +234,7 @@ try:
                     'cell_type_idx': rec['cell_type_idx'],
                     'gene': gene,
                     'score': score,
-                    'rank': i+1,
+                    'rank': i + 1,
                     'group': 'top'
                 })
             for i, (gene, score) in enumerate(zip(rec['bottom_genes'], rec['bottom_scores'])):
@@ -245,18 +243,12 @@ try:
                     'cell_type_idx': rec['cell_type_idx'],
                     'gene': gene,
                     'score': score,
-                    'rank': i+1,
+                    'rank': i + 1,
                     'group': 'bottom'
                 })
-        df = pd.DataFrame(flat_records)
-        csv_filename = f'{model_name}_gradcam_gene_importance.csv'
-        df.to_csv(csv_filename, index=False)
-        print(f"Saved GradCAM gene importance to {csv_filename}")
 
-    dist.destroy_process_group()
+        df = pd.DataFrame(flat_records)
+        df.to_csv(f"{model_name}_gradcam.csv", index=False)
 
 except Exception as e:
-    if is_master:
-        print(f"[ERROR] Exception occurred: {e}")
-    dist.destroy_process_group()
-    raise
+    print(e)
