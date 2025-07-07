@@ -172,7 +172,7 @@ try:
     model.eval()
 
     print(model.module if isinstance(model, DDP) else model)
-    
+
     net = model.module if isinstance(model, DDP) else model
 
     class GradCAM:
@@ -216,7 +216,7 @@ try:
             heatmap = heatmap.flatten()
             return heatmap
 
-    gradcam = GradCAM(model.module, model.module.performer.token_emb)
+    gradcam = GradCAM(model.module, model.module.token_emb)
 
     records = []
 
