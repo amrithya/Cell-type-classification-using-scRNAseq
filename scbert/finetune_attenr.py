@@ -14,6 +14,7 @@ from performer_pytorch import PerformerLM
 from utils import *
 from collections import defaultdict
 from tqdm import tqdm
+from sklearn.model_selection import StratifiedShuffleSplit
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--local_rank", "--local-rank", type=int, default=-1)
@@ -105,11 +106,16 @@ try:
             print(f"[ERROR] Failed to load data: {e}")
         raise
 
-    sss_indices = np.arange(len(label))
-    train_idx = sss_indices
-    val_idx = sss_indices
-    val_dataset = SCDataset(data[val_idx], label[val_idx])
-    val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
+    sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=SEED)
+    for train_idx, val_idx in sss.split(data, label):
+        train_dataset = SCDataset(data[train_idx], label[train_idx])
+        val_dataset = SCDataset(data[val_idx], label[val_idx])
+
+    train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
+    val_sampler = torch.utils.data.distributed.DistributedSampler(val_dataset)
+
+    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, sampler=train_sampler)
+    val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, sampler=val_sampler)
 
     model = PerformerLMWithAttn(
         num_tokens=CLASS,
@@ -139,9 +145,7 @@ try:
             x = x.unsqueeze(1)
             x = self.conv1(x)
             x = self.act(x)
-            print("Before flatten:", x.shape)
             x = x.view(x.shape[0], -1)
-            print("After flatten:", x.shape)
             x = self.fc1(x)
             x = self.act1(x)
             x = self.dropout1(x)
