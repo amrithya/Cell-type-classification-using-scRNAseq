@@ -153,23 +153,11 @@ try:
     ckpt_path = f"/data1/data/corpus/scMODEL/{model_name}_full_model_Zheng68K.pkl"
     try:
         ckpt = torch.load(ckpt_path, map_location='cpu')
-
-        clean_state_dict = {k: v for k, v in ckpt['model_state_dict'].items() if not k.startswith('to_out.conv1')}
-        ckpt['model_state_dict'] = clean_state_dict
-
         model.load_state_dict(ckpt['model_state_dict'])
     except Exception as e:
         if is_master:
             print(f"[ERROR] Failed to load checkpoint: {e}")
         raise
-
-    save_path = f"/data1/data/corpus/scMODEL/{model_name}_attenr_model_Zheng68K.pkl"
-    torch.save({
-        'model_state_dict': model.state_dict(),
-    }, save_path)
-
-    if is_master:
-        print(f"[INFO] Checkpoint saved to {save_path}")
 
     model = model.to(device)
     model = DDP(model, device_ids=[local_rank], output_device=local_rank)
