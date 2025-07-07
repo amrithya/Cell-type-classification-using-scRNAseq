@@ -163,13 +163,13 @@ try:
     model = DDP(model, device_ids=[local_rank], output_device=local_rank)
 
     def compute_gradcam(model, data_loader, label_dict, gene_names):
-        model.train()
+        model.eval()
         records = []
 
         token_emb = model.module.token_emb if isinstance(model, DDP) else model.token_emb
 
-        for batch_data, batch_labels in tqdm(data_loader, desc="Computing GradCAM"):
-            batch_data = batch_data.to(device)
+        for batch_idx, (batch_data, batch_labels) in enumerate(tqdm(data_loader, desc="Computing GradCAM")):
+            batch_data = batch_data.to(device).float()  # Ensure float for grad
             batch_labels = batch_labels.to(device)
 
             model.zero_grad()
@@ -188,20 +188,18 @@ try:
             correct_preds = preds[correct_mask]
 
             for i in range(len(correct_data)):
-                single_data = correct_data[i].unsqueeze(0)
+                single_data = correct_data[i].unsqueeze(0).detach()
+                single_data.requires_grad_(True)
 
                 model.zero_grad()
                 if token_emb.weight.grad is not None:
                     token_emb.weight.grad.zero_()
 
                 output = model(single_data)
-
                 class_score = output[0, correct_preds[i]]
-                print("Starting backward")
                 class_score.backward()
-                print("Completed backward")
 
-                gradients = token_emb.weight.grad
+                gradients = token_emb.weight.grad.detach()
                 activations = token_emb(single_data)
 
                 pooled_gradients = torch.mean(gradients, dim=0)
@@ -227,7 +225,7 @@ try:
 
         return records
 
-    gradcam_results = compute_gradcam(model, val_loader, label, gene_names)
+    gradcam_results = compute_gradcam(model, val_loader, label_dict, gene_names)
     
     if is_master:
         flat_records = []
