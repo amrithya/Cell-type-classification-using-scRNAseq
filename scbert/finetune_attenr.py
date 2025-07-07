@@ -142,7 +142,7 @@ try:
             x = self.fc3(x)
             return x
 
-    model.to_out = Identity(in_dim=200, dropout=0., h_dim=128, out_dim=label_dict.shape[0])
+    model.to_out = Identity(dropout=0., h_dim=128, out_dim=label_dict.shape[0])
 
     ckpt_path = f"/data1/data/corpus/scMODEL/{model_name}_full_model_Zheng68K.pkl"
     try:
