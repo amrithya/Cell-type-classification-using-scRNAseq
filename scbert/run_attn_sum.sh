@@ -14,7 +14,7 @@
 
 poetry run python -u attn_sum_save.py \
     --data_path "/data1/data/corpus/scDATA/Zheng68K.h5ad" \
-    --model_path "/data1/data/corpus/scMODEL/panglao_pretrain.pth" \
+    --model_path "/data1/data/corpus/scMODEL/finetune_full_model_Zheng68K.pkl" \
     --save_dir "/data1/data/corpus/scDATA/"
 
 echo "All Done at $(date)!"
