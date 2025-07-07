@@ -16,7 +16,7 @@ MASTER_PORT=$(python -c "import socket; s=socket.socket(); s.bind(('',0)); print
 
 export CUDA_LAUNCH_BLOCKING=1
 
-poetry run python -m torch.distributed.launch --nproc_per_node=2 --master_port=$MASTER_PORT finetune_gradcam.py \
+poetry run python -u -m torch.distributed.launch --nproc_per_node=2 --master_port=$MASTER_PORT finetune_gradcam.py \
     --data_path "/data1/data/corpus/scDATA/Zheng68K.h5ad" \
     --model_path "/data1/data/corpus/scMODEL/panglao_pretrain.pth"
 
