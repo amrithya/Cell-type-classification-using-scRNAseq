@@ -164,6 +164,8 @@ if is_master:
     with open("/data1/data/corpus/scDATA/val_loader.pkl", "wb") as f:
         pkl.dump(val_loader, f)
 
+print("Saved loader")
+
 model = PerformerLM(
     num_tokens=CLASS,
     dim=200,
