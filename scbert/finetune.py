@@ -157,6 +157,13 @@ val_sampler = DistributedSampler(val_dataset)
 train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, sampler=train_sampler)
 val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, sampler=val_sampler)
 
+if is_master:
+    os.makedirs("/data1/data/corpus/scDATA/", exist_ok=True)
+    with open("/data1/data/corpus/scDATA/train_loader.pkl", "wb") as f:
+        pkl.dump(train_loader, f)
+    with open("/data1/data/corpus/scDATA/val_loader.pkl", "wb") as f:
+        pkl.dump(val_loader, f)
+
 model = PerformerLM(
     num_tokens=CLASS,
     dim=200,
@@ -255,7 +262,7 @@ else:
 
 print(f"[INFO] Starting training from epoch {start_epoch}.")
 
-for i in range(start_epoch, EPOCHS + 1):
+for i in range(start_epoch, start_epoch + 1):
     train_loader.sampler.set_epoch(i)
     model.train()
     dist.barrier()
