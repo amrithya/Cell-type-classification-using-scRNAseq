@@ -124,8 +124,6 @@ try:
     class Identity(nn.Module):
         def __init__(self, dropout=0., h_dim=100, out_dim=10):
             super().__init__()
-            self.conv1 = nn.Conv2d(1, 1, (1, 200))
-            self.act = nn.ReLU()
             self.fc1 = nn.Linear(in_features=SEQ_LEN, out_features=512)
             self.act1 = nn.ReLU()
             self.dropout1 = nn.Dropout(dropout)
@@ -135,11 +133,6 @@ try:
             self.fc3 = nn.Linear(in_features=h_dim, out_features=out_dim)
 
         def forward(self, x):
-            if x.dim() == 3:
-                x = x.unsqueeze(1)
-            x = self.conv1(x)
-            x = self.act(x)
-            x = x.view(x.shape[0], -1)
             x = self.fc1(x)
             x = self.act1(x)
             x = self.dropout1(x)
@@ -149,7 +142,7 @@ try:
             x = self.fc3(x)
             return x
 
-    model.to_out = Identity(dropout=0., h_dim=128, out_dim=label_dict.shape[0])
+    model.to_out = Identity(in_dim=200, dropout=0., h_dim=128, out_dim=label_dict.shape[0])
 
     ckpt_path = f"/data1/data/corpus/scMODEL/{model_name}_full_model_Zheng68K.pkl"
     try:
