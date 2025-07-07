@@ -135,7 +135,7 @@ try:
             self.fc3 = nn.Linear(in_features=h_dim, out_features=out_dim)
 
         def forward(self, x):
-            x = x[:, None, :, :]
+            x = x.unsqueeze(1)
             x = self.conv1(x)
             x = self.act(x)
             x = x.view(x.shape[0], -1)
