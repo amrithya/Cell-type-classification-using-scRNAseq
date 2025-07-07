@@ -197,7 +197,9 @@ try:
                 output = model(single_data)
 
                 class_score = output[0, correct_preds[i]]
-                class_score.backward(retain_graph=True)
+                print("Starting backward")
+                class_score.backward()
+                print("Completed backward")
 
                 gradients = token_emb.weight.grad
                 activations = token_emb(single_data)
