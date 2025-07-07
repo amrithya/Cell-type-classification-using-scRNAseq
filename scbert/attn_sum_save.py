@@ -4,6 +4,7 @@ import argparse
 import numpy as np
 import scanpy as sc
 import torch
+from torch.utils.data import DataLoader
 from performer_pytorch import PerformerLM
 from tqdm import tqdm
 
@@ -13,20 +14,16 @@ parser.add_argument("--gene_num", type=int, default=16906)
 parser.add_argument("--data_path", type=str, default='./data/data.h5ad')
 parser.add_argument("--model_path", type=str, default='./model.pth')
 parser.add_argument("--save_dir", type=str, default='./attention/')
+parser.add_argument("--batch_size", type=int, default=64)
 args = parser.parse_args()
 
 SEQ_LEN = args.gene_num + 1
 CLASS = args.bin_num + 2
 
-data_dir = args.data_path
-model_dir = args.model_path
-save_dir = args.save_dir
-
 device = torch.device("cuda")
 print('            =======  Config over  ======= \n')
 
-data = sc.read_h5ad(data_dir)
-
+data = sc.read_h5ad(args.data_path)
 index_labels = data.obs['celltype']
 cellinds = list(set(index_labels.tolist()))
 label_dict, label = np.unique(np.array(data.obs['celltype']), return_inverse=True)
@@ -49,38 +46,48 @@ for cellind in cellinds:
     )
     print(f'            =======  Model defined  ======= \n')
 
-    ckpt_path = model_dir
     try:
-        ckpt = torch.load(ckpt_path, map_location='cpu')
+        ckpt = torch.load(args.model_path, map_location='cpu')
         state_dict = ckpt['model_state_dict']
         ignored_keys = [k for k in state_dict.keys() if k.startswith("to_out.") or k.startswith("pos_emb.")]
         for k in ignored_keys:
             del state_dict[k]
-
         model.load_state_dict(state_dict, strict=False)
     except Exception as e:
         print(f"[ERROR] Failed to load checkpoint: {e}")
         raise
 
+    if torch.cuda.device_count() > 1:
+        print(f"Using {torch.cuda.device_count()} GPUs")
+        model = torch.nn.DataParallel(model)
+
     model = model.to(device)
-    print('            =======  Predict start  ======= \n')
-
-    batch_size = data_alpha.shape[0]
     model.eval()
-    with torch.no_grad():
-        final_mtx = torch.zeros(batch_size, data_alpha.shape[1]+1).to(device)
-        for index in tqdm(range(batch_size), desc=f"Processing {cellind}"):
-            full_seq = data_alpha[index].toarray()[0]
-            full_seq[full_seq > (CLASS - 2)] = CLASS - 2
-            full_seq = torch.from_numpy(full_seq).long()
-            full_seq = torch.cat((full_seq, torch.tensor([0]))).to(device)
-            full_seq = full_seq.unsqueeze(0)
-            _, attn_map = model(full_seq, output_attentions=True)
-            attn_map = attn_map.mean((0,1,2))
-            attn_map /= attn_map.sum()
-            final_mtx[index] = attn_map
 
-    final_mtx = final_mtx.detach().cpu().numpy()
-    os.makedirs(save_dir, exist_ok=True)
-    np.save(os.path.join(save_dir, f'full_attn_sum_{cellind}.npy'), final_mtx)
+    batch_size = args.batch_size
+    input_seqs = []
+
+    for i in range(data_alpha.shape[0]):
+        full_seq = data_alpha[i].toarray()[0]
+        full_seq[full_seq > (CLASS - 2)] = CLASS - 2
+        full_seq = torch.from_numpy(full_seq).long()
+        full_seq = torch.cat((full_seq, torch.tensor([0])))
+        input_seqs.append(full_seq)
+
+    input_seqs = torch.stack(input_seqs)
+    loader = DataLoader(input_seqs, batch_size=batch_size, shuffle=False)
+
+    all_attn = []
+
+    with torch.no_grad():
+        for batch in tqdm(loader, desc=f"Processing {cellind}"):
+            batch = batch.to(device)
+            _, attn_map = model(batch, output_attentions=True)
+            attn_map = attn_map.mean((1, 2, 3))
+            attn_map /= attn_map.sum(dim=1, keepdim=True)
+            all_attn.append(attn_map)
+
+    final_mtx = torch.cat(all_attn, dim=0).detach().cpu().numpy()
+    os.makedirs(args.save_dir, exist_ok=True)
+    np.save(os.path.join(args.save_dir, f'full_attn_sum_{cellind}.npy'), final_mtx)
     print(f'            =======  Predict end  ======= \n')
