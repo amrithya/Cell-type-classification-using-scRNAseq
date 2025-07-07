@@ -81,6 +81,7 @@ for cellind in cellinds:
             batch = batch.to(device)
             _, attn_map = model(batch, output_attentions=True)
             attn_map = attn_map.mean((1, 2, 3))
+            print("attn_map shape:", attn_map.shape)
             attn_map /= attn_map.sum(dim=1, keepdim=True)
             all_attn.append(attn_map)
 
