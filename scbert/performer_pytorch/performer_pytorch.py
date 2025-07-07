@@ -252,8 +252,8 @@ class FastAttention(nn.Module):
         attn_fn = linear_attention if not self.causal else self.causal_linear_fn
         out = attn_fn(q, k, v)
         if output_attentions:
-            v_diag = torch.eye(v.shape[-2], device=device)
-            v_diag = v_diag.unsqueeze(0).unsqueeze(0).repeat(v.shape[0], v.shape[1], 1, 1).to(torch.float16)  # <----- added
+            v_diag = torch.eye(v.shape[-2], device=device, dtype=torch.float16)
+            # v_diag = v_diag.unsqueeze(0).unsqueeze(0).repeat(v.shape[0], v.shape[1], 1, 1).to(torch.float16)  # <----- added
             # v_diag = v_diag.unsqueeze(0).unsqueeze(0).repeat(v.shape[0],v.shape[1],1,1)  <---- commented
             # attn_weights = torch.zeros(1, 1, len(inds), len(inds)).to(device).to(torch.float16)
             # attn_weights = torch.zeros(1, q.shape[1], len(inds), len(inds)).to(device).to(torch.float16)
@@ -268,7 +268,7 @@ class FastAttention(nn.Module):
                 attn_weights[:, head_dim] = torch.abs(attn_fn(
                 q[:, head_dim].to(torch.float16),
                 k[:, head_dim].to(torch.float16),
-                v_diag[:, head_dim]
+                v_diag
             ))
 
             attn_weights = attn_weights.mean(dim=1, keepdim=True)
