@@ -43,8 +43,7 @@ device = torch.device("cuda")
 print('            =======  Config over  ======= \n')
 
 data = sc.read_h5ad(data_dir)
-methods = np.unique(data.obs['dataset'])
-index_methods = data.obs['dataset']
+
 index_labels = data.obs['celltype']
 cellinds = list(set(index_labels.tolist()))
 label_dict, label = np.unique(np.array(data.obs['celltype']), return_inverse=True)
