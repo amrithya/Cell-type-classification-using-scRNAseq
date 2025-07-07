@@ -20,7 +20,8 @@ args = parser.parse_args()
 SEQ_LEN = args.gene_num + 1
 CLASS = args.bin_num + 2
 
-device = torch.device("cuda")
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # use only GPU 0
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print('            =======  Config over  ======= \n')
 
 data = sc.read_h5ad(args.data_path)
@@ -36,18 +37,18 @@ for cellind in cellinds:
     data_alpha = data_counts[indices]
 
     model = PerformerLM(
-        num_tokens = CLASS,
-        dim = 200,
-        depth = 6,
-        max_seq_len = SEQ_LEN,
-        heads = 10,
-        local_attn_heads = 0,
-        g2v_position_emb = False
+        num_tokens=CLASS,
+        dim=200,
+        depth=6,
+        max_seq_len=SEQ_LEN,
+        heads=10,
+        local_attn_heads=0,
+        g2v_position_emb=False
     )
     print(f'            =======  Model defined  ======= \n')
 
     try:
-        ckpt = torch.load(args.model_path, map_location='cpu')
+        ckpt = torch.load(args.model_path, map_location=device)
         state_dict = ckpt['model_state_dict']
         ignored_keys = [k for k in state_dict.keys() if k.startswith("to_out.") or k.startswith("pos_emb.")]
         for k in ignored_keys:
@@ -56,10 +57,6 @@ for cellind in cellinds:
     except Exception as e:
         print(f"[ERROR] Failed to load checkpoint: {e}")
         raise
-
-    if torch.cuda.device_count() > 1:
-        print(f"Using {torch.cuda.device_count()} GPUs")
-        model = torch.nn.DataParallel(model)
 
     model = model.to(device)
     model.eval()
