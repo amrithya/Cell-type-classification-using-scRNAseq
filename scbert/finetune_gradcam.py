@@ -184,7 +184,6 @@ try:
         def hook_layers(self):
             def forward_hook(module, input, output):
                 self.activations = output.detach()
-
             def backward_hook(module, grad_in, grad_out):
                 self.gradients = grad_out[0].detach()
 
@@ -192,32 +191,28 @@ try:
             self.target_layer.register_backward_hook(backward_hook)
 
         def __call__(self, x, class_idx):
+            x = x.clone().detach().requires_grad_(True).to(next(self.model.parameters()).device)
             self.model.zero_grad()
-            outputs = self.model(x)  # No requires_grad_ on x
-
+            outputs = self.model(x)
+            one_hot = torch.zeros_like(outputs)
             if isinstance(class_idx, torch.Tensor):
                 class_idx = class_idx.cpu().numpy()
-
             if isinstance(class_idx, (list, np.ndarray)) and len(class_idx) > 1:
                 losses = []
                 for i, c in enumerate(class_idx):
                     losses.append(outputs[i, c])
                 loss = torch.stack(losses).sum()
             else:
-                loss = outputs[0, class_idx] if not isinstance(class_idx, (list, np.ndarray)) else outputs[0, class_idx[0]]
-
+                loss = outputs[0, class_idx] if not isinstance(class_idx, (list,np.ndarray)) else outputs[0,class_idx[0]]
             loss.backward(retain_graph=True)
-
             pooled_gradients = torch.mean(self.gradients, dim=[0, 2, 3])
-            activations = self.activations[0]
+            activations = self.activations[0]  
             for i in range(activations.shape[0]):
                 activations[i, ...] *= pooled_gradients[i]
-
             heatmap = torch.mean(activations, dim=0).cpu().numpy()
             heatmap = np.maximum(heatmap, 0)
             heatmap = heatmap / np.max(heatmap) if np.max(heatmap) != 0 else heatmap
             heatmap = heatmap.flatten()
-
             return heatmap
 
     gradcam = GradCAM(model.module, model.module.to_out.conv1)
@@ -225,13 +220,11 @@ try:
     records = []
 
     model.eval()
-    with torch.no_grad():
-        class_gene_scores = {c: [] for c in range(CLASS)}
+    for data, labels in tqdm(val_loader, desc="Validation"):
+        data = data.to(device)
+        labels = labels.to(device)
 
-        for data, labels in tqdm(val_loader, desc="Validation batches"):
-            data = data.to(device)
-            labels = labels.to(device)
-
+        with torch.no_grad():
             outputs = model(data)
             preds = outputs.argmax(dim=1)
 
@@ -243,17 +236,19 @@ try:
             correct_labels = labels[correct_mask]
             correct_preds = preds[correct_mask]
 
+        with torch.enable_grad():
             cams = gradcam(correct_data, class_idx=correct_preds)
             if cams.ndim == 2:
                 pass
             elif cams.ndim == 1:
                 cams = cams[None, :]
 
-            for c in torch.unique(correct_preds):
-                c = c.item()
-                idxs = (correct_preds == c).nonzero(as_tuple=True)[0].cpu().numpy()
-                class_c_scores = cams[idxs]
-                class_gene_scores[c].append(class_c_scores)
+        class_gene_scores = defaultdict(list)
+        for c in torch.unique(correct_preds):
+            c = c.item()
+            idxs = (correct_preds == c).nonzero(as_tuple=True)[0].cpu().numpy()
+            class_c_scores = cams[idxs]
+            class_gene_scores[c].append(class_c_scores)
 
         for c in class_gene_scores:
             if len(class_gene_scores[c]) == 0:
@@ -271,7 +266,7 @@ try:
                 records.append([label_dict[c], rank, gene_names[gene_idx], mean_scores[gene_idx]])
 
     df = pd.DataFrame(records, columns=['class', 'rank', 'gene', 'value'])
-    df.to_csv("gradcam_class_top_bottom_genes.csv", index=False)
+    df.to_csv("class_top_bottom_genes.csv", index=False)
     if is_master:
         print("Saved class-wise top and bottom genes to class_top_bottom_genes.csv")
 
