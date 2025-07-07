@@ -14,7 +14,7 @@ parser.add_argument("--gene_num", type=int, default=16906)
 parser.add_argument("--data_path", type=str, default='./data/data.h5ad')
 parser.add_argument("--model_path", type=str, default='./model.pth')
 parser.add_argument("--save_dir", type=str, default='./attention/')
-parser.add_argument("--batch_size", type=int, default=64)
+parser.add_argument("--batch_size", type=int, default=4)
 args = parser.parse_args()
 
 SEQ_LEN = args.gene_num + 1
