@@ -135,6 +135,7 @@ try:
             self.fc3 = nn.Linear(in_features=h_dim, out_features=out_dim)
 
         def forward(self, x):
+            x = x.permute(0, 2, 1)
             x = x.unsqueeze(1)
             x = self.conv1(x)
             x = self.act(x)
