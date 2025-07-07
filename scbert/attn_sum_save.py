@@ -82,7 +82,10 @@ for cellind in cellinds:
             _, attn_map = model(batch, output_attentions=True)
             attn_map = attn_map.mean((1, 2, 3))
             print("attn_map shape:", attn_map.shape)
-            attn_map /= attn_map.sum(dim=1, keepdim=True)
+            if attn_map.dim() == 1:
+                attn_map /= attn_map.sum(dim=0, keepdim=True)
+            else:
+                attn_map /= attn_map.sum(dim=1, keepdim=True)
             all_attn.append(attn_map)
 
     final_mtx = torch.cat(all_attn, dim=0).detach().cpu().numpy()
