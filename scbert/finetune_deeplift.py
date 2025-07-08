@@ -199,9 +199,7 @@ try:
     for i in iterator:
         seq = seqs[i].unsqueeze(0).to(device)
         lbl = lbls[i].item()
-        attr = deeplift.attribute(seq.unsqueeze(0), 
-                         baselines=baseline.unsqueeze(0), 
-                         target=lbl.item())
+        attr = deeplift.attribute(seq.unsqueeze(0), baselines=baseline.unsqueeze(0), target=lbl)
         rel = attr.squeeze().detach().cpu().numpy()
         rel = rel / (np.max((rel)) + 1e-12)
         relevances.append(rel)
