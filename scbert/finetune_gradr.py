@@ -8,6 +8,9 @@ from tqdm import tqdm
 import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset
 from torch.nn.parallel import DistributedDataParallel as DDP
+from torch.utils.data.distributed import DistributedSampler
+from sklearn.model_selection import train_test_split, ShuffleSplit, StratifiedShuffleSplit, StratifiedKFold
+
 import torch.distributed as dist
 import scanpy as sc
 import pickle as pkl
@@ -87,11 +90,20 @@ try:
     label = torch.from_numpy(label)
     data = adata.X
 
-    sss_indices = np.arange(len(label))
-    train_idx = sss_indices
-    val_idx = sss_indices
-    val_dataset = SCDataset(data[val_idx], label[val_idx])
-    val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
+    skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=SEED)
+    pred_list = pd.Series(['un'] * data.shape[0])
+
+    sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=SEED)
+    for index_train, index_val in sss.split(data, label):
+        data_train, label_train = data[index_train], label[index_train]
+        data_val, label_val = data[index_val], label[index_val]
+        train_dataset = SCDataset(data_train, label_train)
+        val_dataset = SCDataset(data_val, label_val)
+
+    train_sampler = DistributedSampler(train_dataset)
+    val_sampler = DistributedSampler(val_dataset)
+    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, sampler=train_sampler)
+    val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, sampler=val_sampler)
 
     model = PerformerLM(
         num_tokens=CLASS,
