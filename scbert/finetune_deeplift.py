@@ -181,9 +181,9 @@ try:
     iterator = tqdm(range(len(seqs)), desc="Calculating DeepLIFT Relevance") if is_master else range(len(seqs))
 
     for i in iterator:
-        seq = seqs[i].unsqueeze(0).to(device)
+        seq = seqs[i].unsqueeze(0).to(device).float()
         lbl = lbls[i].item()
-        attr = deeplift.attribute(seq, baselines=baseline, target=None)
+        attr = deeplift.attribute(seq, baselines=baseline, target=lbl)
         rel = attr.squeeze().detach().cpu().numpy()
         rel = rel / (np.max(rel) + 1e-12)
         relevances.append(rel)
