@@ -9,14 +9,12 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data.distributed import DistributedSampler
-from sklearn.model_selection import StratifiedShuffleSplit, StratifiedKFold
-
+from sklearn.model_selection import StratifiedShuffleSplit
 import torch.distributed as dist
 import scanpy as sc
 import pickle as pkl
 from utils import *
 from performer_pytorch import PerformerLM
-from collections import defaultdict
 from captum.attr import DeepLift
 
 parser = argparse.ArgumentParser()
@@ -48,18 +46,15 @@ LEARNING_RATE = args.learning_rate
 SEQ_LEN = args.gene_num + 1
 VALIDATE_EVERY = args.valid_every
 
-PATIENCE = 10
-UNASSIGN_THRES = 0.0
-
 CLASS = args.bin_num + 2
 POS_EMBED_USING = args.pos_embed
 model_name = args.model_name
+
 
 dist.init_process_group(backend='nccl')
 torch.cuda.set_device(local_rank)
 device = torch.device("cuda", local_rank)
 world_size = dist.get_world_size()
-
 seed_all(SEED + dist.get_rank())
 
 class SCDataset(Dataset):
@@ -73,8 +68,7 @@ class SCDataset(Dataset):
         full_seq[full_seq > (CLASS - 2)] = CLASS - 2
         full_seq = torch.from_numpy(full_seq).long()
         full_seq = torch.cat((full_seq, torch.tensor([0]))).to(device)
-        seq_label = self.label[index]
-        return full_seq, seq_label
+        return full_seq, self.label[index]
 
     def __len__(self):
         return self.data.shape[0]
@@ -141,24 +135,18 @@ try:
             return x
 
     model.to_out = Identity(dropout=0., h_dim=128, out_dim=label_dict.shape[0])
-
     ckpt_path = f"/data1/data/corpus/scMODEL/{model_name}_full_model_Zheng68K.pkl"
     ckpt = torch.load(ckpt_path, map_location='cpu')
     model.load_state_dict(ckpt['model_state_dict'])
-
     model = model.to(device)
     model = DDP(model, device_ids=[local_rank], output_device=local_rank)
     model.eval()
 
     net = model.module if isinstance(model, DDP) else model
-
-    correct_seqs = []
-    correct_lbls = []
+    correct_seqs, correct_lbls = [], []
 
     with torch.no_grad():
-        iter_val_loader = val_loader
-        if is_master:
-            iter_val_loader = tqdm(val_loader, desc="Collecting Correct Predictions")
+        iter_val_loader = tqdm(val_loader, desc="Collecting Correct Predictions") if is_master else val_loader
         for x_v, y_v in iter_val_loader:
             x_v = x_v.to(device)
             y_v = y_v.to(device)
@@ -188,25 +176,21 @@ try:
     encoder = EncWrapper(net).to(device)
     deeplift = DeepLift(encoder)
 
-    baseline = torch.zeros_like(seqs[0].unsqueeze(0)).long().to(device)
+    baseline = torch.zeros_like(seqs[0]).unsqueeze(0).to(device)
     relevances = []
-    length = len(seqs)
-    if is_master:
-        iterator = tqdm(range(length), desc="Calculating DeepLIFT Relevance")
-    else:
-        iterator = range(length)
+    iterator = tqdm(range(len(seqs)), desc="Calculating DeepLIFT Relevance") if is_master else range(len(seqs))
 
     for i in iterator:
         seq = seqs[i].unsqueeze(0).to(device)
         lbl = lbls[i].item()
-        attr = deeplift.attribute(seq.unsqueeze(0), baselines=baseline.unsqueeze(0), target=lbl)
+        attr = deeplift.attribute(seq, baselines=baseline, target=None)
         rel = attr.squeeze().detach().cpu().numpy()
-        rel = rel / (np.max((rel)) + 1e-12)
+        rel = rel / (np.max(rel) + 1e-12)
         relevances.append(rel)
 
     relevances = np.stack(relevances)[:, :-1]
-
     records = []
+
     for cls in np.unique(lbls.cpu()):
         arr = np.mean(relevances[lbls.cpu() == cls], axis=0)
         top15 = arr.argsort()[-15:][::-1]

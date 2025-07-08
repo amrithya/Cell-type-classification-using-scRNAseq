@@ -610,8 +610,7 @@ class PerformerLM(nn.Module):
         self.performer.fix_projection_matrices_()
 
     def forward(self, x, return_encodings = False, output_attentions = False, **kwargs):
-        b, n, d = x.shape
-        device = x.device
+        b, n, device = *x.shape, x.device
         assert n <= self.max_seq_len, f'sequence length {n} must be less than the max sequence length {self.max_seq_len}'
 
         # token and positional embedding
