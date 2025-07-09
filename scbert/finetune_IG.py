@@ -120,6 +120,7 @@ model.to(device)
 model.eval()
 
 def model_forward(input_ids):
+    input_ids = input_ids.to(dtype=torch.float32)
     return model(input_ids)
 
 embedding_layer = model.token_emb
@@ -127,7 +128,8 @@ lig = LayerIntegratedGradients(model_forward, embedding_layer)
 
 def construct_input_and_baseline(seq):
     pad_token = 0
-    baseline = torch.full_like(seq, pad_token)
+    seq = seq.to(dtype=torch.float32)
+    baseline = torch.full_like(seq, pad_token).to(dtype=torch.float32)
     return seq.unsqueeze(0).to(device), baseline.unsqueeze(0).to(device)
 
 val_sampler.set_epoch(0)
