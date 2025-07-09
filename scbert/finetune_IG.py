@@ -122,7 +122,7 @@ model.eval()
 def model_forward(input_ids):
     return model(input_ids)
 
-embedding_layer = model.performer.net.token_emb
+embedding_layer = model.token_emb
 lig = LayerIntegratedGradients(model_forward, embedding_layer)
 
 def construct_input_and_baseline(seq):
