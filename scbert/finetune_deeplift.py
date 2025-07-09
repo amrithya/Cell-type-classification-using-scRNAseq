@@ -199,7 +199,7 @@ try:
         lbl = lbls[i].item()
         seq = seq.long()
         baseline = baseline.long()
-        attr = deeplift.attribute(seq, baselines=baseline, target=lbl)
+        attr = deeplift.attribute(seq, baselines=baseline, target=int(lbl))
         rel = attr.squeeze().detach().cpu().numpy()
         rel = rel / (np.max(rel) + 1e-12)
         relevances.append(rel)
