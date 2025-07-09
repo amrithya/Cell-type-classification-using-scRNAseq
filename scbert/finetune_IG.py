@@ -121,7 +121,7 @@ model.eval()
 
 def model_forward(input_ids):
     print("input_ids shape:", input_ids.shape, "type:", type(input_ids), "dtype:", input_ids.dtype)
-    input_ids = input_ids.long()
+    input_ids = input_ids.long().to(device)
     print("After conversion:")
     print("input_ids shape:", input_ids.shape, "type:", type(input_ids), "dtype:", input_ids.dtype)
 
