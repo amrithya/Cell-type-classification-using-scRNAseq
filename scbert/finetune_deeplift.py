@@ -88,9 +88,10 @@ class WrappedModel(torch.nn.Module):
         self.model = model
     def forward(self, input_float):
         input_long = input_float.round().long()
-        logits = self.model(x=input_long)
-        return logits
-
+        logits = self.model(x=input_long) 
+        cls_logits = logits[:, -1, :]
+        return cls_logits
+    
 wrapped_model = WrappedModel(model).to(device)
 wrapped_model.eval()
 deeplift = DeepLift(wrapped_model)
