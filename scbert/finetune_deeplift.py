@@ -50,11 +50,12 @@ class SCDataset(torch.utils.data.Dataset):
         return len(self.labels)
     def __getitem__(self, idx):
         full_seq = self.data[idx].toarray()[0]
+        # Clip values to max token id
         full_seq[full_seq > (CLASS - 2)] = CLASS - 2
         full_seq_long = torch.from_numpy(full_seq).long()
         full_seq_float = torch.from_numpy(full_seq).float()
-        full_seq_long = torch.cat((full_seq_long, torch.tensor([0])))
-        full_seq_float = torch.cat((full_seq_float, torch.tensor([0.0])))
+        full_seq_long = torch.cat((full_seq_long, torch.tensor([0], dtype=torch.long)))
+        full_seq_float = torch.cat((full_seq_float, torch.tensor([0.0], dtype=torch.float)))
         label = self.labels[idx]
         return full_seq_long, full_seq_float, label
 
@@ -86,12 +87,16 @@ class WrappedModel(torch.nn.Module):
     def __init__(self, model):
         super().__init__()
         self.model = model
-    def forward(self, input_long):
+
+    def forward(self, input_float):
+        # Convert float input to long tokens internally
+        input_long = input_float.round().long()
         logits = self.model(x=input_long)
         return logits[:, -1, :]
-    
+
 wrapped_model = WrappedModel(model).to(device)
 wrapped_model.eval()
+
 deeplift = DeepLift(wrapped_model)
 print("DeepLift initialized.")
 
@@ -110,25 +115,25 @@ for batch_idx, (inputs_long, inputs_float, labels_batch) in enumerate(tqdm(val_l
     baseline = torch.zeros_like(inputs_float).to(device)
 
     batch_relevances = []
-    for i in range(inputs_long.size(0)):
-        input_long_i = inputs_long[i].unsqueeze(0).to(device)
-        baseline_i = torch.zeros_like(input_long_i)
-
+    for i in range(inputs_float.size(0)):
+        input_float_i = inputs_float[i].unsqueeze(0)
+        baseline_i = baseline[i].unsqueeze(0)
         target_i = int(labels_batch[i].item())
+
         print(f"\n Sample {i}:")
-        print(f"input_long_i shape: {input_long_i.shape}, dtype: {input_long_i.dtype}")
+        print(f"input_float_i shape: {input_float_i.shape}, dtype: {input_float_i.dtype}")
         print(f"baseline_i shape: {baseline_i.shape}, dtype: {baseline_i.dtype}")
         print(f"target_i: {target_i}, type: {type(target_i)}")
 
         with torch.no_grad():
-            out = wrapped_model(input_long_i)
+            out = wrapped_model(input_float_i)
             print(f"logits shape: {out.shape}, dtype: {out.dtype}")
             if target_i >= out.shape[1]:
                 print(f"Skipping sample due to invalid target: {target_i}, output shape: {out.shape}")
                 continue
 
-        input_long_i.requires_grad_()
-        attr = deeplift.attribute(input_long_i, baselines=baseline_i, target=target_i)
+        input_float_i.requires_grad_()
+        attr = deeplift.attribute(input_float_i, baselines=baseline_i, target=target_i)
         print(f"attr shape: {attr.shape}, dtype: {attr.dtype}")
         batch_relevances.append(attr.squeeze(0).detach().cpu().numpy())
 
@@ -139,7 +144,6 @@ for batch_idx, (inputs_long, inputs_float, labels_batch) in enumerate(tqdm(val_l
         all_labels.append(labels_batch.detach().cpu().numpy())
         print(f"Added to all_relevances and all_labels.")
     print(f"Processed batch {batch_idx + 1}")
-
 
 print("All batches processed. Aggregating results...")
 all_relevances = np.concatenate(all_relevances, axis=0)
