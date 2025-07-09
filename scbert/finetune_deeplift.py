@@ -51,6 +51,16 @@ class SCDataset(torch.utils.data.Dataset):
         full_seq = torch.cat((full_seq, torch.tensor([0])))
         label = self.labels[idx]
         return full_seq, label
+    
+class WrappedModel(torch.nn.Module):
+    def __init__(self, model):
+        super().__init__()
+        self.model = model
+    def forward(self, x):
+        logits = self.model(x)
+        if isinstance(logits, tuple):
+            return logits[0]
+        return logits
 
 val_dataset = SCDataset(data_val, label_val)
 val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
@@ -73,7 +83,7 @@ model.load_state_dict(state_dict, strict=False)
 model = model.to(device)
 model.eval()
 
-deeplift = DeepLift(model)
+deeplift = DeepLift(WrappedModel(model))
 
 all_relevances = []
 all_labels = []
