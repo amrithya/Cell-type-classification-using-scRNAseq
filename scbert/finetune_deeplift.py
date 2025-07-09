@@ -79,9 +79,13 @@ class WrappedModel(torch.nn.Module):
     def __init__(self, model):
         super().__init__()
         self.model = model
-    def forward(self, input_long):
-        input_long = input_long.round().long()
+    def forward(self, input_float):
+        input_long = input_float.round().long()
         return self.model(x=input_long)
+
+wrapped_model = WrappedModel(model).to(device)
+wrapped_model.eval()
+deeplift = DeepLift(wrapped_model)
 
 all_relevances = []
 all_labels = []
@@ -97,8 +101,6 @@ for inputs_long, inputs_float, labels_batch in tqdm(val_loader):
         baseline_i = baseline[i].unsqueeze(0)
         target_i = labels_batch[i].item()
 
-        wrapped_model = WrappedModel(model)
-        deeplift = DeepLift(wrapped_model)
         input_float_i.requires_grad_()
         attr = deeplift.attribute(input_float_i, baselines=baseline_i, target=target_i)
         batch_relevances.append(attr.squeeze(0).detach().cpu().numpy())
