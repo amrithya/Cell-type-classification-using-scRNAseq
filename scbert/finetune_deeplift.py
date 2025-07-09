@@ -47,10 +47,12 @@ class SCDataset(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         full_seq = self.data[idx].toarray()[0]
         full_seq[full_seq > (CLASS - 2)] = CLASS - 2
-        full_seq = torch.from_numpy(full_seq).float()
-        full_seq = torch.cat((full_seq, torch.tensor([0])))
+        full_seq_long = torch.from_numpy(full_seq).long()  # For model input
+        full_seq_float = torch.from_numpy(full_seq).float()  # For attribution
+        full_seq_long = torch.cat((full_seq_long, torch.tensor([0])))
+        full_seq_float = torch.cat((full_seq_float, torch.tensor([0.0])))
         label = self.labels[idx]
-        return full_seq, label
+        return full_seq_long, full_seq_float, label
 
 val_dataset = SCDataset(data_val, label_val)
 val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
@@ -77,11 +79,8 @@ class WrappedModel(torch.nn.Module):
     def __init__(self, model):
         super().__init__()
         self.model = model
-    def forward(self, input_ids, target=None):
-        outputs = self.model(x=input_ids)
-        if target is not None:
-            return outputs.gather(1, target.unsqueeze(1)).squeeze(1)
-        return outputs
+    def forward(self, x):
+        return self.model(x=x)
 
 wrapped_model = WrappedModel(model)
 deeplift = DeepLift(wrapped_model)
@@ -89,19 +88,29 @@ deeplift = DeepLift(wrapped_model)
 all_relevances = []
 all_labels = []
 
-for inputs, labels_batch in tqdm(val_loader):
-    inputs = inputs.to(device)
+for inputs_long, inputs_float, labels_batch in tqdm(val_loader):
+    inputs_long = inputs_long.to(device)
+    inputs_float = inputs_float.to(device)
     labels_batch = labels_batch.to(device)
-    baseline = torch.zeros_like(inputs).to(device)
+    baseline = torch.zeros_like(inputs_float).to(device)
 
     batch_relevances = []
-    for i in range(inputs.size(0)):
-        input_i = inputs[i].unsqueeze(0)
+    for i in range(inputs_long.size(0)):
+        input_long_i = inputs_long[i].unsqueeze(0)
+        input_float_i = inputs_float[i].unsqueeze(0)
         baseline_i = baseline[i].unsqueeze(0)
         target_i = labels_batch[i].item()
 
-        attr = deeplift.attribute(input_i, baselines=baseline_i, target=target_i, 
-                         additional_forward_args=(torch.tensor([target_i], device=device)))
+        def forward_func(input_float):
+            input_long = input_float.round().long()
+            outputs = wrapped_model(input_long)
+            return outputs[:, target_i]
+        
+        attr = deeplift.attribute(input_float_i,
+                                baselines=baseline_i,
+                                target=None,
+                                forward_func=forward_func)
+        
         batch_relevances.append(attr.squeeze(0).detach().cpu().numpy())
 
     batch_relevances = np.stack(batch_relevances)
