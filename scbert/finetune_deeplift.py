@@ -76,9 +76,9 @@ model = PerformerLM(
 print("Loading model checkpoint...")
 ckpt = torch.load(args.model_path, map_location=device)
 state_dict = ckpt['model_state_dict']
-ignored_keys = [k for k in state_dict.keys() if k.startswith("to_out.") or k.startswith("pos_emb.")]
-for k in ignored_keys:
-    del state_dict[k]
+# ignored_keys = [k for k in state_dict.keys() if k.startswith("to_out.") or k.startswith("pos_emb.")]
+# for k in ignored_keys:
+#     del state_dict[k]
 model.load_state_dict(state_dict, strict=False)
 print("Model loaded")
 
