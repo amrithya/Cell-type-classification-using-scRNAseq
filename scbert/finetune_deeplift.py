@@ -197,6 +197,8 @@ try:
     for i in iterator:
         seq = seqs[i].unsqueeze(0).to(device).float()
         lbl = lbls[i].item()
+        seq = seq.long()
+        baseline = baseline.long()
         attr = deeplift.attribute(seq, baselines=baseline, target=lbl)
         rel = attr.squeeze().detach().cpu().numpy()
         rel = rel / (np.max(rel) + 1e-12)
