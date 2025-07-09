@@ -50,7 +50,6 @@ CLASS = args.bin_num + 2
 POS_EMBED_USING = args.pos_embed
 model_name = args.model_name
 
-
 dist.init_process_group(backend='nccl')
 torch.cuda.set_device(local_rank)
 device = torch.device("cuda", local_rank)
@@ -143,28 +142,43 @@ try:
     model.eval()
 
     net = model.module if isinstance(model, DDP) else model
-    correct_seqs, correct_lbls = [], []
 
-    with torch.no_grad():
-        iter_val_loader = tqdm(val_loader, desc="Collecting Correct Predictions") if is_master else val_loader
-        for x_v, y_v in iter_val_loader:
-            x_v = x_v.to(device)
-            y_v = y_v.to(device)
-            reps = net(x_v, return_encodings=True)
-            logits = net.to_out(reps)
-            preds = logits.argmax(dim=1)
-            correct_mask = preds == y_v
-            if correct_mask.any():
-                correct_seqs.append(x_v[correct_mask])
-                correct_lbls.append(y_v[correct_mask])
+    correct_seq_path = "/data1/data/corpus/scDATA/scbert_deeplift/correct_seqs.pt"
+    correct_lbl_path = "/data1/data/corpus/scDATA/scbert_deeplift/correct_lbls.pt"
 
-    if len(correct_seqs) == 0:
+    if os.path.exists(correct_seq_path) and os.path.exists(correct_lbl_path):
         if is_master:
-            print("[WARNING] No correctly predicted samples found.")
-        exit()
+            print("Loading saved correct predictions...")
+        seqs = torch.load(correct_seq_path, map_location=device)
+        lbls = torch.load(correct_lbl_path, map_location=device)
+    else:
+        correct_seqs, correct_lbls = [], []
+        with torch.no_grad():
+            iter_val_loader = tqdm(val_loader, desc="Collecting Correct Predictions") if is_master else val_loader
+            for x_v, y_v in iter_val_loader:
+                x_v = x_v.to(device)
+                y_v = y_v.to(device)
+                reps = net(x_v, return_encodings=True)
+                logits = net.to_out(reps)
+                preds = logits.argmax(dim=1)
+                correct_mask = preds == y_v
+                if correct_mask.any():
+                    correct_seqs.append(x_v[correct_mask])
+                    correct_lbls.append(y_v[correct_mask])
 
-    seqs = torch.cat(correct_seqs)
-    lbls = torch.cat(correct_lbls)
+        if len(correct_seqs) == 0:
+            if is_master:
+                print("[WARNING] No correctly predicted samples found.")
+            dist.destroy_process_group()
+            exit()
+
+        seqs = torch.cat(correct_seqs)
+        lbls = torch.cat(correct_lbls)
+
+        if is_master:
+            os.makedirs(os.path.dirname(correct_seq_path), exist_ok=True)
+            torch.save(seqs.cpu(), correct_seq_path)
+            torch.save(lbls.cpu(), correct_lbl_path)
 
     class EncWrapper(nn.Module):
         def __init__(self, model):
