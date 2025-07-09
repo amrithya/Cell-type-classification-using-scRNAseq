@@ -110,8 +110,19 @@ model = PerformerLM(
 )
 model.to_out = Identity(dropout=0., h_dim=128, out_dim=CLASS)
 
-checkpoint = torch.load(args.model_path, map_location=device)
-model.load_state_dict(checkpoint['model_state_dict'])
+try:
+    print("Loading pretrained PerformerLM model...")
+    path = args.model_path
+    ckpt = torch.load(path, map_location='cpu')
+    state_dict = ckpt['model_state_dict']
+    print("Keys in the checkpoint's model_state_dict:")
+    for key in state_dict.keys():
+        print(key)
+    model.load_state_dict(state_dict)
+except Exception as e:
+    print(f"[ERROR] Model loading failed: {e}")
+    exit(1)
+
 model.to(device)
 model.eval()
 
