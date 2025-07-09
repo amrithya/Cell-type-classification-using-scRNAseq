@@ -1,224 +1,114 @@
-# -*- coding: utf-8 -*-
 import os
 import argparse
 import numpy as np
 import pandas as pd
-import torch
-from tqdm import tqdm
-import torch.nn as nn
-from torch.utils.data import DataLoader, Dataset
-from torch.nn.parallel import DistributedDataParallel as DDP
-from torch.utils.data.distributed import DistributedSampler
-from sklearn.model_selection import StratifiedShuffleSplit
-import torch.distributed as dist
 import scanpy as sc
-import pickle as pkl
-from utils import *
+import torch
+from torch.utils.data import DataLoader, DistributedSampler
 from performer_pytorch import PerformerLM
+from sklearn.model_selection import StratifiedShuffleSplit
+from tqdm import tqdm
 from captum.attr import DeepLift
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--local_rank", "--local-rank", type=int, default=-1)
 parser.add_argument("--bin_num", type=int, default=5)
 parser.add_argument("--gene_num", type=int, default=16906)
-parser.add_argument("--epoch", type=int, default=20)
-parser.add_argument("--seed", type=int, default=2021)
-parser.add_argument("--batch_size", type=int, default=4)
-parser.add_argument("--learning_rate", type=float, default=1e-4)
-parser.add_argument("--grad_acc", type=int, default=60)
-parser.add_argument("--valid_every", type=int, default=1)
-parser.add_argument("--pos_embed", type=bool, default=True)
-parser.add_argument("--data_path", type=str, default='./data/Zheng68K.h5ad')
-parser.add_argument("--model_path", type=str, default='./panglao_pretrained.pth')
-parser.add_argument("--ckpt_dir", type=str, default='./ckpts/')
-parser.add_argument("--model_name", type=str, default='finetune')
+parser.add_argument("--data_path", type=str, default='./data/data.h5ad')
+parser.add_argument("--model_path", type=str, default='./model.pth')
+parser.add_argument("--save_dir", type=str, default='./deeplift/')
+parser.add_argument("--batch_size", type=int, default=2)
+parser.add_argument("--seed", type=int, default=42)
 args = parser.parse_args()
 
-rank = int(os.environ["RANK"])
-local_rank = args.local_rank
-is_master = local_rank == 0
-
-SEED = args.seed
-EPOCHS = args.epoch
-BATCH_SIZE = args.batch_size
-GRADIENT_ACCUMULATION = args.grad_acc
-LEARNING_RATE = args.learning_rate
 SEQ_LEN = args.gene_num + 1
-VALIDATE_EVERY = args.valid_every
-
 CLASS = args.bin_num + 2
-POS_EMBED_USING = args.pos_embed
-model_name = args.model_name
+BATCH_SIZE = args.batch_size
+SEED = args.seed
 
-dist.init_process_group(backend='nccl')
-torch.cuda.set_device(local_rank)
-device = torch.device("cuda", local_rank)
-world_size = dist.get_world_size()
-seed_all(SEED + dist.get_rank())
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-class SCDataset(Dataset):
-    def __init__(self, data, label):
-        super().__init__()
+data = sc.read_h5ad(args.data_path)
+index_labels = data.obs['celltype']
+label_dict, label = np.unique(np.array(data.obs['celltype']), return_inverse=True)
+data_counts = data.X
+gene_names = data.var_names
+
+sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=SEED)
+for _, index_val in sss.split(data_counts, label):
+    data_val, label_val = data_counts[index_val], label[index_val]
+
+class SCDataset(torch.utils.data.Dataset):
+    def __init__(self, data, labels):
         self.data = data
-        self.label = label
-
-    def __getitem__(self, index):
-        full_seq = self.data[index].toarray()[0]
+        self.labels = labels
+    def __len__(self):
+        return len(self.labels)
+    def __getitem__(self, idx):
+        full_seq = self.data[idx].toarray()[0]
         full_seq[full_seq > (CLASS - 2)] = CLASS - 2
         full_seq = torch.from_numpy(full_seq).long()
-        full_seq = torch.cat((full_seq, torch.tensor([0]))).to(device)
-        return full_seq, self.label[index]
+        full_seq = torch.cat((full_seq, torch.tensor([0])))
+        label = self.labels[idx]
+        return full_seq, label
 
-    def __len__(self):
-        return self.data.shape[0]
+val_dataset = SCDataset(data_val, label_val)
+val_sampler = DistributedSampler(val_dataset)
+val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, sampler=val_sampler)
 
-try:
-    adata = sc.read_h5ad(args.data_path)
-    gene_names = list(adata.var_names)
-    label_dict, label = np.unique(np.array(adata.obs['celltype']), return_inverse=True)
-    if is_master:
-        with open('label_dict', 'wb') as fp:
-            pkl.dump(label_dict, fp)
-        with open('label', 'wb') as fp:
-            pkl.dump(label, fp)
-    label = torch.from_numpy(label)
-    data = adata.X
+model = PerformerLM(
+    num_tokens=CLASS,
+    dim=200,
+    depth=6,
+    max_seq_len=SEQ_LEN,
+    heads=10,
+    local_attn_heads=0,
+    g2v_position_emb=False
+)
+ckpt = torch.load(args.model_path, map_location=device)
+state_dict = ckpt['model_state_dict']
+ignored_keys = [k for k in state_dict.keys() if k.startswith("to_out.") or k.startswith("pos_emb.")]
+for k in ignored_keys:
+    del state_dict[k]
+model.load_state_dict(state_dict, strict=False)
+model = model.to(device)
+model.eval()
 
-    sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=SEED)
-    for index_train, index_val in sss.split(data, label):
-        data_train, label_train = data[index_train], label[index_train]
-        data_val, label_val = data[index_val], label[index_val]
-        train_dataset = SCDataset(data_train, label_train)
-        val_dataset = SCDataset(data_val, label_val)
+deeplift = DeepLift(model)
 
-    train_sampler = DistributedSampler(train_dataset)
-    val_sampler = DistributedSampler(val_dataset)
-    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, sampler=train_sampler)
-    val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, sampler=val_sampler)
+all_relevances = []
+all_labels = []
 
-    model = PerformerLM(
-        num_tokens=CLASS,
-        dim=200,
-        depth=6,
-        max_seq_len=SEQ_LEN,
-        heads=10,
-        local_attn_heads=0,
-        g2v_position_emb=POS_EMBED_USING
-    )
+for inputs, labels_batch in tqdm(val_loader):
+    inputs = inputs.to(device)
+    labels_batch = labels_batch.to(device)
 
-    class Identity(nn.Module):
-        def __init__(self, dropout=0., h_dim=100, out_dim=10):
-            super().__init__()
-            self.conv1 = nn.Conv2d(1, 1, (1, 200))
-            self.act = nn.ReLU()
-            self.fc1 = nn.Linear(SEQ_LEN, 512)
-            self.act1 = nn.ReLU()
-            self.dropout1 = nn.Dropout(dropout)
-            self.fc2 = nn.Linear(512, h_dim)
-            self.act2 = nn.ReLU()
-            self.dropout2 = nn.Dropout(dropout)
-            self.fc3 = nn.Linear(h_dim, out_dim)
+    baseline = torch.zeros_like(inputs).to(device)
 
-        def forward(self, x):
-            x = x[:, None, :, :]
-            x = self.conv1(x)
-            x = self.act(x)
-            x = x.view(x.shape[0], -1)
-            x = self.fc1(x)
-            x = self.act1(x)
-            x = self.dropout1(x)
-            x = self.fc2(x)
-            x = self.act2(x)
-            x = self.dropout2(x)
-            x = self.fc3(x)
-            return x
+    batch_relevances = []
+    for i in range(inputs.size(0)):
+        input_i = inputs[i].unsqueeze(0)
+        baseline_i = baseline[i].unsqueeze(0)
+        target_i = labels_batch[i].item()
+        attr = deeplift.attribute(input_i, baselines=baseline_i, target=target_i)
+        batch_relevances.append(attr.squeeze(0).detach().cpu().numpy())
+    batch_relevances = np.stack(batch_relevances)
+    all_relevances.append(batch_relevances)
+    all_labels.append(labels_batch.detach().cpu().numpy())
 
-    model.to_out = Identity(dropout=0., h_dim=128, out_dim=label_dict.shape[0])
-    ckpt_path = f"/data1/data/corpus/scMODEL/{model_name}_full_model_Zheng68K.pkl"
-    ckpt = torch.load(ckpt_path, map_location='cpu')
-    model.load_state_dict(ckpt['model_state_dict'])
-    model = model.to(device)
-    model = DDP(model, device_ids=[local_rank], output_device=local_rank)
-    model.eval()
+all_relevances = np.concatenate(all_relevances, axis=0)
+all_labels = np.concatenate(all_labels, axis=0)
 
-    net = model.module if isinstance(model, DDP) else model
+records = []
+for cls in np.unique(all_labels):
+    arr = np.mean(all_relevances[all_labels == cls], axis=0)
+    top15 = arr.argsort()[-15:][::-1]
+    bot15 = arr.argsort()[:15]
+    for rank, g in enumerate(top15, 1):
+        records.append((label_dict[cls], rank, gene_names[g], arr[g]))
+    for rank, g in enumerate(bot15[::-1], 1):
+        records.append((label_dict[cls], -rank, gene_names[g], arr[g]))
 
-    correct_seq_path = "/data1/data/corpus/scDATA/scbert_deeplift/correct_seqs.pt"
-    correct_lbl_path = "/data1/data/corpus/scDATA/scbert_deeplift/correct_lbls.pt"
-
-    if os.path.exists(correct_seq_path) and os.path.exists(correct_lbl_path):
-        if is_master:
-            print("Loading saved correct predictions...")
-        seqs = torch.load(correct_seq_path, map_location=device)
-        lbls = torch.load(correct_lbl_path, map_location=device)
-    else:
-        correct_seqs, correct_lbls = [], []
-        with torch.no_grad():
-            iter_val_loader = tqdm(val_loader, desc="Collecting Correct Predictions") if is_master else val_loader
-            for x_v, y_v in iter_val_loader:
-                x_v = x_v.to(device)
-                y_v = y_v.to(device)
-                reps = net(x_v, return_encodings=True)
-                logits = net.to_out(reps)
-                preds = logits.argmax(dim=1)
-                correct_mask = preds == y_v
-                if correct_mask.any():
-                    correct_seqs.append(x_v[correct_mask])
-                    correct_lbls.append(y_v[correct_mask])
-
-        if len(correct_seqs) == 0:
-            if is_master:
-                print("[WARNING] No correctly predicted samples found.")
-            dist.destroy_process_group()
-            exit()
-
-        seqs = torch.cat(correct_seqs)
-        lbls = torch.cat(correct_lbls)
-
-        if is_master:
-            os.makedirs(os.path.dirname(correct_seq_path), exist_ok=True)
-            torch.save(seqs.cpu(), correct_seq_path)
-            torch.save(lbls.cpu(), correct_lbl_path)
-
-    class EncWrapper(nn.Module):
-        def __init__(self, model):
-            super().__init__()
-            self.model = model
-        def forward(self, x):
-            return self.model(x, return_encodings=True)
-
-    encoder = EncWrapper(net).to(device)
-    deeplift = DeepLift(encoder)
-
-    baseline = torch.zeros_like(seqs[0]).unsqueeze(0).to(device)
-    relevances = []
-    iterator = tqdm(range(len(seqs)), desc="Calculating DeepLIFT Relevance") if is_master else range(len(seqs))
-
-    for i in iterator:
-        seq = seqs[i].unsqueeze(0).to(device).float()
-        lbl = lbls[i].item()
-        seq = seq.long()
-        baseline = baseline.long()
-        attr = deeplift.attribute(seq, baselines=baseline, target=int(lbl))
-        rel = attr.squeeze().detach().cpu().numpy()
-        rel = rel / (np.max(rel) + 1e-12)
-        relevances.append(rel)
-
-    relevances = np.stack(relevances)[:, :-1]
-    records = []
-
-    for cls in np.unique(lbls.cpu()):
-        arr = np.mean(relevances[lbls.cpu() == cls], axis=0)
-        top15 = arr.argsort()[-15:][::-1]
-        bot15 = arr.argsort()[:15]
-        for rank, g in enumerate(top15, 1):
-            records.append((label_dict[cls], rank, gene_names[g], arr[g]))
-        for rank, g in enumerate(bot15[::-1], 1):
-            records.append((label_dict[cls], -rank, gene_names[g], arr[g]))
-
-    df = pd.DataFrame(records, columns=['class', 'rank', 'gene', 'value'])
-    if is_master:
-        df.to_csv("finetune_deeplift_relevance_topbot.csv", index=False)
-
-finally:
-    dist.destroy_process_group()
+df = pd.DataFrame(records, columns=['class', 'rank', 'gene', 'value'])
+os.makedirs(args.save_dir, exist_ok=True)
+df.to_csv(os.path.join(args.save_dir, "deeplift_relevance_topbot.csv"), index=False)
