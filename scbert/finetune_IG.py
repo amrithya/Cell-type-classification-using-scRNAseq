@@ -120,7 +120,7 @@ model.module.load_state_dict(ckpt['model_state_dict'])
 model.eval()
 
 def forward_func(input_ids):
-    output = model(input_ids.unsqueeze(1))
+    output = model(input_ids)
     return F.softmax(output, dim=-1)
 
 ig = IntegratedGradients(forward_func)
