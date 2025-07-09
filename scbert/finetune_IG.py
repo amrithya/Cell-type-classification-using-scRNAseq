@@ -108,7 +108,7 @@ model = PerformerLM(
     local_attn_heads=0,
     g2v_position_emb=POS_EMBED_USING
 )
-model.to_out = Identity(dropout=0., h_dim=128, out_dim=CLASS)
+model.to_out = Identity(dropout=0., h_dim=128, out_dim=11)
 
 ckpt_path = "/data1/data/corpus/scMODEL/finetune_full_model_Zheng68K.pkl"
 
