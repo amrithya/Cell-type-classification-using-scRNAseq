@@ -8,11 +8,9 @@ from torch.utils.data import DataLoader, Dataset
 from torch.utils.data.distributed import DistributedSampler
 import torch.distributed as dist
 from performer_pytorch import PerformerLM
-from tqdm import tqdm
-from sklearn.model_selection import StratifiedShuffleSplit
-from captum.attr import IntegratedGradients
+from captum.attr import LayerIntegratedGradients
 import torch.nn.functional as F
-import pandas as pd
+from sklearn.model_selection import StratifiedShuffleSplit
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--local_rank", "--local-rank", type=int, default=-1)
@@ -23,7 +21,7 @@ parser.add_argument("--batch_size", type=int, default=2)
 parser.add_argument("--pos_embed", type=bool, default=True)
 parser.add_argument("--data_path", type=str, default='./data/Zheng68K.h5ad')
 parser.add_argument("--model_path", type=str, default='./panglao_pretrained.pth')
-parser.add_argument("--output_dir", type=str, default='./deeplift_outputs/')
+parser.add_argument("--output_dir", type=str, default='./IG_outputs/')
 args = parser.parse_args()
 
 rank = int(os.environ["RANK"])
@@ -110,57 +108,33 @@ model = PerformerLM(
     local_attn_heads=0,
     g2v_position_emb=POS_EMBED_USING
 )
-model.to_out = Identity(dropout=0., h_dim=128, out_dim=label_dict.shape[0])
-model = model.to(device)
-model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[local_rank], output_device=local_rank)
+model.to_out = Identity(dropout=0., h_dim=128, out_dim=CLASS)
 
-ckpt_path = "/data1/data/corpus/scMODEL/finetune_full_model_Zheng68K.pkl"
-ckpt = torch.load(ckpt_path, map_location='cpu')
-model.module.load_state_dict(ckpt['model_state_dict'])
+checkpoint = torch.load(args.model_path, map_location=device)
+model.load_state_dict(checkpoint['model_state_dict'])
+model.to(device)
 model.eval()
 
-def forward_func(input_ids):
-    output = model(input_ids)
-    return F.softmax(output, dim=-1)
+def model_forward(input_ids):
+    return model(input_ids)
 
-ig = IntegratedGradients(forward_func)
+embedding_layer = model.performer.net.token_emb
+lig = LayerIntegratedGradients(model_forward, embedding_layer)
 
-all_attributions = []
-all_preds = []
-all_labels = []
+def construct_input_and_baseline(seq):
+    pad_token = 0
+    baseline = torch.full_like(seq, pad_token)
+    return seq.unsqueeze(0).to(device), baseline.unsqueeze(0).to(device)
 
-for batch in tqdm(val_loader):
-    input_ids, labels = batch
-    input_ids = input_ids.to(device)
-    labels = labels.to(device)
-    baseline = torch.zeros_like(input_ids)
-    attributions, _ = ig.attribute(inputs=input_ids, baselines=baseline, target=None, return_convergence_delta=True)
-    preds = model(input_ids).argmax(dim=-1)
-    all_attributions.append(attributions.detach().cpu())
-    all_preds.append(preds.detach().cpu())
-    all_labels.append(labels.detach().cpu())
-
-all_attributions = torch.cat(all_attributions)
-all_preds = torch.cat(all_preds)
-all_labels = torch.cat(all_labels)
-
-if is_master:
-    os.makedirs(args.output_dir, exist_ok=True)
-    attributions_np = all_attributions[:, :-1].numpy()
-    labels_np = all_labels.numpy()
-    gene_names = data.var_names if hasattr(data, 'var_names') else [f"gene_{i}" for i in range(SEQ_LEN-1)]
-    rows = []
-    for cls_idx, cls_name in enumerate(label_dict):
-        cls_mask = labels_np == cls_idx
-        cls_attr = attributions_np[cls_mask]
-        if cls_attr.shape[0] == 0:
-            continue
-        mean_attr = cls_attr.mean(axis=0)
-        top_indices = mean_attr.argsort()[::-1][:15]
-        bottom_indices = mean_attr.argsort()[:15]
-        for i in top_indices:
-            rows.append([cls_name, "top", gene_names[i], mean_attr[i]])
-        for i in bottom_indices:
-            rows.append([cls_name, "bottom", gene_names[i], mean_attr[i]])
-    df = pd.DataFrame(rows, columns=["class", "type", "gene", "mean_ig_score"])
-    df.to_csv(os.path.join(args.output_dir, "top_bottom_15_genes_per_class.csv"), index=False)
+val_sampler.set_epoch(0)
+for batch_idx, (seqs, labels) in enumerate(val_loader):
+    for i in range(seqs.size(0)):
+        input_ids, baseline_ids = construct_input_and_baseline(seqs[i])
+        attr, delta = lig.attribute(inputs=input_ids,
+                                    baselines=baseline_ids,
+                                    return_convergence_delta=True)
+        attr_sum = attr.sum(dim=-1).squeeze(0)
+        attr_norm = attr_sum / torch.norm(attr_sum)
+        attr_np = attr_norm.cpu().detach().numpy()
+        print(f"Sample {i} token attributions shape:", attr_np.shape)
+    break
