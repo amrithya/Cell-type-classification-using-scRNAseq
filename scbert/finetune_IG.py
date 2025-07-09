@@ -112,9 +112,9 @@ model.to_out = Identity(dropout=0., h_dim=128, out_dim=CLASS)
 
 ckpt_path = "/data1/data/corpus/scMODEL/finetune_full_model_Zheng68K.pkl"
 
-print("Loading finetuned checkpoint...")
+ckpt_path = "/data1/data/corpus/scMODEL/finetune_full_model_Zheng68K.pkl"
 ckpt = torch.load(ckpt_path, map_location='cpu')
-model.module.load_state_dict(ckpt['model_state_dict'])
+model.load_state_dict(ckpt['model_state_dict'])
 
 model.to(device)
 model.eval()
