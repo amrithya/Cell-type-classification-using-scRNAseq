@@ -116,6 +116,7 @@ ckpt_path = "/data1/data/corpus/scMODEL/finetune_full_model_Zheng68K.pkl"
 ckpt = torch.load(ckpt_path, map_location='cpu')
 model.load_state_dict(ckpt['model_state_dict'])
 
+model = model.float()
 model.to(device)
 model.eval()
 
