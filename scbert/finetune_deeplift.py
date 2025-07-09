@@ -1,101 +1,77 @@
 import os
+import random
 import argparse
+import pickle as pkl
 import numpy as np
-import pandas as pd
 import scanpy as sc
 import torch
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
+from torch.utils.data.distributed import DistributedSampler
+import torch.distributed as dist
 from performer_pytorch import PerformerLM
-from sklearn.model_selection import StratifiedShuffleSplit
-from tqdm import tqdm
 from captum.attr import DeepLift
-import torch.nn as nn
+from tqdm import tqdm
+from sklearn.model_selection import StratifiedShuffleSplit
 
 parser = argparse.ArgumentParser()
+parser.add_argument("--local_rank", type=int, default=-1)
 parser.add_argument("--bin_num", type=int, default=5)
 parser.add_argument("--gene_num", type=int, default=16906)
-parser.add_argument("--data_path", type=str, default='./data/data.h5ad')
-parser.add_argument("--model_path", type=str, default='./model.pth')
-parser.add_argument("--save_dir", type=str, default='./deeplift/')
-parser.add_argument("--batch_size", type=int, default=2)
-parser.add_argument("--seed", type=int, default=42)
+parser.add_argument("--seed", type=int, default=2021)
+parser.add_argument("--batch_size", type=int, default=4)
+parser.add_argument("--pos_embed", type=bool, default=True)
+parser.add_argument("--data_path", type=str, default='./data/Zheng68K.h5ad')
+# parser.add_argument("--finetuned_model_path", type=str, required=True)
+parser.add_argument("--output_dir", type=str, default='./deeplift_outputs/')
 args = parser.parse_args()
 
+rank = int(os.environ["RANK"])
+local_rank = args.local_rank
+is_master = local_rank == 0
+
+SEED = args.seed
+BATCH_SIZE = args.batch_size
 SEQ_LEN = args.gene_num + 1
 CLASS = args.bin_num + 2
-BATCH_SIZE = args.batch_size
-SEED = args.seed
+POS_EMBED_USING = args.pos_embed
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+dist.init_process_group(backend='nccl')
+torch.cuda.set_device(local_rank)
+device = torch.device("cuda", local_rank)
 
-print("Loading data...")
-data = sc.read_h5ad(args.data_path)
-index_labels = data.obs['celltype']
-label_dict, label = np.unique(np.array(index_labels), return_inverse=True)
-data_counts = data.X
-gene_names = data.var_names
-print(f"Data counts shape: {data_counts.shape}")
-print(f"Number of unique labels: {len(label_dict)}")
+random.seed(SEED + rank)
+torch.manual_seed(SEED + rank)
+torch.cuda.manual_seed_all(SEED + rank)
 
-print("Performing stratified split...")
-sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=SEED)
-for _, index_val in sss.split(data_counts, label):
-    data_val, label_val = data_counts[index_val], label[index_val]
-print(f"Validation data shape: {data_val.shape}, Validation labels shape: {label_val.shape}")
-
-class SCDataset(torch.utils.data.Dataset):
-    def __init__(self, data, labels):
+class SCDataset(Dataset):
+    def __init__(self, data, label):
+        super().__init__()
         self.data = data
-        self.labels = labels
-    def __len__(self):
-        return len(self.labels)
-    def __getitem__(self, idx):
-        full_seq = self.data[idx].toarray()[0]
+        self.label = label
+
+    def __getitem__(self, index):
+        full_seq = self.data[index].toarray()[0]
         full_seq[full_seq > (CLASS - 2)] = CLASS - 2
-        full_seq_long = torch.from_numpy(full_seq).long()
-        full_seq_float = torch.from_numpy(full_seq).float()
-        full_seq_long = torch.cat((full_seq_long, torch.tensor([0], dtype=torch.long)))
-        full_seq_float = torch.cat((full_seq_float, torch.tensor([0.0], dtype=torch.float)))
-        label = self.labels[idx]
-        return full_seq_long, full_seq_float, label
+        full_seq = torch.from_numpy(full_seq).long()
+        full_seq = torch.cat((full_seq, torch.tensor([0]))).to(device)
+        seq_label = self.label[index]
+        return full_seq, seq_label
 
-val_dataset = SCDataset(data_val, label_val)
-val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
-print(f"Validation DataLoader prepared with batch size {BATCH_SIZE}")
+    def __len__(self):
+        return self.data.shape[0]
 
-print("Loading model checkpoint...")
-model = PerformerLM(
-    num_tokens=CLASS,
-    dim=200,
-    depth=6,
-    max_seq_len=SEQ_LEN,
-    heads=10,
-    local_attn_heads=0,
-    g2v_position_emb=False
-)
-ckpt = torch.load(args.model_path, map_location=device)
-state_dict = ckpt['model_state_dict']
-ignored_keys = [k for k in state_dict.keys() if k.startswith("to_out.") or k.startswith("pos_emb.")]
-for k in ignored_keys:
-    del state_dict[k]
-model.load_state_dict(state_dict, strict=False)
-model = model.to(device)
-model.eval()
-print("Model loaded")
-
-class Identity(nn.Module):
-    def __init__(self, dropout=0., h_dim=100, out_dim=11):
+class Identity(torch.nn.Module):
+    def __init__(self, dropout=0., h_dim=100, out_dim=10):
         super(Identity, self).__init__()
-        self.conv1 = nn.Conv2d(1, 1, (1, 200))
-        self.act = nn.ReLU()
-        self.fc1 = nn.Linear(in_features=SEQ_LEN, out_features=512, bias=True)
-        self.act1 = nn.ReLU()
-        self.dropout1 = nn.Dropout(dropout)
-        self.fc2 = nn.Linear(in_features=512, out_features=h_dim, bias=True)
-        self.act2 = nn.ReLU()
-        self.dropout2 = nn.Dropout(dropout)
-        self.fc3 = nn.Linear(in_features=h_dim, out_features=out_dim, bias=True)
+        self.conv1 = torch.nn.Conv2d(1, 1, (1, 200))
+        self.act = torch.nn.ReLU()
+        self.fc1 = torch.nn.Linear(in_features=SEQ_LEN, out_features=512, bias=True)
+        self.act1 = torch.nn.ReLU()
+        self.dropout1 = torch.nn.Dropout(dropout)
+        self.fc2 = torch.nn.Linear(in_features=512, out_features=h_dim, bias=True)
+        self.act2 = torch.nn.ReLU()
+        self.dropout2 = torch.nn.Dropout(dropout)
+        self.fc3 = torch.nn.Linear(in_features=h_dim, out_features=out_dim, bias=True)
 
     def forward(self, x):
         x = x[:, None, :, :]
@@ -111,91 +87,60 @@ class Identity(nn.Module):
         x = self.fc3(x)
         return x
 
-identity_head = Identity(out_dim=11).to(device)
-identity_head.eval()
+print("Loading data...")
+data = sc.read_h5ad(args.data_path)
+label_dict, label = np.unique(np.array(data.obs['celltype']), return_inverse=True)
+label = torch.from_numpy(label)
+data = data.X
 
-class WrappedModel(nn.Module):
-    def __init__(self, model, head):
-        super().__init__()
-        self.model = model
-        self.head = head
+sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=SEED)
+for _, index_val in sss.split(data, label):
+    data_val, label_val = data[index_val], label[index_val]
 
-    def forward(self, input_float):
-        input_long = input_float.round().long()
-        emb = self.model(x=input_long)
-        print(f"PerformerLM output shape: {emb.shape}, dtype: {emb.dtype}")
+val_dataset = SCDataset(data_val, label_val)
+val_sampler = DistributedSampler(val_dataset, shuffle=False)
+val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, sampler=val_sampler)
 
-        if len(emb.shape) == 3:
-            emb_ = emb.unsqueeze(1)
-        else:
-            emb_ = emb
+print("Building model...")
+model = PerformerLM(
+    num_tokens=CLASS,
+    dim=200,
+    depth=6,
+    max_seq_len=SEQ_LEN,
+    heads=10,
+    local_attn_heads=0,
+    g2v_position_emb=POS_EMBED_USING
+)
+model.to_out = Identity(dropout=0., h_dim=128, out_dim=label_dict.shape[0])
+model = model.to(device)
+model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[local_rank], output_device=local_rank)
 
-        out = self.head(emb_)
-        print(f"Identity head output shape: {out.shape}, dtype: {out.dtype}")
-        return out
+ckpt_path = "/data1/data/corpus/scMODEL/finetune_full_model_Zheng68K.pkl"
 
-wrapped_model = WrappedModel(model, identity_head).to(device)
-wrapped_model.eval()
+print("Loading finetuned checkpoint...")
+ckpt = torch.load(ckpt_path, map_location='cpu')
+model.module.load_state_dict(ckpt['model_state_dict'])
 
-deeplift = DeepLift(wrapped_model)
-print("DeepLift initialized")
+model.eval()
 
-all_relevances = []
-all_labels = []
+dl = DeepLift(model.module)
 
-print("Starting DeepLift attribution...")
-for batch_idx, (inputs_long, inputs_float, labels_batch) in enumerate(tqdm(val_loader)):
-    print(f"\nBatch {batch_idx + 1}")
-    print(f"inputs_long shape: {inputs_long.shape}, dtype: {inputs_long.dtype}")
-    print(f"inputs_float shape: {inputs_float.shape}, dtype: {inputs_float.dtype}")
-    print(f"labels_batch shape: {labels_batch.shape}, dtype: {labels_batch.dtype}")
+os.makedirs(args.output_dir, exist_ok=True)
 
-    inputs_float = inputs_float.to(device)
-    labels_batch = labels_batch.to(device)
-    baseline = torch.zeros_like(inputs_float).to(device)
+if is_master:
+    print(f"Running DeepLIFT attribution on full validation set with {len(val_loader)} batches")
 
-    batch_relevances = []
-    for i in range(inputs_float.size(0)):
-        input_float_i = inputs_float[i].unsqueeze(0)
-        baseline_i = baseline[i].unsqueeze(0)
-        target_i = int(labels_batch[i].item())
+with torch.no_grad():
+    for batch_idx, (data_v, labels_v) in enumerate(tqdm(val_loader, desc="DeepLIFT on val")):
+        data_v = data_v.to(device)
+        baseline = torch.zeros_like(data_v).to(device)
 
-        print(f"\n Sample {i}")
-        print(f"input_float_i shape: {input_float_i.shape}, dtype: {input_float_i.dtype}")
-        print(f"baseline_i shape: {baseline_i.shape}, dtype: {baseline_i.dtype}")
-        print(f"target: {target_i}")
+        attributions = dl.attribute(data_v, baselines=baseline)
 
-        input_float_i.requires_grad_()
-        attr = deeplift.attribute(input_float_i, baselines=baseline_i, target=target_i)
-        print(f"attr shape: {attr.shape}, dtype: {attr.dtype}")
-        batch_relevances.append(attr.squeeze(0).detach().cpu().numpy())
+        if is_master:
+            batch_path = os.path.join(args.output_dir, f"deeplift_batch_{batch_idx}.pkl")
+            with open(batch_path, "wb") as f:
+                pkl.dump({'attributions': attributions.cpu().numpy(), 'labels': labels_v.cpu().numpy()}, f)
 
-    if batch_relevances:
-        batch_relevances = np.stack(batch_relevances)
-        print(f"\nbatch_relevances shape after stack: {batch_relevances.shape}, dtype: {batch_relevances.dtype}")
-        all_relevances.append(batch_relevances)
-        all_labels.append(labels_batch.detach().cpu().numpy())
-        print("Added to all_relevances and all_labels")
-    print(f"Processed batch {batch_idx + 1}")
-
-print("All batches processed. Aggregating results...")
-all_relevances = np.concatenate(all_relevances, axis=0)
-all_labels = np.concatenate(all_labels, axis=0)
-
-records = []
-print("Generating top/bottom genes per class...")
-for cls in np.unique(all_labels):
-    arr = np.mean(all_relevances[all_labels == cls], axis=0)
-    top15 = arr.argsort()[-16:-1][::-1]
-    bot15 = arr.argsort()[:15]
-    for rank, g in enumerate(top15, 1):
-        records.append((label_dict[cls], rank, gene_names[g], arr[g]))
-    for rank, g in enumerate(bot15[::-1], 1):
-        records.append((label_dict[cls], -rank, gene_names[g], arr[g]))
-print("Done collecting feature relevance.")
-
-os.makedirs(args.save_dir, exist_ok=True)
-df = pd.DataFrame(records, columns=['class', 'rank', 'gene', 'value'])
-save_path = os.path.join(args.save_dir, "deeplift_relevance_topbot.csv")
-df.to_csv(save_path, index=False)
-print(f"Saved relevance scores to: {save_path}")
+dist.barrier()
+dist.destroy_process_group()
