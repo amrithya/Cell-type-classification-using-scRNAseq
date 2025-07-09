@@ -617,7 +617,7 @@ class PerformerLM(nn.Module):
         x = self.token_emb(x)
         if output_attentions:
             x.requires_grad_()    # used for attn_map output
-        x += self.pos_emb(x)
+        x = x + self.pos_emb(x)
         x = self.dropout(x)
 
         # performer layers
