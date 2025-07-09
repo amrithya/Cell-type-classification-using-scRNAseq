@@ -28,19 +28,20 @@ SEED = args.seed
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Load data
+print("Loading data...")
 data = sc.read_h5ad(args.data_path)
 index_labels = data.obs['celltype']
 label_dict, label = np.unique(np.array(index_labels), return_inverse=True)
 data_counts = data.X
 gene_names = data.var_names
 
-# Stratified split
+print("Performing stratified split...")
 sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=SEED)
 for _, index_val in sss.split(data_counts, label):
     data_val, label_val = data_counts[index_val], label[index_val]
 
-# Dataset
+print(f"Validation set size: {len(label_val)}")
+
 class SCDataset(torch.utils.data.Dataset):
     def __init__(self, data, labels):
         self.data = data
@@ -59,8 +60,9 @@ class SCDataset(torch.utils.data.Dataset):
 
 val_dataset = SCDataset(data_val, label_val)
 val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
+print("Validation DataLoader prepared.")
 
-# Load model
+print("Loading model...")
 model = PerformerLM(
     num_tokens=CLASS,
     dim=200,
@@ -78,8 +80,8 @@ for k in ignored_keys:
 model.load_state_dict(state_dict, strict=False)
 model = model.to(device)
 model.eval()
+print("Model loaded and set to eval mode.")
 
-# Wrapper
 class WrappedModel(torch.nn.Module):
     def __init__(self, model):
         super().__init__()
@@ -92,11 +94,13 @@ class WrappedModel(torch.nn.Module):
 wrapped_model = WrappedModel(model).to(device)
 wrapped_model.eval()
 deeplift = DeepLift(wrapped_model)
+print("DeepLift initialized.")
 
 all_relevances = []
 all_labels = []
 
-for inputs_long, inputs_float, labels_batch in tqdm(val_loader):
+print("Starting DeepLift attribution...")
+for batch_idx, (inputs_long, inputs_float, labels_batch) in enumerate(tqdm(val_loader)):
     inputs_float = inputs_float.to(device)
     labels_batch = labels_batch.to(device)
     baseline = torch.zeros_like(inputs_float).to(device)
@@ -110,7 +114,7 @@ for inputs_long, inputs_float, labels_batch in tqdm(val_loader):
         with torch.no_grad():
             out = wrapped_model(input_float_i)
             if target_i >= out.shape[1]:
-                print(f"Invalid target index {target_i} for output shape {out.shape}")
+                print(f"Skipping sample due to invalid target: {target_i}, output shape: {out.shape}")
                 continue
 
         input_float_i.requires_grad_()
@@ -121,11 +125,14 @@ for inputs_long, inputs_float, labels_batch in tqdm(val_loader):
         batch_relevances = np.stack(batch_relevances)
         all_relevances.append(batch_relevances)
         all_labels.append(labels_batch.detach().cpu().numpy())
+    print(f"Processed batch {batch_idx + 1}")
 
+print("All batches processed. Aggregating results...")
 all_relevances = np.concatenate(all_relevances, axis=0)
 all_labels = np.concatenate(all_labels, axis=0)
 
 records = []
+print("Generating top/bottom genes per class...")
 for cls in np.unique(all_labels):
     arr = np.mean(all_relevances[all_labels == cls], axis=0)
     top15 = arr.argsort()[-16:-1][::-1]
@@ -134,7 +141,10 @@ for cls in np.unique(all_labels):
         records.append((label_dict[cls], rank, gene_names[g], arr[g]))
     for rank, g in enumerate(bot15[::-1], 1):
         records.append((label_dict[cls], -rank, gene_names[g], arr[g]))
+print("Done collecting feature relevance.")
 
 os.makedirs(args.save_dir, exist_ok=True)
 df = pd.DataFrame(records, columns=['class', 'rank', 'gene', 'value'])
-df.to_csv(os.path.join(args.save_dir, "deeplift_relevance_topbot.csv"), index=False)
+save_path = os.path.join(args.save_dir, "deeplift_relevance_topbot.csv")
+df.to_csv(save_path, index=False)
+print(f"Saved relevance scores to: {save_path}")
