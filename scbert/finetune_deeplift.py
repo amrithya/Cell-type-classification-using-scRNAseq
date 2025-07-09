@@ -53,8 +53,7 @@ class SCDataset(torch.utils.data.Dataset):
         return full_seq, label
 
 val_dataset = SCDataset(data_val, label_val)
-val_sampler = DistributedSampler(val_dataset)
-val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, sampler=val_sampler)
+val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, sampler=False)
 
 model = PerformerLM(
     num_tokens=CLASS,
