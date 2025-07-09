@@ -80,7 +80,7 @@ class EmbedModelWrapper(torch.nn.Module):
         super().__init__()
         self.model = model
     def forward(self, embedded_input):
-        return self.model(inputs_embeds=embedded_input)
+        return self.model(x=embedded_input)
 
 wrapped_model = EmbedModelWrapper(model)
 deeplift = DeepLift(wrapped_model)
