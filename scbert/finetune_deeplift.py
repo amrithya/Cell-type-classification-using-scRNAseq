@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import scanpy as sc
 import torch
+import torch.nn as nn
 from torch.utils.data import DataLoader
 from performer_pytorch import PerformerLM
 from sklearn.model_selection import StratifiedShuffleSplit
@@ -34,13 +35,13 @@ index_labels = data.obs['celltype']
 label_dict, label = np.unique(np.array(index_labels), return_inverse=True)
 data_counts = data.X
 gene_names = data.var_names
+print(f"Data counts shape: {data_counts.shape}")
+print(f"Number of unique labels: {len(label_dict)}")
 
-print("Performing stratified split...")
 sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=SEED)
 for _, index_val in sss.split(data_counts, label):
     data_val, label_val = data_counts[index_val], label[index_val]
-
-print(f"Validation set size: {len(label_val)}")
+print(f"Validation data shape: {data_val.shape}, Validation labels shape: {label_val.shape}")
 
 class SCDataset(torch.utils.data.Dataset):
     def __init__(self, data, labels):
@@ -50,7 +51,6 @@ class SCDataset(torch.utils.data.Dataset):
         return len(self.labels)
     def __getitem__(self, idx):
         full_seq = self.data[idx].toarray()[0]
-        # Clip values to max token id
         full_seq[full_seq > (CLASS - 2)] = CLASS - 2
         full_seq_long = torch.from_numpy(full_seq).long()
         full_seq_float = torch.from_numpy(full_seq).float()
@@ -61,9 +61,8 @@ class SCDataset(torch.utils.data.Dataset):
 
 val_dataset = SCDataset(data_val, label_val)
 val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
-print("Validation DataLoader prepared.")
+print(f"Validation DataLoader prepared with batch size {BATCH_SIZE}")
 
-print("Loading model...")
 model = PerformerLM(
     num_tokens=CLASS,
     dim=200,
@@ -73,39 +72,73 @@ model = PerformerLM(
     local_attn_heads=0,
     g2v_position_emb=False
 )
+
+print("Loading model checkpoint...")
 ckpt = torch.load(args.model_path, map_location=device)
 state_dict = ckpt['model_state_dict']
 ignored_keys = [k for k in state_dict.keys() if k.startswith("to_out.") or k.startswith("pos_emb.")]
 for k in ignored_keys:
     del state_dict[k]
 model.load_state_dict(state_dict, strict=False)
+print("Model loaded")
+
+class Identity(nn.Module):
+    def __init__(self, dropout=0., h_dim=100, out_dim=CLASS):
+        super(Identity, self).__init__()
+        self.conv1 = nn.Conv2d(1, 1, (1, 200))
+        self.act = nn.ReLU()
+        self.fc1 = nn.Linear(in_features=SEQ_LEN, out_features=512, bias=True)
+        self.act1 = nn.ReLU()
+        self.dropout1 = nn.Dropout(dropout)
+        self.fc2 = nn.Linear(in_features=512, out_features=h_dim, bias=True)
+        self.act2 = nn.ReLU()
+        self.dropout2 = nn.Dropout(dropout)
+        self.fc3 = nn.Linear(in_features=h_dim, out_features=out_dim, bias=True)
+
+    def forward(self, x):
+        x = x[:, None, :, :]
+        x = self.conv1(x)
+        x = self.act(x)
+        x = x.view(x.shape[0], -1)
+        x = self.fc1(x)
+        x = self.act1(x)
+        x = self.dropout1(x)
+        x = self.fc2(x)
+        x = self.act2(x)
+        x = self.dropout2(x)
+        x = self.fc3(x)
+        return x
+
+model.to_out = Identity(dropout=0., h_dim=100, out_dim=CLASS).to(device)
 model = model.to(device)
 model.eval()
-print("Model loaded and set to eval mode.")
 
-class WrappedModel(torch.nn.Module):
+class WrappedModel(nn.Module):
     def __init__(self, model):
         super().__init__()
         self.model = model
 
     def forward(self, input_float):
-        # Convert float input to long tokens internally
         input_long = input_float.round().long()
-        logits = self.model(x=input_long)
-        return logits[:, -1, :]
+        emb = self.model(x=input_long)
+        print(f"Embeddings shape: {emb.shape}, dtype: {emb.dtype}")
+        cls_emb = emb[:, -1, :]
+        print(f"CLS embedding shape: {cls_emb.shape}, dtype: {cls_emb.dtype}")
+        logits = self.model.to_out(cls_emb)
+        print(f"Logits shape: {logits.shape}, dtype: {logits.dtype}")
+        return logits
 
 wrapped_model = WrappedModel(model).to(device)
 wrapped_model.eval()
 
 deeplift = DeepLift(wrapped_model)
-print("DeepLift initialized.")
+print("DeepLift initialized")
 
 all_relevances = []
 all_labels = []
 
-print("Starting DeepLift attribution...")
 for batch_idx, (inputs_long, inputs_float, labels_batch) in enumerate(tqdm(val_loader)):
-    print(f"\nBatch {batch_idx + 1} --------------------")
+    print(f"\nBatch {batch_idx+1}")
     print(f"inputs_long shape: {inputs_long.shape}, dtype: {inputs_long.dtype}")
     print(f"inputs_float shape: {inputs_float.shape}, dtype: {inputs_float.dtype}")
     print(f"labels_batch shape: {labels_batch.shape}, dtype: {labels_batch.dtype}")
@@ -119,47 +152,44 @@ for batch_idx, (inputs_long, inputs_float, labels_batch) in enumerate(tqdm(val_l
         input_float_i = inputs_float[i].unsqueeze(0)
         baseline_i = baseline[i].unsqueeze(0)
         target_i = int(labels_batch[i].item())
-
-        print(f"\n Sample {i}:")
-        print(f"input_float_i shape: {input_float_i.shape}, dtype: {input_float_i.dtype}")
-        print(f"baseline_i shape: {baseline_i.shape}, dtype: {baseline_i.dtype}")
-        print(f"target_i: {target_i}, type: {type(target_i)}")
+        print(f" Sample {i}: input_float_i shape: {input_float_i.shape}, dtype: {input_float_i.dtype}")
+        print(f" baseline_i shape: {baseline_i.shape}, dtype: {baseline_i.dtype}")
+        print(f" target: {target_i}")
 
         with torch.no_grad():
             out = wrapped_model(input_float_i)
-            print(f"logits shape: {out.shape}, dtype: {out.dtype}")
+            print(f" Output logits shape: {out.shape}, dtype: {out.dtype}")
             if target_i >= out.shape[1]:
-                print(f"Skipping sample due to invalid target: {target_i}, output shape: {out.shape}")
+                print(f" Skipping sample due to invalid target {target_i}")
                 continue
 
         input_float_i.requires_grad_()
         attr = deeplift.attribute(input_float_i, baselines=baseline_i, target=target_i)
-        print(f"attr shape: {attr.shape}, dtype: {attr.dtype}")
+        print(f" Attribution shape: {attr.shape}, dtype: {attr.dtype}")
         batch_relevances.append(attr.squeeze(0).detach().cpu().numpy())
 
     if batch_relevances:
         batch_relevances = np.stack(batch_relevances)
-        print(f"\nbatch_relevances shape after stack: {batch_relevances.shape}, dtype: {batch_relevances.dtype}")
+        print(f" Batch relevances stacked shape: {batch_relevances.shape}, dtype: {batch_relevances.dtype}")
         all_relevances.append(batch_relevances)
         all_labels.append(labels_batch.detach().cpu().numpy())
-        print(f"Added to all_relevances and all_labels.")
-    print(f"Processed batch {batch_idx + 1}")
 
-print("All batches processed. Aggregating results...")
 all_relevances = np.concatenate(all_relevances, axis=0)
 all_labels = np.concatenate(all_labels, axis=0)
+print(f"All relevances shape: {all_relevances.shape}")
+print(f"All labels shape: {all_labels.shape}")
 
 records = []
-print("Generating top/bottom genes per class...")
 for cls in np.unique(all_labels):
     arr = np.mean(all_relevances[all_labels == cls], axis=0)
     top15 = arr.argsort()[-16:-1][::-1]
     bot15 = arr.argsort()[:15]
+    print(f"Class {cls} ({label_dict[cls]}): top gene indices {top15}")
+    print(f"Class {cls} ({label_dict[cls]}): bottom gene indices {bot15}")
     for rank, g in enumerate(top15, 1):
         records.append((label_dict[cls], rank, gene_names[g], arr[g]))
     for rank, g in enumerate(bot15[::-1], 1):
         records.append((label_dict[cls], -rank, gene_names[g], arr[g]))
-print("Done collecting feature relevance.")
 
 os.makedirs(args.save_dir, exist_ok=True)
 df = pd.DataFrame(records, columns=['class', 'rank', 'gene', 'value'])
