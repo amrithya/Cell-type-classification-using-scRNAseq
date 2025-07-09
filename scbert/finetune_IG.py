@@ -134,7 +134,12 @@ def construct_input_and_baseline(seq):
 
 
 val_sampler.set_epoch(0)
+printed = False
 for batch_idx, (seqs, labels) in enumerate(val_loader):
+    if not printed:
+        print("Sample seqs:\n", seqs[:5])
+        print(f"seqs shape: {seqs.shape}, labels shape: {labels.shape}")
+        printed = True
     for i in range(seqs.size(0)):
         input_ids, baseline_ids = construct_input_and_baseline(seqs[i])
         attr, delta = lig.attribute(inputs=input_ids,
