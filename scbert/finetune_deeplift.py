@@ -73,16 +73,14 @@ model.load_state_dict(state_dict, strict=False)
 model = model.to(device)
 model.eval()
 
-embedding_layer = model.token_emb
-
-class EmbedModelWrapper(torch.nn.Module):
+class WrappedModel(torch.nn.Module):
     def __init__(self, model):
         super().__init__()
         self.model = model
-    def forward(self, embedded_input):
-        return self.model(x=embedded_input)
+    def forward(self, input_ids):
+        return self.model(x=input_ids).logits
 
-wrapped_model = EmbedModelWrapper(model)
+wrapped_model = WrappedModel(model)
 deeplift = DeepLift(wrapped_model)
 
 all_relevances = []
@@ -99,10 +97,7 @@ for inputs, labels_batch in tqdm(val_loader):
         baseline_i = baseline[i].unsqueeze(0)
         target_i = labels_batch[i].item()
 
-        embedded_input = embedding_layer(input_i)
-        embedded_baseline = embedding_layer(baseline_i)
-
-        attr = deeplift.attribute(embedded_input, baselines=embedded_baseline, target=target_i)
+        attr = deeplift.attribute(input_i, baselines=baseline_i, target=target_i)
         batch_relevances.append(attr.squeeze(0).detach().cpu().numpy())
 
     batch_relevances = np.stack(batch_relevances)
@@ -115,7 +110,7 @@ all_labels = np.concatenate(all_labels, axis=0)
 records = []
 for cls in np.unique(all_labels):
     arr = np.mean(all_relevances[all_labels == cls], axis=0)
-    top15 = arr.argsort()[-15:][::-1]
+    top15 = arr.argsort()[-16:-1][::-1]
     bot15 = arr.argsort()[:15]
     for rank, g in enumerate(top15, 1):
         records.append((label_dict[cls], rank, gene_names[g], arr[g]))
