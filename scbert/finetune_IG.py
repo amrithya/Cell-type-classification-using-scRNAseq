@@ -120,7 +120,11 @@ model.to(device)
 model.eval()
 
 def model_forward(input_ids):
-    input_ids = input_ids.to(dtype=torch.float32)
+    print("input_ids shape:", input_ids.shape, "type:", type(input_ids), "dtype:", input_ids.dtype)
+    input_ids = input_ids.long()
+    print("After conversion:")
+    print("input_ids shape:", input_ids.shape, "type:", type(input_ids), "dtype:", input_ids.dtype)
+
     return model(input_ids)
 
 embedding_layer = model.token_emb
