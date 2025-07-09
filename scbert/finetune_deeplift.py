@@ -93,7 +93,6 @@ wrapped_model = WrappedModel(model).to(device)
 wrapped_model.eval()
 deeplift = DeepLift(wrapped_model)
 
-# Attribution
 all_relevances = []
 all_labels = []
 
@@ -126,7 +125,6 @@ for inputs_long, inputs_float, labels_batch in tqdm(val_loader):
 all_relevances = np.concatenate(all_relevances, axis=0)
 all_labels = np.concatenate(all_labels, axis=0)
 
-# Save relevance
 records = []
 for cls in np.unique(all_labels):
     arr = np.mean(all_relevances[all_labels == cls], axis=0)
