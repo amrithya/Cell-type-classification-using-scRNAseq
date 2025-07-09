@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import scanpy as sc
 import torch
-from torch.utils.data import DataLoader, DistributedSampler
+from torch.utils.data import DataLoader
 from performer_pytorch import PerformerLM
 from sklearn.model_selection import StratifiedShuffleSplit
 from tqdm import tqdm
@@ -30,7 +30,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 data = sc.read_h5ad(args.data_path)
 index_labels = data.obs['celltype']
-label_dict, label = np.unique(np.array(data.obs['celltype']), return_inverse=True)
+label_dict, label = np.unique(np.array(index_labels), return_inverse=True)
 data_counts = data.X
 gene_names = data.var_names
 
@@ -51,16 +51,6 @@ class SCDataset(torch.utils.data.Dataset):
         full_seq = torch.cat((full_seq, torch.tensor([0])))
         label = self.labels[idx]
         return full_seq, label
-    
-class WrappedModel(torch.nn.Module):
-    def __init__(self, model):
-        super().__init__()
-        self.model = model
-    def forward(self, x):
-        logits = self.model(x)
-        if isinstance(logits, tuple):
-            return logits[0]
-        return logits
 
 val_dataset = SCDataset(data_val, label_val)
 val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
@@ -83,7 +73,17 @@ model.load_state_dict(state_dict, strict=False)
 model = model.to(device)
 model.eval()
 
-deeplift = DeepLift(WrappedModel(model))
+embedding_layer = model.token_emb
+
+class EmbedModelWrapper(torch.nn.Module):
+    def __init__(self, model):
+        super().__init__()
+        self.model = model
+    def forward(self, embedded_input):
+        return self.model(inputs_embeds=embedded_input)
+
+wrapped_model = EmbedModelWrapper(model)
+deeplift = DeepLift(wrapped_model)
 
 all_relevances = []
 all_labels = []
@@ -91,7 +91,6 @@ all_labels = []
 for inputs, labels_batch in tqdm(val_loader):
     inputs = inputs.to(device)
     labels_batch = labels_batch.to(device)
-
     baseline = torch.zeros_like(inputs).to(device)
 
     batch_relevances = []
@@ -99,8 +98,13 @@ for inputs, labels_batch in tqdm(val_loader):
         input_i = inputs[i].unsqueeze(0)
         baseline_i = baseline[i].unsqueeze(0)
         target_i = labels_batch[i].item()
-        attr = deeplift.attribute(input_i, baselines=baseline_i, target=target_i)
+
+        embedded_input = embedding_layer(input_i)
+        embedded_baseline = embedding_layer(baseline_i)
+
+        attr = deeplift.attribute(embedded_input, baselines=embedded_baseline, target=target_i)
         batch_relevances.append(attr.squeeze(0).detach().cpu().numpy())
+
     batch_relevances = np.stack(batch_relevances)
     all_relevances.append(batch_relevances)
     all_labels.append(labels_batch.detach().cpu().numpy())
