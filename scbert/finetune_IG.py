@@ -135,7 +135,7 @@ for batch in tqdm(val_loader):
     labels = labels.to(device)
     baseline = torch.zeros_like(input_ids)
     attributions, _ = ig.attribute(inputs=input_ids, baselines=baseline, target=None, return_convergence_delta=True)
-    preds = model(input_ids.unsqueeze(1)).argmax(dim=-1)
+    preds = model(input_ids).argmax(dim=-1)
     all_attributions.append(attributions.detach().cpu())
     all_preds.append(preds.detach().cpu())
     all_labels.append(labels.detach().cpu())
