@@ -75,27 +75,32 @@ model.load_state_dict(state_dict, strict=False)
 model = model.to(device)
 model.eval()
 
+class WrappedModel(torch.nn.Module):
+    def __init__(self, model, target_idx):
+        super().__init__()
+        self.model = model
+        self.target_idx = target_idx
+    def forward(self, input_float):
+        input_long = input_float.round().long()
+        logits = self.model(x=input_long)
+        return logits[:, self.target_idx]
+
 all_relevances = []
 all_labels = []
 
 for inputs_long, inputs_float, labels_batch in tqdm(val_loader):
-    inputs_long = inputs_long.to(device)
     inputs_float = inputs_float.to(device)
     labels_batch = labels_batch.to(device)
     baseline = torch.zeros_like(inputs_float).to(device)
 
     batch_relevances = []
-    for i in range(inputs_long.size(0)):
+    for i in range(inputs_float.size(0)):
         input_float_i = inputs_float[i].unsqueeze(0)
         baseline_i = baseline[i].unsqueeze(0)
         target_i = labels_batch[i].item()
 
-        def forward_func(input_float):
-            input_long = input_float.round().long()
-            outputs = model(x=input_long)
-            return outputs[:, target_i]
-
-        deeplift = DeepLift(forward_func)
+        wrapped_model = WrappedModel(model, target_i)
+        deeplift = DeepLift(wrapped_model)
         attr = deeplift.attribute(input_float_i, baselines=baseline_i)
         batch_relevances.append(attr.squeeze(0).detach().cpu().numpy())
 
