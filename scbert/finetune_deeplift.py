@@ -80,6 +80,7 @@ class WrappedModel(torch.nn.Module):
         super().__init__()
         self.model = model
     def forward(self, input_long):
+        input_long = input_long.round().long()
         return self.model(x=input_long)
 
 all_relevances = []
