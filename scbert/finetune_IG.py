@@ -110,18 +110,11 @@ model = PerformerLM(
 )
 model.to_out = Identity(dropout=0., h_dim=128, out_dim=CLASS)
 
-try:
-    print("Loading pretrained PerformerLM model...")
-    path = args.model_path
-    ckpt = torch.load(path, map_location='cpu')
-    state_dict = ckpt['model_state_dict']
-    print("Keys in the checkpoint's model_state_dict:")
-    for key in state_dict.keys():
-        print(key)
-    model.load_state_dict(state_dict)
-except Exception as e:
-    print(f"[ERROR] Model loading failed: {e}")
-    exit(1)
+ckpt_path = "/data1/data/corpus/scMODEL/finetune_full_model_Zheng68K.pkl"
+
+print("Loading finetuned checkpoint...")
+ckpt = torch.load(ckpt_path, map_location='cpu')
+model.module.load_state_dict(ckpt['model_state_dict'])
 
 model.to(device)
 model.eval()
