@@ -47,7 +47,7 @@ class SCDataset(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         full_seq = self.data[idx].toarray()[0]
         full_seq[full_seq > (CLASS - 2)] = CLASS - 2
-        full_seq = torch.from_numpy(full_seq).long()
+        full_seq = torch.from_numpy(full_seq).float()
         full_seq = torch.cat((full_seq, torch.tensor([0])))
         label = self.labels[idx]
         return full_seq, label
@@ -77,8 +77,11 @@ class WrappedModel(torch.nn.Module):
     def __init__(self, model):
         super().__init__()
         self.model = model
-    def forward(self, input_ids):
-        return self.model(x=input_ids)
+    def forward(self, input_ids, target=None):
+        outputs = self.model(x=input_ids)
+        if target is not None:
+            return outputs.gather(1, target.unsqueeze(1)).squeeze(1)
+        return outputs
 
 wrapped_model = WrappedModel(model)
 deeplift = DeepLift(wrapped_model)
@@ -97,7 +100,8 @@ for inputs, labels_batch in tqdm(val_loader):
         baseline_i = baseline[i].unsqueeze(0)
         target_i = labels_batch[i].item()
 
-        attr = deeplift.attribute(input_i, baselines=baseline_i, target=target_i)
+        attr = deeplift.attribute(input_i, baselines=baseline_i, target=target_i, 
+                         additional_forward_args=(torch.tensor([target_i], device=device)))
         batch_relevances.append(attr.squeeze(0).detach().cpu().numpy())
 
     batch_relevances = np.stack(batch_relevances)
