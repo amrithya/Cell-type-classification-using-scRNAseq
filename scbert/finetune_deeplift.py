@@ -101,6 +101,11 @@ all_labels = []
 
 print("Starting DeepLift attribution...")
 for batch_idx, (inputs_long, inputs_float, labels_batch) in enumerate(tqdm(val_loader)):
+    print(f"\nBatch {batch_idx + 1} --------------------")
+    print(f"inputs_long shape: {inputs_long.shape}, dtype: {inputs_long.dtype}")
+    print(f"inputs_float shape: {inputs_float.shape}, dtype: {inputs_float.dtype}")
+    print(f"labels_batch shape: {labels_batch.shape}, dtype: {labels_batch.dtype}")
+
     inputs_float = inputs_float.to(device)
     labels_batch = labels_batch.to(device)
     baseline = torch.zeros_like(inputs_float).to(device)
@@ -111,21 +116,31 @@ for batch_idx, (inputs_long, inputs_float, labels_batch) in enumerate(tqdm(val_l
         baseline_i = baseline[i].unsqueeze(0)
         target_i = int(labels_batch[i].item())
 
+        print(f"\n Sample {i}:")
+        print(f"input_float_i shape: {input_float_i.shape}, dtype: {input_float_i.dtype}")
+        print(f"baseline_i shape: {baseline_i.shape}, dtype: {baseline_i.dtype}")
+        print(f"target_i: {target_i}, type: {type(target_i)}")
+
         with torch.no_grad():
             out = wrapped_model(input_float_i)
+            print(f"logits shape: {out.shape}, dtype: {out.dtype}")
             if target_i >= out.shape[1]:
                 print(f"Skipping sample due to invalid target: {target_i}, output shape: {out.shape}")
                 continue
 
         input_float_i.requires_grad_()
         attr = deeplift.attribute(input_float_i, baselines=baseline_i, target=target_i)
+        print(f"attr shape: {attr.shape}, dtype: {attr.dtype}")
         batch_relevances.append(attr.squeeze(0).detach().cpu().numpy())
 
     if batch_relevances:
         batch_relevances = np.stack(batch_relevances)
+        print(f"\nbatch_relevances shape after stack: {batch_relevances.shape}, dtype: {batch_relevances.dtype}")
         all_relevances.append(batch_relevances)
         all_labels.append(labels_batch.detach().cpu().numpy())
+        print(f"Added to all_relevances and all_labels.")
     print(f"Processed batch {batch_idx + 1}")
+
 
 print("All batches processed. Aggregating results...")
 all_relevances = np.concatenate(all_relevances, axis=0)
