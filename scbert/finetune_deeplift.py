@@ -85,7 +85,7 @@ model.eval()
 print("Model loaded")
 
 class Identity(nn.Module):
-    def __init__(self, dropout=0., h_dim=100, out_dim=CLASS):
+    def __init__(self, dropout=0., h_dim=100, out_dim=11):
         super(Identity, self).__init__()
         self.conv1 = nn.Conv2d(1, 1, (1, 200))
         self.act = nn.ReLU()
@@ -98,7 +98,7 @@ class Identity(nn.Module):
         self.fc3 = nn.Linear(in_features=h_dim, out_features=out_dim, bias=True)
 
     def forward(self, x):
-        
+        x = x[:, None, :, :]
         x = self.conv1(x)
         x = self.act(x)
         x = x.view(x.shape[0], -1)
@@ -111,7 +111,7 @@ class Identity(nn.Module):
         x = self.fc3(x)
         return x
 
-identity_head = Identity(out_dim=CLASS).to(device)
+identity_head = Identity(out_dim=11).to(device)
 identity_head.eval()
 
 class WrappedModel(nn.Module):
