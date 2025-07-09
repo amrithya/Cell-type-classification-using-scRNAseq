@@ -17,7 +17,7 @@ parser.add_argument("--local_rank", "--local-rank", type=int, default=-1)
 parser.add_argument("--bin_num", type=int, default=5)
 parser.add_argument("--gene_num", type=int, default=16906)
 parser.add_argument("--seed", type=int, default=2021)
-parser.add_argument("--batch_size", type=int, default=2)
+parser.add_argument("--batch_size", type=int, default=1)
 parser.add_argument("--pos_embed", type=bool, default=True)
 parser.add_argument("--data_path", type=str, default='./data/Zheng68K.h5ad')
 parser.add_argument("--model_path", type=str, default='./panglao_pretrained.pth')
@@ -147,6 +147,7 @@ for batch_idx, (seqs, labels) in enumerate(val_loader):
         printed = True
     for i in range(seqs.size(0)):
         input_ids, baseline_ids = construct_input_and_baseline(seqs[i])
+        torch.cuda.empty_cache()
         attr, delta = lig.attribute(inputs=input_ids,
                                     baselines=baseline_ids,
                                     return_convergence_delta=True)
