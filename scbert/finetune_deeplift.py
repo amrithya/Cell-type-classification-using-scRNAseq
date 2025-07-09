@@ -78,7 +78,7 @@ class WrappedModel(torch.nn.Module):
         super().__init__()
         self.model = model
     def forward(self, input_ids):
-        return self.model(x=input_ids).logits
+        return self.model(x=input_ids)
 
 wrapped_model = WrappedModel(model)
 deeplift = DeepLift(wrapped_model)
