@@ -137,6 +137,7 @@ all_labels = []
 with torch.no_grad():
     for batch_idx, (data_v, labels_v) in enumerate(tqdm(val_loader, desc="DeepLIFT on val")):
         data_v = data_v.to(device)
+        data_v.requires_grad = True
         labels_v = labels_v.to(device)
         baseline = torch.zeros_like(data_v).to(device)
         attributions = dl.attribute(data_v, baselines=baseline, target=labels_v)
