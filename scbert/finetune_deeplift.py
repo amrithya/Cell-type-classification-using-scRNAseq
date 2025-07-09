@@ -3,6 +3,7 @@ import random
 import argparse
 import pickle as pkl
 import numpy as np
+import pandas as pd
 import scanpy as sc
 import torch
 from torch.utils.data import DataLoader, Dataset
@@ -130,17 +131,60 @@ os.makedirs(args.output_dir, exist_ok=True)
 if is_master:
     print(f"Running DeepLIFT attribution on full validation set with {len(val_loader)} batches")
 
+all_attrs = []
+all_labels = []
+
 with torch.no_grad():
     for batch_idx, (data_v, labels_v) in enumerate(tqdm(val_loader, desc="DeepLIFT on val")):
         data_v = data_v.to(device)
+        labels_v = labels_v.to(device)
         baseline = torch.zeros_like(data_v).to(device)
-
-        attributions = dl.attribute(data_v, baselines=baseline)
+        attributions = dl.attribute(data_v, baselines=baseline, target=labels_v)
 
         if is_master:
-            batch_path = os.path.join(args.output_dir, f"deeplift_batch_{batch_idx}.pkl")
-            with open(batch_path, "wb") as f:
-                pkl.dump({'attributions': attributions.cpu().numpy(), 'labels': labels_v.cpu().numpy()}, f)
+            all_attrs.append(attributions.cpu().numpy())
+            all_labels.append(labels_v.cpu().numpy())
 
 dist.barrier()
+
+if is_master:
+    all_attrs = np.concatenate(all_attrs, axis=0)  # shape (N_samples, seq_len, ...)
+    all_labels = np.concatenate(all_labels, axis=0)  # shape (N_samples,)
+
+    if all_attrs.ndim > 2:
+        all_attrs = all_attrs.mean(axis=tuple(range(2, all_attrs.ndim)))
+
+    gene_attrs = all_attrs[:, :-1]  # exclude appended token
+
+    results = {}
+    for class_idx in np.unique(all_labels):
+        class_mask = all_labels == class_idx
+        class_attrs = gene_attrs[class_mask]
+        mean_attrs = class_attrs.mean(axis=0)
+
+        top15_idx = np.argsort(mean_attrs)[-15:][::-1]
+        bottom15_idx = np.argsort(mean_attrs)[:15]
+
+        results[class_idx] = {
+            'top15_genes': top15_idx,
+            'top15_values': mean_attrs[top15_idx],
+            'bottom15_genes': bottom15_idx,
+            'bottom15_values': mean_attrs[bottom15_idx]
+        }
+
+    gene_names = np.array(data.var_names) if hasattr(data, 'var_names') else np.array([f'gene_{i}' for i in range(SEQ_LEN - 1)])
+
+    for class_idx, res in results.items():
+        class_name = label_dict[class_idx]
+        df_top = pd.DataFrame({
+            'gene': gene_names[res['top15_genes']],
+            'attribution': res['top15_values']
+        })
+        df_bottom = pd.DataFrame({
+            'gene': gene_names[res['bottom15_genes']],
+            'attribution': res['bottom15_values']
+        })
+        df_top.to_csv(os.path.join(args.output_dir, f'{class_name}_top15_genes.csv'), index=False)
+        df_bottom.to_csv(os.path.join(args.output_dir, f'{class_name}_bottom15_genes.csv'), index=False)
+
 dist.destroy_process_group()
