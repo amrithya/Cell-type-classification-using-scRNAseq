@@ -86,11 +86,9 @@ class WrappedModel(torch.nn.Module):
     def __init__(self, model):
         super().__init__()
         self.model = model
-    def forward(self, input_float):
-        input_long = input_float.round().long()
-        logits = self.model(x=input_long) 
-        cls_logits = logits[:, -1, :]
-        return cls_logits
+    def forward(self, input_long):
+        logits = self.model(x=input_long)
+        return logits[:, -1, :]
     
 wrapped_model = WrappedModel(model).to(device)
 wrapped_model.eval()
@@ -112,25 +110,25 @@ for batch_idx, (inputs_long, inputs_float, labels_batch) in enumerate(tqdm(val_l
     baseline = torch.zeros_like(inputs_float).to(device)
 
     batch_relevances = []
-    for i in range(inputs_float.size(0)):
-        input_float_i = inputs_float[i].unsqueeze(0)
-        baseline_i = baseline[i].unsqueeze(0)
-        target_i = int(labels_batch[i].item())
+    for i in range(inputs_long.size(0)):
+        input_long_i = inputs_long[i].unsqueeze(0).to(device)
+        baseline_i = torch.zeros_like(input_long_i)
 
+        target_i = int(labels_batch[i].item())
         print(f"\n Sample {i}:")
-        print(f"input_float_i shape: {input_float_i.shape}, dtype: {input_float_i.dtype}")
+        print(f"input_long_i shape: {input_long_i.shape}, dtype: {input_long_i.dtype}")
         print(f"baseline_i shape: {baseline_i.shape}, dtype: {baseline_i.dtype}")
         print(f"target_i: {target_i}, type: {type(target_i)}")
 
         with torch.no_grad():
-            out = wrapped_model(input_float_i)
+            out = wrapped_model(input_long_i)
             print(f"logits shape: {out.shape}, dtype: {out.dtype}")
             if target_i >= out.shape[1]:
                 print(f"Skipping sample due to invalid target: {target_i}, output shape: {out.shape}")
                 continue
 
-        input_float_i.requires_grad_()
-        attr = deeplift.attribute(input_float_i, baselines=baseline_i, target=target_i)
+        input_long_i.requires_grad_()
+        attr = deeplift.attribute(input_long_i, baselines=baseline_i, target=target_i)
         print(f"attr shape: {attr.shape}, dtype: {attr.dtype}")
         batch_relevances.append(attr.squeeze(0).detach().cpu().numpy())
 
