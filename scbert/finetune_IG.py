@@ -128,9 +128,10 @@ lig = LayerIntegratedGradients(model_forward, embedding_layer)
 
 def construct_input_and_baseline(seq):
     pad_token = 0
-    seq = seq.to(dtype=torch.float32)
-    baseline = torch.full_like(seq, pad_token).to(dtype=torch.float32)
+    seq = seq.to(dtype=torch.long)
+    baseline = torch.full_like(seq, pad_token).to(dtype=torch.long)
     return seq.unsqueeze(0).to(device), baseline.unsqueeze(0).to(device)
+
 
 val_sampler.set_epoch(0)
 for batch_idx, (seqs, labels) in enumerate(val_loader):
