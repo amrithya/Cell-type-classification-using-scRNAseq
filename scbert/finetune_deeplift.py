@@ -21,7 +21,7 @@ parser.add_argument("--seed", type=int, default=2021)
 parser.add_argument("--batch_size", type=int, default=4)
 parser.add_argument("--pos_embed", type=bool, default=True)
 parser.add_argument("--data_path", type=str, default='./data/Zheng68K.h5ad')
-# parser.add_argument("--finetuned_model_path", type=str, required=True)
+parser.add_argument("--model_path", type=str, default='./panglao_pretrained.pth')
 parser.add_argument("--output_dir", type=str, default='./deeplift_outputs/')
 args = parser.parse_args()
 
