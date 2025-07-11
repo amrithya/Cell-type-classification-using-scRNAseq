@@ -9,7 +9,7 @@ from tqdm import tqdm
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.data.distributed import DistributedSampler
 import torch.distributed as dist
-from collections import defaultdict
+from collections import defaultdict, Counter
 from performer_pytorch import PerformerLM
 from captum.attr import LayerIntegratedGradients
 import torch.nn.functional as F
@@ -117,17 +117,14 @@ model = PerformerLM(
 )
 model.to_out = Identity(dropout=0., h_dim=128, out_dim=11)
 
-ckpt_path = args.model_path
-ckpt = torch.load(ckpt_path, map_location='cpu')
+ckpt = torch.load(args.model_path, map_location='cpu')
 model.load_state_dict(ckpt['model_state_dict'])
 
-print(f"[RANK {rank}] Loaded model checkpoint from: {ckpt_path}")
+print(f"[RANK {rank}] Loaded model checkpoint from: {args.model_path}")
 
 model = model.float()
 model.to(device)
 model.eval()
-
-print(f"[RANK {rank}] Model moved to device: {device} and set to eval mode.")
 
 def model_forward(input_ids):
     input_ids = input_ids.long().to(device)
@@ -143,31 +140,41 @@ def construct_input_and_baseline(seq):
     return seq.unsqueeze(0).to(device), baseline.unsqueeze(0).to(device)
 
 val_sampler.set_epoch(0)
-print(f"[RANK {rank}] Starting attribution loop on {len(val_loader)} batches...")
-
 attr_accumulator = defaultdict(list)
+total_preds = Counter()
+correct_preds = Counter()
 
-val_iter = val_loader
-if is_master:
-    val_iter = tqdm(val_loader, desc=f"[RANK {rank}] IG Attribution")
+val_iter = tqdm(val_loader, desc=f"[RANK {rank}] IG Attribution") if is_master else val_loader
 
 for batch_idx, (seqs, labels) in enumerate(val_iter):
     with torch.no_grad():
         outputs = model(seqs.to(device))
         preds = torch.argmax(outputs, dim=1)
     for i in range(seqs.size(0)):
-        if preds[i] == labels[i].to(device):
+        true_label = labels[i].item()
+        pred_label = preds[i].item()
+        total_preds[pred_label] += 1
+        if pred_label == true_label:
+            correct_preds[true_label] += 1
             input_ids, baseline_ids = construct_input_and_baseline(seqs[i])
             torch.cuda.empty_cache()
             attr, delta = lig.attribute(inputs=input_ids,
                                         baselines=baseline_ids,
-                                        target=labels[i].item(),
+                                        target=true_label,
                                         n_steps=5,
                                         return_convergence_delta=True)
             attr_sum = attr.sum(dim=-1).squeeze(0)
-            attr_accumulator[labels[i].item()].append(attr_sum.detach().cpu())
+            attr_accumulator[true_label].append(attr_sum.detach().cpu())
 
 if is_master:
+    print("\nClass prediction stats:")
+    for cls_idx in sorted(set(total_preds.keys()).union(correct_preds.keys())):
+        class_name = label_dict[cls_idx]
+        total = total_preds.get(cls_idx, 0)
+        correct = correct_preds.get(cls_idx, 0)
+        acc = correct / total if total > 0 else 0.0
+        print(f"Class: {class_name:20s} | Total: {total:4d} | Correct: {correct:4d} | Acc: {acc:.2%}")
+
     os.makedirs(args.output_dir, exist_ok=True)
     records = []
     for cls_idx, attr_list in attr_accumulator.items():
@@ -196,6 +203,5 @@ if is_master:
     df = pd.DataFrame(records)
     df.to_csv(os.path.join(args.output_dir, 'IG_top_bottom_genes_per_class.csv'), index=False)
 
-print(f"[RANK {rank}] Attribution done. Destroying process group.")
 if dist.is_initialized():
     dist.destroy_process_group()
