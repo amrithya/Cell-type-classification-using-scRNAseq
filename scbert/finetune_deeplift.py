@@ -180,14 +180,15 @@ for data_v, labels_v in tqdm(val_loader, desc="DeepLIFT on val"):
     all_attrs.append(attributions.detach().cpu().numpy())
     all_labels.append(labels_correct.detach().cpu().numpy())
 
-all_attrs_tensor = torch.tensor(np.concatenate(all_attrs, axis=0))
-all_labels_tensor = torch.tensor(np.concatenate(all_labels, axis=0))
+all_attrs_tensor = torch.tensor(np.concatenate(all_attrs, axis=0)).to(device)
+all_labels_tensor = torch.tensor(np.concatenate(all_labels, axis=0)).to(device)
 
 attrs_gather = [torch.zeros_like(all_attrs_tensor) for _ in range(dist.get_world_size())]
 labels_gather = [torch.zeros_like(all_labels_tensor) for _ in range(dist.get_world_size())]
 
 dist.all_gather(attrs_gather, all_attrs_tensor)
 dist.all_gather(labels_gather, all_labels_tensor)
+
 
 dist.barrier()
 
