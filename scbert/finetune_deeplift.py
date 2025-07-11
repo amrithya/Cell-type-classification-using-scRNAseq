@@ -205,6 +205,8 @@ if is_master:
     print(df_all.head(5))
     df_all.to_csv(os.path.join(args.output_dir, 'deeplift_top_bottom15_genes.csv'), index=False, encoding='utf-8')
     print(f"Saved DeepLIFT attribution results to {args.output_dir}deeplift_top_bottom15_genes.csv")
+    df_test = pd.read_csv(os.path.join(args.output_dir, 'deeplift_top_bottom15_genes.csv'), encoding='utf-8')
+    print(df_test.head())
 
 dist.destroy_process_group()
 print("Distributed process group destroyed. Script finished.")
