@@ -1,24 +1,21 @@
 #!/bin/bash
 
-#SBATCH --job-name="finetune_deeplift"
+#SBATCH --job-name=deeplift_eval
 #SBATCH --partition=gpu
-#SBATCH --gres=gpu:2
+#SBATCH --gres=gpu:1
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=2
-#SBATCH --cpus-per-task=3
-#SBATCH --time=48:00:00
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=4
+#SBATCH --time=12:00:00
 #SBATCH --hint=nomultithread
-#SBATCH --output=results/finetune_deeplift_%A_%a.out
-#SBATCH --error=results/finetune_deeplift_%A_%a.err
-#SBATCH --array=1
-
-MASTER_PORT=$(python -c "import socket; s=socket.socket(); s.bind(('',0)); print(s.getsockname()[1]); s.close()")
+#SBATCH --output=results/deeplift_eval_%j.out
+#SBATCH --error=results/deeplift_eval_%j.err
 
 export CUDA_LAUNCH_BLOCKING=1
 
-poetry run python -u -m torch.distributed.launch --nproc_per_node=2 --master_port=$MASTER_PORT finetune_deeplift.py \
+poetry run python -u finetune_deeplift.py \
     --data_path "/data1/data/corpus/scDATA/Zheng68K.h5ad" \
-    --model_path "/data1/data/corpus/scMODEL/panglao_pretrain.pth"
+    --model_path "/data1/data/corpus/scMODEL/panglao_pretrained.pth" \
+    --output_dir "./deeplift_outputs/"
 
 echo "All Done at $(date)!"
-wait

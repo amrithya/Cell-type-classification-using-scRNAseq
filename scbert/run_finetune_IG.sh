@@ -23,3 +23,4 @@ poetry run python -u -m torch.distributed.launch --nproc_per_node=2 --master_por
 
 echo "All Done at $(date)!"
 wait
+
