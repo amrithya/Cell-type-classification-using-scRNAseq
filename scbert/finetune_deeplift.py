@@ -16,7 +16,7 @@ from sklearn.model_selection import StratifiedShuffleSplit
 from collections import Counter, defaultdict
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--local_rank", "--local-rank", type=int, default=-1)
+parser.add_argument("--local_rank", type=int, default=-1)
 parser.add_argument("--bin_num", type=int, default=5)
 parser.add_argument("--gene_num", type=int, default=16906)
 parser.add_argument("--seed", type=int, default=2021)
@@ -29,7 +29,7 @@ args = parser.parse_args()
 
 rank = int(os.environ["RANK"])
 local_rank = args.local_rank
-is_master = local_rank == 0
+is_master = rank == 0
 
 SEED = args.seed
 BATCH_SIZE = args.batch_size
@@ -64,16 +64,16 @@ class SCDataset(Dataset):
 
 class Identity(torch.nn.Module):
     def __init__(self, dropout=0., h_dim=100, out_dim=10):
-        super(Identity, self).__init__()
+        super().__init__()
         self.conv1 = torch.nn.Conv2d(1, 1, (1, 200))
         self.act = torch.nn.ReLU()
-        self.fc1 = torch.nn.Linear(in_features=SEQ_LEN, out_features=512, bias=True)
+        self.fc1 = torch.nn.Linear(in_features=SEQ_LEN, out_features=512)
         self.act1 = torch.nn.ReLU()
         self.dropout1 = torch.nn.Dropout(dropout)
-        self.fc2 = torch.nn.Linear(in_features=512, out_features=h_dim, bias=True)
+        self.fc2 = torch.nn.Linear(512, h_dim)
         self.act2 = torch.nn.ReLU()
         self.dropout2 = torch.nn.Dropout(dropout)
-        self.fc3 = torch.nn.Linear(in_features=h_dim, out_features=out_dim, bias=True)
+        self.fc3 = torch.nn.Linear(h_dim, out_dim)
 
     def forward(self, x):
         x = x[:, None, :, :]
@@ -101,16 +101,14 @@ sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=SEED)
 for _, index_val in sss.split(data, label):
     data_val, label_val = data[index_val], label[index_val]
 
+val_label_counts = Counter(label_val.numpy())
+
 val_dataset = SCDataset(data_val, label_val)
 val_sampler = DistributedSampler(val_dataset, shuffle=False)
 val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, sampler=val_sampler)
 
-print(f"Validation dataset size: {len(val_dataset)}")
-
-# NEW: Show class distribution in validation set
 if is_master:
-    val_label_counts = Counter(label_val.numpy())
-    print("Validation samples per class (before inference):")
+    print(f"Validation dataset size: {len(val_dataset)}")
     for class_idx in range(len(label_dict)):
         print(f"{label_dict[class_idx]}: {val_label_counts[class_idx]}")
 
@@ -146,20 +144,14 @@ class ModelFromEmbeddings(torch.nn.Module):
 wrapper_model = ModelFromEmbeddings(model.module)
 dl = DeepLift(wrapper_model)
 
-os.makedirs(args.output_dir, exist_ok=True)
-
-if is_master:
-    print(f"Running DeepLIFT attribution on correctly predicted validation samples with {len(val_loader)} batches")
-
 all_attrs = []
 all_labels = []
 correct_counts = Counter()
 total_counts = Counter()
 
-for batch_idx, (data_v, labels_v) in enumerate(tqdm(val_loader, desc="DeepLIFT on val")):
+for data_v, labels_v in tqdm(val_loader, desc="DeepLIFT on val"):
     data_v = data_v.to(device)
     labels_v = labels_v.to(device)
-
     with torch.no_grad():
         embedded_input = model.module.token_emb(data_v)
         outputs = model.module.to_out(embedded_input)
@@ -185,43 +177,31 @@ for batch_idx, (data_v, labels_v) in enumerate(tqdm(val_loader, desc="DeepLIFT o
     embedded_input_correct = embedded_input_correct.detach().clone().requires_grad_(True)
     attributions = dl.attribute(inputs=embedded_input_correct, baselines=baseline, target=labels_correct)
 
-    if is_master:
-        all_attrs.append(attributions.detach().cpu().numpy())
-        all_labels.append(labels_correct.detach().cpu().numpy())
+    all_attrs.append(attributions.detach().cpu().numpy())
+    all_labels.append(labels_correct.detach().cpu().numpy())
 
-print("Completed DeepLIFT attribution.")
+# gather from all ranks
+all_attrs_tensor = torch.tensor(np.concatenate(all_attrs, axis=0))
+all_labels_tensor = torch.tensor(np.concatenate(all_labels, axis=0))
+
+attrs_gather = [torch.zeros_like(all_attrs_tensor) for _ in range(dist.get_world_size())]
+labels_gather = [torch.zeros_like(all_labels_tensor) for _ in range(dist.get_world_size())]
+
+dist.all_gather(attrs_gather, all_attrs_tensor)
+dist.all_gather(labels_gather, all_labels_tensor)
+
 dist.barrier()
 
 if is_master:
-    print("Correctly predicted sample counts per class:")
-    for class_idx in range(len(label_dict)):
-        print(f"{label_dict[class_idx]}: {correct_counts[class_idx]}/{total_counts[class_idx]}")
+    all_attrs = torch.cat(attrs_gather, dim=0).numpy()
+    all_labels = torch.cat(labels_gather, dim=0).numpy()
 
-    total_correct = sum(correct_counts.values())
-    total_seen = sum(total_counts.values())
-    acc_overall = total_correct / total_seen
-    print(f"Overall accuracy: {acc_overall:.4f}")
-
-    print("Per-class accuracy:")
-    for class_idx in range(len(label_dict)):
-        total = total_counts[class_idx]
-        correct = correct_counts[class_idx]
-        acc = correct / total if total > 0 else 0.0
-        print(f"{label_dict[class_idx]}: {acc:.4f}")
-
-    # NEW: Sanity check
-    print("Total samples processed per class during inference:")
-    for class_idx in range(len(label_dict)):
-        print(f"{label_dict[class_idx]}: {total_counts[class_idx]}")
-    
+    infer_label_counts = Counter(all_labels)
     val_total_sum = sum(val_label_counts.values())
-    infer_total_sum = sum(total_counts.values())
+    infer_total_sum = sum(infer_label_counts.values())
     print(f"Validation sample total = {val_total_sum} | Processed total = {infer_total_sum}")
     if val_total_sum != infer_total_sum:
-        print("⚠️ WARNING: Number of processed samples does not match validation dataset!")
-
-    all_attrs = np.concatenate(all_attrs, axis=0)
-    all_labels = np.concatenate(all_labels, axis=0)
+        print("\u26a0\ufe0f WARNING: Number of processed samples does not match validation dataset!")
 
     if all_attrs.ndim > 2:
         all_attrs = all_attrs.mean(axis=tuple(range(2, all_attrs.ndim)))
@@ -255,9 +235,9 @@ if is_master:
                 'type': 'bottom'
             })
 
+    os.makedirs(args.output_dir, exist_ok=True)
     df_all = pd.DataFrame(results)
-    df_all.to_csv(os.path.join(args.output_dir, 'correct_deeplift_top_bottom15_genes.csv'), index=False, encoding='utf-8')
+    df_all.to_csv(os.path.join(args.output_dir, 'correct_deeplift_top_bottom15_genes.csv'), index=False)
     print(f"Saved results to {args.output_dir}correct_deeplift_top_bottom15_genes.csv")
 
 dist.destroy_process_group()
-print("Distributed process group destroyed. Script finished.")
