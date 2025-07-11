@@ -16,7 +16,7 @@ from sklearn.model_selection import StratifiedShuffleSplit
 from collections import Counter, defaultdict
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--local_rank", type=int, default=-1)
+parser.add_argument("--local_rank", "--local-rank", type=int, default=-1)
 parser.add_argument("--bin_num", type=int, default=5)
 parser.add_argument("--gene_num", type=int, default=16906)
 parser.add_argument("--seed", type=int, default=2021)
@@ -180,7 +180,6 @@ for data_v, labels_v in tqdm(val_loader, desc="DeepLIFT on val"):
     all_attrs.append(attributions.detach().cpu().numpy())
     all_labels.append(labels_correct.detach().cpu().numpy())
 
-# gather from all ranks
 all_attrs_tensor = torch.tensor(np.concatenate(all_attrs, axis=0))
 all_labels_tensor = torch.tensor(np.concatenate(all_labels, axis=0))
 
