@@ -117,7 +117,7 @@ model = PerformerLM(
 )
 model.to_out = Identity(dropout=0., h_dim=128, out_dim=11)
 
-ckpt_path = args.model_path  # Using argument now
+ckpt_path = args.model_path
 ckpt = torch.load(ckpt_path, map_location='cpu')
 model.load_state_dict(ckpt['model_state_dict'])
 

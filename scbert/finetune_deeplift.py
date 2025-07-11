@@ -27,7 +27,7 @@ parser.add_argument("--model_path", type=str, default='./panglao_pretrained.pth'
 parser.add_argument("--output_dir", type=str, default='./deeplift_outputs/')
 args = parser.parse_args()
 
-rank = int(os.environ["RANK"])
+rank = args.local_rank
 local_rank = args.local_rank
 is_master = rank == 0
 
