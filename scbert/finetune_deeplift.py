@@ -202,7 +202,8 @@ if is_master:
             })
 
     df_all = pd.DataFrame(results)
-    df_all.to_csv(os.path.join(args.output_dir, 'deeplift_top_bottom15_genes.csv'), index=False)
+    print(df_all.head(5))
+    df_all.to_csv(os.path.join(args.output_dir, 'deeplift_top_bottom15_genes.csv'), index=False, encoding='utf-8')
     print(f"Saved DeepLIFT attribution results to {args.output_dir}deeplift_top_bottom15_genes.csv")
 
 dist.destroy_process_group()
