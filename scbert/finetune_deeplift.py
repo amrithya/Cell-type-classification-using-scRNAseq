@@ -201,7 +201,7 @@ if is_master:
     infer_total_sum = sum(infer_label_counts.values())
     print(f"Validation sample total = {val_total_sum} | Processed total = {infer_total_sum}")
     if val_total_sum != infer_total_sum:
-        print("\u26a0\ufe0f WARNING: Number of processed samples does not match validation dataset!")
+        print("WARNING: Number of processed samples does not match validation dataset!")
 
     if all_attrs.ndim > 2:
         all_attrs = all_attrs.mean(axis=tuple(range(2, all_attrs.ndim)))
