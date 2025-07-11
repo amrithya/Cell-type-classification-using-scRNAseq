@@ -2,11 +2,13 @@ import os
 import random
 import argparse
 import numpy as np
+import pandas as pd
 import scanpy as sc
 import torch
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.data.distributed import DistributedSampler
 import torch.distributed as dist
+from collections import defaultdict
 from performer_pytorch import PerformerLM
 from captum.attr import LayerIntegratedGradients
 import torch.nn.functional as F
@@ -143,6 +145,9 @@ def construct_input_and_baseline(seq):
 val_sampler.set_epoch(0)
 print(f"[RANK {rank}] Starting attribution loop on {len(val_loader)} batches...")
 
+
+attr_accumulator = defaultdict(list)
+
 for batch_idx, (seqs, labels) in enumerate(val_loader):
     for i in range(seqs.size(0)):
         input_ids, baseline_ids = construct_input_and_baseline(seqs[i])
@@ -153,9 +158,21 @@ for batch_idx, (seqs, labels) in enumerate(val_loader):
                                     n_steps=5,
                                     return_convergence_delta=True)
         attr_sum = attr.sum(dim=-1).squeeze(0)
-        attr_norm = attr_sum / torch.norm(attr_sum)
-        attr_np = attr_norm.cpu().detach().numpy()
-    break
+        attr_accumulator[labels[i].item()].append(attr_sum.detach().cpu())
+
+if is_master:
+    os.makedirs(args.output_dir, exist_ok=True)
+    records = []
+    for cls, attr_list in attr_accumulator.items():
+        cls_attr = torch.stack(attr_list).mean(dim=0)
+        topk = torch.topk(cls_attr, 15)
+        bottomk = torch.topk(-cls_attr, 15)
+        for rank, idx in enumerate(topk.indices.tolist()):
+            records.append({"class": cls, "rank": rank + 1, "type": "top", "gene_index": idx, "score": topk.values[rank].item()})
+        for rank, idx in enumerate(bottomk.indices.tolist()):
+            records.append({"class": cls, "rank": rank + 1, "type": "bottom", "gene_index": idx, "score": -bottomk.values[rank].item()})
+    df = pd.DataFrame(records)
+    df.to_csv(os.path.join(args.output_dir, 'IG_top_bottom_genes_per_class.csv'), index=False)
 
 print(f"[RANK {rank}] Attribution done. Destroying process group.")
 if dist.is_initialized():
