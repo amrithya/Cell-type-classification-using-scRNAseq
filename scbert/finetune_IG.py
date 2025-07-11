@@ -91,9 +91,13 @@ label_dict, label = np.unique(np.array(data.obs['celltype']), return_inverse=Tru
 label = torch.from_numpy(label)
 data = data.X
 
+print(f"[RANK {rank}] Loaded data: {data.shape}, Labels: {label.shape}")
+
 sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=SEED)
 for _, index_val in sss.split(data, label):
     data_val, label_val = data[index_val], label[index_val]
+
+print(f"[RANK {rank}] Validation split: {data_val.shape}, Labels: {label_val.shape}")
 
 val_dataset = SCDataset(data_val, label_val)
 val_sampler = DistributedSampler(val_dataset, shuffle=False)
@@ -111,21 +115,20 @@ model = PerformerLM(
 model.to_out = Identity(dropout=0., h_dim=128, out_dim=11)
 
 ckpt_path = "/data1/data/corpus/scMODEL/finetune_full_model_Zheng68K.pkl"
-
-ckpt_path = "/data1/data/corpus/scMODEL/finetune_full_model_Zheng68K.pkl"
 ckpt = torch.load(ckpt_path, map_location='cpu')
 model.load_state_dict(ckpt['model_state_dict'])
+
+print(f"[RANK {rank}] Loaded model checkpoint from: {ckpt_path}")
 
 model = model.float()
 model.to(device)
 model.eval()
 
-def model_forward(input_ids):
-    print("input_ids shape:", input_ids.shape, "type:", type(input_ids), "dtype:", input_ids.dtype)
-    input_ids = input_ids.long().to(device)
-    print("After conversion:")
-    print("input_ids shape:", input_ids.shape, "type:", type(input_ids), "dtype:", input_ids.dtype)
+print(f"[RANK {rank}] Model moved to device: {device} and set to eval mode.")
 
+def model_forward(input_ids):
+    print(f"[RANK {rank}] model_forward input_ids shape: {input_ids.shape}, dtype: {input_ids.dtype}")
+    input_ids = input_ids.long().to(device)
     return model(input_ids)
 
 embedding_layer = model.token_emb
@@ -137,14 +140,10 @@ def construct_input_and_baseline(seq):
     baseline = torch.full_like(seq, pad_token).to(dtype=torch.long)
     return seq.unsqueeze(0).to(device), baseline.unsqueeze(0).to(device)
 
-
 val_sampler.set_epoch(0)
-printed = False
+print(f"[RANK {rank}] Starting attribution loop on {len(val_loader)} batches...")
+
 for batch_idx, (seqs, labels) in enumerate(val_loader):
-    if not printed:
-        print(f"seqs shape: {seqs.shape}, type: {type(seqs)}")
-        print(f"labels shape: {labels.shape}, type: {type(labels)}")
-        printed = True
     for i in range(seqs.size(0)):
         input_ids, baseline_ids = construct_input_and_baseline(seqs[i])
         torch.cuda.empty_cache()
@@ -156,5 +155,8 @@ for batch_idx, (seqs, labels) in enumerate(val_loader):
         attr_sum = attr.sum(dim=-1).squeeze(0)
         attr_norm = attr_sum / torch.norm(attr_sum)
         attr_np = attr_norm.cpu().detach().numpy()
-        print(f"Sample {i} token attributions shape:", attr_np.shape)
     break
+
+print(f"[RANK {rank}] Attribution done. Destroying process group.")
+if dist.is_initialized():
+    dist.destroy_process_group()
