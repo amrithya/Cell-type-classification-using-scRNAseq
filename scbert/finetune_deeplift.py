@@ -13,7 +13,7 @@ from performer_pytorch import PerformerLM
 from captum.attr import DeepLift
 from tqdm import tqdm
 from sklearn.model_selection import StratifiedShuffleSplit
-from collections import Counter
+from collections import Counter, defaultdict
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--local_rank", "--local-rank", type=int, default=-1)
@@ -104,12 +104,8 @@ for _, index_val in sss.split(data, label):
 val_label_counts = Counter(label_val.numpy())
 
 val_dataset = SCDataset(data_val, label_val)
-
-if is_master:
-    val_sampler = DistributedSampler(val_dataset, shuffle=False)
-    val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, sampler=val_sampler)
-else:
-    val_loader = []
+val_sampler = DistributedSampler(val_dataset, shuffle=False)
+val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, sampler=val_sampler)
 
 if is_master:
     print(f"Validation dataset size: {len(val_dataset)}")
@@ -148,41 +144,50 @@ class ModelFromEmbeddings(torch.nn.Module):
 wrapper_model = ModelFromEmbeddings(model.module)
 dl = DeepLift(wrapper_model)
 
+all_attrs = []
+all_labels = []
+
+total_inference_samples = 0
+
+for data_v, labels_v in tqdm(val_loader, desc="DeepLIFT on val"):
+    data_v = data_v.to(device)
+    labels_v = labels_v.to(device)
+    with torch.no_grad():
+        embedded_input = model.module.token_emb(data_v)
+        outputs = model.module.to_out(embedded_input)
+        preds = outputs.argmax(dim=1)
+
+    total_inference_samples += data_v.size(0)
+
+    embedded_input = embedded_input.detach().clone().requires_grad_(True)
+    baseline = torch.zeros_like(embedded_input)
+
+    attributions = dl.attribute(inputs=embedded_input, baselines=baseline, target=labels_v)
+
+    all_attrs.append(attributions.detach().cpu().numpy())
+    all_labels.append(labels_v.detach().cpu().numpy())
+
+# gather from all ranks
+all_attrs_tensor = torch.tensor(np.concatenate(all_attrs, axis=0))
+all_labels_tensor = torch.tensor(np.concatenate(all_labels, axis=0))
+
+attrs_gather = [torch.zeros_like(all_attrs_tensor) for _ in range(dist.get_world_size())]
+labels_gather = [torch.zeros_like(all_labels_tensor) for _ in range(dist.get_world_size())]
+
+dist.all_gather(attrs_gather, all_attrs_tensor)
+dist.all_gather(labels_gather, all_labels_tensor)
+
+dist.barrier()
+
 if is_master:
-    all_attrs = []
-    all_labels = []
-
-    for data_v, labels_v in tqdm(val_loader, desc="DeepLIFT on val"):
-        data_v = data_v.to(device)
-        labels_v = labels_v.to(device)
-        with torch.no_grad():
-            embedded_input = model.module.token_emb(data_v)
-            outputs = model.module.to_out(embedded_input)
-            preds = outputs.argmax(dim=1)
-
-        correct_mask = (preds == labels_v)
-        if correct_mask.sum() == 0:
-            continue
-
-        data_correct = data_v[correct_mask]
-        labels_correct = labels_v[correct_mask]
-
-        embedded_input_correct = model.module.token_emb(data_correct)
-        baseline = torch.zeros_like(embedded_input_correct)
-
-        embedded_input_correct = embedded_input_correct.detach().clone().requires_grad_(True)
-        attributions = dl.attribute(inputs=embedded_input_correct, baselines=baseline, target=labels_correct)
-
-        all_attrs.append(attributions.detach().cpu().numpy())
-        all_labels.append(labels_correct.detach().cpu().numpy())
-
-    all_attrs = np.concatenate(all_attrs, axis=0)
-    all_labels = np.concatenate(all_labels, axis=0)
+    all_attrs = torch.cat(attrs_gather, dim=0).numpy()
+    all_labels = torch.cat(labels_gather, dim=0).numpy()
 
     infer_label_counts = Counter(all_labels)
     val_total_sum = sum(val_label_counts.values())
     infer_total_sum = sum(infer_label_counts.values())
     print(f"Validation sample total = {val_total_sum} | Processed total = {infer_total_sum}")
+    print(f"Total samples processed by inference: {total_inference_samples}")
     if val_total_sum != infer_total_sum:
         print("\u26a0\ufe0f WARNING: Number of processed samples does not match validation dataset!")
 
@@ -223,5 +228,4 @@ if is_master:
     df_all.to_csv(os.path.join(args.output_dir, 'correct_deeplift_top_bottom15_genes.csv'), index=False)
     print(f"Saved results to {args.output_dir}correct_deeplift_top_bottom15_genes.csv")
 
-dist.barrier()
 dist.destroy_process_group()
