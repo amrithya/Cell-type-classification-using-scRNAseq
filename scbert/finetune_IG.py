@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import scanpy as sc
 import torch
-import tqdm
+from tqdm import tqdm
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.data.distributed import DistributedSampler
 import torch.distributed as dist
