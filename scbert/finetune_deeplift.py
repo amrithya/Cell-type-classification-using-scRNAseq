@@ -13,7 +13,7 @@ from performer_pytorch import PerformerLM
 from captum.attr import DeepLift
 from tqdm import tqdm
 from sklearn.model_selection import StratifiedShuffleSplit
-from collections import Counter
+from collections import Counter, defaultdict
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--local_rank", "--local-rank", type=int, default=-1)
@@ -148,6 +148,7 @@ if is_master:
 all_attrs = []
 all_labels = []
 correct_counts = Counter()
+total_counts = Counter()
 
 for batch_idx, (data_v, labels_v) in enumerate(tqdm(val_loader, desc="DeepLIFT on val")):
     data_v = data_v.to(device)
@@ -158,9 +159,12 @@ for batch_idx, (data_v, labels_v) in enumerate(tqdm(val_loader, desc="DeepLIFT o
         outputs = model.module.to_out(embedded_input)
         preds = outputs.argmax(dim=1)
 
+    for class_idx in labels_v.cpu().numpy():
+        total_counts[class_idx] += 1
+
     correct_mask = (preds == labels_v)
     if correct_mask.sum() == 0:
-        continue  # skip if no correct samples in batch
+        continue
 
     data_correct = data_v[correct_mask]
     labels_correct = labels_v[correct_mask]
@@ -179,13 +183,25 @@ for batch_idx, (data_v, labels_v) in enumerate(tqdm(val_loader, desc="DeepLIFT o
         all_attrs.append(attributions.detach().cpu().numpy())
         all_labels.append(labels_correct.detach().cpu().numpy())
 
-print("Completed DeepLIFT attribution on correctly predicted validation samples.")
+print("Completed DeepLIFT attribution.")
 dist.barrier()
 
 if is_master:
     print("Correctly predicted sample counts per class:")
     for class_idx in range(len(label_dict)):
-        print(f"{label_dict[class_idx]}: {correct_counts[class_idx]}")
+        print(f"{label_dict[class_idx]}: {correct_counts[class_idx]}/{total_counts[class_idx]}")
+
+    total_correct = sum(correct_counts.values())
+    total_seen = sum(total_counts.values())
+    acc_overall = total_correct / total_seen
+    print(f"Overall accuracy: {acc_overall:.4f}")
+
+    print("Per-class accuracy:")
+    for class_idx in range(len(label_dict)):
+        total = total_counts[class_idx]
+        correct = correct_counts[class_idx]
+        acc = correct / total if total > 0 else 0.0
+        print(f"{label_dict[class_idx]}: {acc:.4f}")
 
     all_attrs = np.concatenate(all_attrs, axis=0)
     all_labels = np.concatenate(all_labels, axis=0)
@@ -223,11 +239,8 @@ if is_master:
             })
 
     df_all = pd.DataFrame(results)
-    print(df_all.head(5))
     df_all.to_csv(os.path.join(args.output_dir, 'correct_deeplift_top_bottom15_genes.csv'), index=False, encoding='utf-8')
-    print(f"Saved DeepLIFT attribution results to {args.output_dir}correct_deeplift_top_bottom15_genes.csv")
-    df_test = pd.read_csv(os.path.join(args.output_dir, 'correct_deeplift_top_bottom15_genes.csv'), encoding='utf-8')
-    print(df_test.head())
+    print(f"Saved results to {args.output_dir}correct_deeplift_top_bottom15_genes.csv")
 
 dist.destroy_process_group()
 print("Distributed process group destroyed. Script finished.")
