@@ -102,6 +102,9 @@ val_dataset = SCDataset(data_val, label_val)
 val_sampler = DistributedSampler(val_dataset, shuffle=False)
 val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, sampler=val_sampler)
 
+print(f"Validation dataset size: {len(val_dataset)}")
+print(f"Number of batches per epoch: {len(val_loader)}")
+
 print("Building model...")
 model = PerformerLM(
     num_tokens=CLASS,
@@ -121,6 +124,7 @@ print("Loading finetuned checkpoint...")
 ckpt = torch.load(ckpt_path, map_location='cpu')
 model.module.load_state_dict(ckpt['model_state_dict'])
 model.eval()
+print("Checkpoint loaded successfully.")
 
 class ModelFromEmbeddings(torch.nn.Module):
     def __init__(self, model):
@@ -155,6 +159,8 @@ for batch_idx, (data_v, labels_v) in enumerate(tqdm(val_loader, desc="DeepLIFT o
     if is_master:
         all_attrs.append(attributions.detach().cpu().numpy())
         all_labels.append(labels_v.detach().cpu().numpy())
+
+print("Completed DeepLIFT attribution on validation set.")
 
 dist.barrier()
 
@@ -198,5 +204,7 @@ if is_master:
 
     df_all = pd.DataFrame(results)
     df_all.to_csv(os.path.join(args.output_dir, 'deeplift_top_bottom15_genes.csv'), index=False)
+    print(f"Saved DeepLIFT attribution results to {args.output_dir}/deeplift_top_bottom15_genes.csv")
 
 dist.destroy_process_group()
+print("Distributed process group destroyed. Script finished.")
