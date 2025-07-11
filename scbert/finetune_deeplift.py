@@ -54,7 +54,7 @@ class SCDataset(Dataset):
         full_seq = self.data[index].toarray()[0]
         full_seq[full_seq > (CLASS - 2)] = CLASS - 2
         full_seq = torch.from_numpy(full_seq).long()
-        full_seq = torch.cat((full_seq, torch.tensor([0]))).to(device)
+        full_seq = torch.cat((full_seq, torch.tensor([0])))
         seq_label = self.label[index]
         return full_seq, seq_label
 
@@ -92,11 +92,11 @@ print("Loading data...")
 data = sc.read_h5ad(args.data_path)
 label_dict, label = np.unique(np.array(data.obs['celltype']), return_inverse=True)
 label = torch.from_numpy(label)
-data = data.X
+data_X = data.X
 
 sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=SEED)
-for _, index_val in sss.split(data, label):
-    data_val, label_val = data[index_val], label[index_val]
+for _, index_val in sss.split(data_X, label):
+    data_val, label_val = data_X[index_val], label[index_val]
 
 val_dataset = SCDataset(data_val, label_val)
 val_sampler = DistributedSampler(val_dataset, shuffle=False)
@@ -121,9 +121,9 @@ ckpt_path = "/data1/data/corpus/scMODEL/finetune_full_model_Zheng68K.pkl"
 print("Loading finetuned checkpoint...")
 ckpt = torch.load(ckpt_path, map_location='cpu')
 model.module.load_state_dict(ckpt['model_state_dict'])
-
 model.eval()
 
+embedding_layer = model.module.token_emb
 dl = DeepLift(model.module)
 
 os.makedirs(args.output_dir, exist_ok=True)
@@ -134,28 +134,27 @@ if is_master:
 all_attrs = []
 all_labels = []
 
-with torch.no_grad():
-    for batch_idx, (data_v, labels_v) in enumerate(tqdm(val_loader, desc="DeepLIFT on val")):
-        data_v = data_v.to(device)
-        data_v.requires_grad = True
-        labels_v = labels_v.to(device)
-        baseline = torch.zeros_like(data_v).to(device)
-        attributions = dl.attribute(data_v, baselines=baseline, target=labels_v)
+for batch_idx, (data_v, labels_v) in enumerate(tqdm(val_loader, desc="DeepLIFT on val")):
+    data_v = data_v.to(device)
+    labels_v = labels_v.to(device)
+    embedded_input = embedding_layer(data_v)
+    baseline = torch.zeros_like(embedded_input).to(device)
+    attributions = dl.attribute(embedded_input, baselines=baseline, target=labels_v)
 
-        if is_master:
-            all_attrs.append(attributions.cpu().numpy())
-            all_labels.append(labels_v.cpu().numpy())
+    if is_master:
+        all_attrs.append(attributions.detach().cpu().numpy())
+        all_labels.append(labels_v.detach().cpu().numpy())
 
 dist.barrier()
 
 if is_master:
-    all_attrs = np.concatenate(all_attrs, axis=0)  # shape (N_samples, seq_len, ...)
-    all_labels = np.concatenate(all_labels, axis=0)  # shape (N_samples,)
+    all_attrs = np.concatenate(all_attrs, axis=0)
+    all_labels = np.concatenate(all_labels, axis=0)
 
     if all_attrs.ndim > 2:
         all_attrs = all_attrs.mean(axis=tuple(range(2, all_attrs.ndim)))
 
-    gene_attrs = all_attrs[:, :-1]  # exclude appended token
+    gene_attrs = all_attrs[:, :-1]
 
     results = {}
     for class_idx in np.unique(all_labels):
@@ -175,17 +174,28 @@ if is_master:
 
     gene_names = np.array(data.var_names) if hasattr(data, 'var_names') else np.array([f'gene_{i}' for i in range(SEQ_LEN - 1)])
 
+    all_class_results = []
+
     for class_idx, res in results.items():
         class_name = label_dict[class_idx]
         df_top = pd.DataFrame({
             'gene': gene_names[res['top15_genes']],
-            'attribution': res['top15_values']
+            'attribution': res['top15_values'],
+            'rank': list(range(1, 16)),
+            'type': 'top',
+            'class': class_name
         })
         df_bottom = pd.DataFrame({
             'gene': gene_names[res['bottom15_genes']],
-            'attribution': res['bottom15_values']
+            'attribution': res['bottom15_values'],
+            'rank': list(range(1, 16)),
+            'type': 'bottom',
+            'class': class_name
         })
-        df_top.to_csv(os.path.join(args.output_dir, f'{class_name}_top15_genes.csv'), index=False)
-        df_bottom.to_csv(os.path.join(args.output_dir, f'{class_name}_bottom15_genes.csv'), index=False)
+        all_class_results.append(df_top)
+        all_class_results.append(df_bottom)
+
+    final_df = pd.concat(all_class_results, ignore_index=True)
+    final_df.to_csv(os.path.join(args.output_dir, 'deeplift_gene_attributions.csv'), index=False)
 
 dist.destroy_process_group()
