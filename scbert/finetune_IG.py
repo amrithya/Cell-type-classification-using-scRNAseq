@@ -150,6 +150,7 @@ for batch_idx, (seqs, labels) in enumerate(val_loader):
         torch.cuda.empty_cache()
         attr, delta = lig.attribute(inputs=input_ids,
                                     baselines=baseline_ids,
+                                    target=labels[i].item(),
                                     n_steps=5,
                                     return_convergence_delta=True)
         attr_sum = attr.sum(dim=-1).squeeze(0)
