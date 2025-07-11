@@ -106,7 +106,13 @@ val_sampler = DistributedSampler(val_dataset, shuffle=False)
 val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, sampler=val_sampler)
 
 print(f"Validation dataset size: {len(val_dataset)}")
-print(f"Number of batches per epoch: {len(val_loader)}")
+
+# NEW: Show class distribution in validation set
+if is_master:
+    val_label_counts = Counter(label_val.numpy())
+    print("Validation samples per class (before inference):")
+    for class_idx in range(len(label_dict)):
+        print(f"{label_dict[class_idx]}: {val_label_counts[class_idx]}")
 
 print("Building model...")
 model = PerformerLM(
@@ -202,6 +208,17 @@ if is_master:
         correct = correct_counts[class_idx]
         acc = correct / total if total > 0 else 0.0
         print(f"{label_dict[class_idx]}: {acc:.4f}")
+
+    # NEW: Sanity check
+    print("Total samples processed per class during inference:")
+    for class_idx in range(len(label_dict)):
+        print(f"{label_dict[class_idx]}: {total_counts[class_idx]}")
+    
+    val_total_sum = sum(val_label_counts.values())
+    infer_total_sum = sum(total_counts.values())
+    print(f"Validation sample total = {val_total_sum} | Processed total = {infer_total_sum}")
+    if val_total_sum != infer_total_sum:
+        print("⚠️ WARNING: Number of processed samples does not match validation dataset!")
 
     all_attrs = np.concatenate(all_attrs, axis=0)
     all_labels = np.concatenate(all_labels, axis=0)
