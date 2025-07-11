@@ -203,7 +203,7 @@ if is_master:
 
     df_all = pd.DataFrame(results)
     df_all.to_csv(os.path.join(args.output_dir, 'deeplift_top_bottom15_genes.csv'), index=False)
-    print(f"Saved DeepLIFT attribution results to {args.output_dir}/deeplift_top_bottom15_genes.csv")
+    print(f"Saved DeepLIFT attribution results to {args.output_dir}deeplift_top_bottom15_genes.csv")
 
 dist.destroy_process_group()
 print("Distributed process group destroyed. Script finished.")
