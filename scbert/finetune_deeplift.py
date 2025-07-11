@@ -36,6 +36,7 @@ SEQ_LEN = args.gene_num + 1
 CLASS = args.bin_num + 2
 POS_EMBED_USING = args.pos_embed
 
+# Initialize distributed
 dist.init_process_group(backend='nccl')
 torch.cuda.set_device(local_rank)
 device = torch.device("cuda", local_rank)
@@ -63,16 +64,16 @@ class SCDataset(Dataset):
 
 class Identity(torch.nn.Module):
     def __init__(self, dropout=0., h_dim=100, out_dim=10):
-        super(Identity, self).__init__()
+        super().__init__()
         self.conv1 = torch.nn.Conv2d(1, 1, (1, 200))
         self.act = torch.nn.ReLU()
-        self.fc1 = torch.nn.Linear(in_features=SEQ_LEN, out_features=512, bias=True)
+        self.fc1 = torch.nn.Linear(in_features=SEQ_LEN, out_features=512)
         self.act1 = torch.nn.ReLU()
         self.dropout1 = torch.nn.Dropout(dropout)
-        self.fc2 = torch.nn.Linear(in_features=512, out_features=h_dim, bias=True)
+        self.fc2 = torch.nn.Linear(in_features=512, out_features=h_dim)
         self.act2 = torch.nn.ReLU()
         self.dropout2 = torch.nn.Dropout(dropout)
-        self.fc3 = torch.nn.Linear(in_features=h_dim, out_features=out_dim, bias=True)
+        self.fc3 = torch.nn.Linear(in_features=h_dim, out_features=out_dim)
 
     def forward(self, x):
         x = x[:, None, :, :]
@@ -88,15 +89,23 @@ class Identity(torch.nn.Module):
         x = self.fc3(x)
         return x
 
+class WrappedModel(torch.nn.Module):
+    def __init__(self, model):
+        super().__init__()
+        self.model = model
+
+    def forward(self, embedded_input):
+        return self.model.to_out(self.model.transformer(embedded_input))
+
 print("Loading data...")
 data = sc.read_h5ad(args.data_path)
 label_dict, label = np.unique(np.array(data.obs['celltype']), return_inverse=True)
 label = torch.from_numpy(label)
-data_X = data.X
+data = data.X
 
 sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=SEED)
-for _, index_val in sss.split(data_X, label):
-    data_val, label_val = data_X[index_val], label[index_val]
+for _, index_val in sss.split(data, label):
+    data_val, label_val = data[index_val], label[index_val]
 
 val_dataset = SCDataset(data_val, label_val)
 val_sampler = DistributedSampler(val_dataset, shuffle=False)
@@ -117,14 +126,13 @@ model = model.to(device)
 model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[local_rank], output_device=local_rank)
 
 ckpt_path = "/data1/data/corpus/scMODEL/finetune_full_model_Zheng68K.pkl"
-
 print("Loading finetuned checkpoint...")
 ckpt = torch.load(ckpt_path, map_location='cpu')
 model.module.load_state_dict(ckpt['model_state_dict'])
 model.eval()
 
-embedding_layer = model.module.token_emb
-dl = DeepLift(model.module)
+wrapped_model = WrappedModel(model.module)
+dl = DeepLift(wrapped_model)
 
 os.makedirs(args.output_dir, exist_ok=True)
 
@@ -134,16 +142,20 @@ if is_master:
 all_attrs = []
 all_labels = []
 
-for batch_idx, (data_v, labels_v) in enumerate(tqdm(val_loader, desc="DeepLIFT on val")):
-    data_v = data_v.to(device)
-    labels_v = labels_v.to(device)
-    embedded_input = embedding_layer(data_v)
-    baseline = torch.zeros_like(embedded_input).to(device)
-    attributions = dl.attribute(embedded_input, baselines=baseline, target=labels_v)
+with torch.no_grad():
+    for batch_idx, (data_v, labels_v) in enumerate(tqdm(val_loader, desc="DeepLIFT on val")):
+        data_v = data_v.to(device)
+        labels_v = labels_v.to(device)
 
-    if is_master:
-        all_attrs.append(attributions.detach().cpu().numpy())
-        all_labels.append(labels_v.detach().cpu().numpy())
+        embedded_input = model.module.token_emb(data_v).detach()
+        embedded_input.requires_grad = True
+        baseline = model.module.token_emb(torch.zeros_like(data_v)).detach()
+
+        attributions = dl.attribute(embedded_input, baselines=baseline, target=labels_v)
+
+        if is_master:
+            all_attrs.append(attributions.cpu().numpy())
+            all_labels.append(labels_v.cpu().numpy())
 
 dist.barrier()
 
@@ -155,7 +167,6 @@ if is_master:
         all_attrs = all_attrs.mean(axis=tuple(range(2, all_attrs.ndim)))
 
     gene_attrs = all_attrs[:, :-1]
-
     results = {}
     for class_idx in np.unique(all_labels):
         class_mask = all_labels == class_idx
@@ -174,28 +185,28 @@ if is_master:
 
     gene_names = np.array(data.var_names) if hasattr(data, 'var_names') else np.array([f'gene_{i}' for i in range(SEQ_LEN - 1)])
 
-    all_class_results = []
+    all_entries = []
 
     for class_idx, res in results.items():
         class_name = label_dict[class_idx]
+
         df_top = pd.DataFrame({
+            'celltype': [class_name] * 15,
             'gene': gene_names[res['top15_genes']],
             'attribution': res['top15_values'],
-            'rank': list(range(1, 16)),
-            'type': 'top',
-            'class': class_name
+            'rank_type': ['top'] * 15
         })
+
         df_bottom = pd.DataFrame({
+            'celltype': [class_name] * 15,
             'gene': gene_names[res['bottom15_genes']],
             'attribution': res['bottom15_values'],
-            'rank': list(range(1, 16)),
-            'type': 'bottom',
-            'class': class_name
+            'rank_type': ['bottom'] * 15
         })
-        all_class_results.append(df_top)
-        all_class_results.append(df_bottom)
 
-    final_df = pd.concat(all_class_results, ignore_index=True)
-    final_df.to_csv(os.path.join(args.output_dir, 'deeplift_gene_attributions.csv'), index=False)
+        all_entries.append(df_top)
+        all_entries.append(df_bottom)
 
+    df_all = pd.concat(all_entries, ignore_index=True)
+    df_all.to_csv(os.path.join(args.output_dir, 'all_classes_top_bottom15_genes.csv'), index=False)
 dist.destroy_process_group()
