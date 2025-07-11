@@ -13,6 +13,7 @@ from performer_pytorch import PerformerLM
 from captum.attr import DeepLift
 from tqdm import tqdm
 from sklearn.model_selection import StratifiedShuffleSplit
+from collections import Counter
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--local_rank", "--local-rank", type=int, default=-1)
@@ -142,30 +143,50 @@ dl = DeepLift(wrapper_model)
 os.makedirs(args.output_dir, exist_ok=True)
 
 if is_master:
-    print(f"Running DeepLIFT attribution on full validation set with {len(val_loader)} batches")
+    print(f"Running DeepLIFT attribution on correctly predicted validation samples with {len(val_loader)} batches")
 
 all_attrs = []
 all_labels = []
+correct_counts = Counter()
 
 for batch_idx, (data_v, labels_v) in enumerate(tqdm(val_loader, desc="DeepLIFT on val")):
     data_v = data_v.to(device)
     labels_v = labels_v.to(device)
 
-    embedded_input = model.module.token_emb(data_v)
-    baseline = torch.zeros_like(embedded_input)
+    with torch.no_grad():
+        embedded_input = model.module.token_emb(data_v)
+        outputs = model.module.to_out(embedded_input)
+        preds = outputs.argmax(dim=1)
 
-    embedded_input = embedded_input.detach().clone().requires_grad_(True)
+    correct_mask = (preds == labels_v)
+    if correct_mask.sum() == 0:
+        continue  # skip if no correct samples in batch
 
-    attributions = dl.attribute(inputs=embedded_input, baselines=baseline, target=labels_v)
+    data_correct = data_v[correct_mask]
+    labels_correct = labels_v[correct_mask]
+
+    batch_counts = Counter(labels_correct.cpu().numpy())
+    for class_idx, count in batch_counts.items():
+        correct_counts[class_idx] += count
+
+    embedded_input_correct = model.module.token_emb(data_correct)
+    baseline = torch.zeros_like(embedded_input_correct)
+
+    embedded_input_correct = embedded_input_correct.detach().clone().requires_grad_(True)
+    attributions = dl.attribute(inputs=embedded_input_correct, baselines=baseline, target=labels_correct)
 
     if is_master:
         all_attrs.append(attributions.detach().cpu().numpy())
-        all_labels.append(labels_v.detach().cpu().numpy())
+        all_labels.append(labels_correct.detach().cpu().numpy())
 
-print("Completed DeepLIFT attribution on validation set.")
+print("Completed DeepLIFT attribution on correctly predicted validation samples.")
 dist.barrier()
 
 if is_master:
+    print("Correctly predicted sample counts per class:")
+    for class_idx in range(len(label_dict)):
+        print(f"{label_dict[class_idx]}: {correct_counts[class_idx]}")
+
     all_attrs = np.concatenate(all_attrs, axis=0)
     all_labels = np.concatenate(all_labels, axis=0)
 
