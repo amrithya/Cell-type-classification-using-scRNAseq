@@ -167,7 +167,8 @@ for data_v, labels_v in tqdm(val_loader, desc="DeepLIFT on val"):
     all_attrs.append(attributions.detach().cpu().numpy())
     all_labels.append(labels_v.detach().cpu().numpy())
 
-# gather from all ranks
+    torch.cuda.empty_cache()
+
 all_attrs_tensor = torch.tensor(np.concatenate(all_attrs, axis=0))
 all_labels_tensor = torch.tensor(np.concatenate(all_labels, axis=0))
 
