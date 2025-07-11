@@ -19,7 +19,7 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
 poetry run python -u -m torch.distributed.launch --nproc_per_node=2 --master_port=$MASTER_PORT finetune_IG.py \
     --data_path "/data1/data/corpus/scDATA/Zheng68K.h5ad" \
-    --model_path "/data1/data/corpus/scMODEL/panglao_pretrain.pth"
+    --model_path "/data1/data/corpus/scMODEL/finetune_full_model_Zheng68K.pkl"
 
 echo "All Done at $(date)!"
 wait
