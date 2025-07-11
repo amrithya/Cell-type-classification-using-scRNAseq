@@ -148,7 +148,7 @@ for batch_idx, (data_v, labels_v) in enumerate(tqdm(val_loader, desc="DeepLIFT o
     embedded_input = model.module.token_emb(data_v)
     baseline = torch.zeros_like(embedded_input)
 
-    embedded_input.requires_grad = True
+    embedded_input = embedded_input.detach().clone().requires_grad_(True)
 
     attributions = dl.attribute(inputs=embedded_input, baselines=baseline, target=labels_v)
 
