@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import scanpy as sc
 import torch
+import tqdm
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.data.distributed import DistributedSampler
 import torch.distributed as dist
@@ -129,7 +130,6 @@ model.eval()
 print(f"[RANK {rank}] Model moved to device: {device} and set to eval mode.")
 
 def model_forward(input_ids):
-    print(f"[RANK {rank}] model_forward input_ids shape: {input_ids.shape}, dtype: {input_ids.dtype}")
     input_ids = input_ids.long().to(device)
     return model(input_ids)
 
@@ -148,7 +148,11 @@ print(f"[RANK {rank}] Starting attribution loop on {len(val_loader)} batches..."
 
 attr_accumulator = defaultdict(list)
 
-for batch_idx, (seqs, labels) in enumerate(val_loader):
+val_iter = val_loader
+if is_master:
+    val_iter = tqdm(val_loader, desc=f"[RANK {rank}] IG Attribution")
+
+for batch_idx, (seqs, labels) in enumerate(val_iter):
     for i in range(seqs.size(0)):
         input_ids, baseline_ids = construct_input_and_baseline(seqs[i])
         torch.cuda.empty_cache()
