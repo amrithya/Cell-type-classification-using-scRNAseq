@@ -73,7 +73,7 @@ class Identity(torch.nn.Module):
         self.fc2 = torch.nn.Linear(in_features=512, out_features=h_dim, bias=True)
         self.act2 = torch.nn.ReLU()
         self.dropout2 = torch.nn.Dropout(dropout)
-        self.fc3 = torch.nn.Linear(in_features=h_dim, out_features=out_dim, bias=True)
+        self.fc3 = torch.nn.Linear(in_features=h_dim, out_features=11, bias=True)
 
     def forward(self, x):
         x = x[:, None, :, :]
@@ -92,13 +92,13 @@ class Identity(torch.nn.Module):
 data = sc.read_h5ad(args.data_path)
 label_dict, label = np.unique(np.array(data.obs['celltype']), return_inverse=True)
 label = torch.from_numpy(label)
-data = data.X
+data_matrix = data.X
 
-print(f"[RANK {rank}] Loaded data: {data.shape}, Labels: {label.shape}")
+print(f"[RANK {rank}] Loaded data: {data_matrix.shape}, Labels: {label.shape}")
 
 sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=SEED)
-for _, index_val in sss.split(data, label):
-    data_val, label_val = data[index_val], label[index_val]
+for _, index_val in sss.split(data_matrix, label):
+    data_val, label_val = data_matrix[index_val], label[index_val]
 
 print(f"[RANK {rank}] Validation split: {data_val.shape}, Labels: {label_val.shape}")
 
@@ -117,7 +117,7 @@ model = PerformerLM(
 )
 model.to_out = Identity(dropout=0., h_dim=128, out_dim=11)
 
-ckpt_path = "/data1/data/corpus/scMODEL/finetune_full_model_Zheng68K.pkl"
+ckpt_path = args.model_path  # Using argument now
 ckpt = torch.load(ckpt_path, map_location='cpu')
 model.load_state_dict(ckpt['model_state_dict'])
 
@@ -145,7 +145,6 @@ def construct_input_and_baseline(seq):
 val_sampler.set_epoch(0)
 print(f"[RANK {rank}] Starting attribution loop on {len(val_loader)} batches...")
 
-
 attr_accumulator = defaultdict(list)
 
 val_iter = val_loader
@@ -153,28 +152,47 @@ if is_master:
     val_iter = tqdm(val_loader, desc=f"[RANK {rank}] IG Attribution")
 
 for batch_idx, (seqs, labels) in enumerate(val_iter):
+    with torch.no_grad():
+        outputs = model(seqs.to(device))
+        preds = torch.argmax(outputs, dim=1)
     for i in range(seqs.size(0)):
-        input_ids, baseline_ids = construct_input_and_baseline(seqs[i])
-        torch.cuda.empty_cache()
-        attr, delta = lig.attribute(inputs=input_ids,
-                                    baselines=baseline_ids,
-                                    target=labels[i].item(),
-                                    n_steps=5,
-                                    return_convergence_delta=True)
-        attr_sum = attr.sum(dim=-1).squeeze(0)
-        attr_accumulator[labels[i].item()].append(attr_sum.detach().cpu())
+        if preds[i] == labels[i].to(device):
+            input_ids, baseline_ids = construct_input_and_baseline(seqs[i])
+            torch.cuda.empty_cache()
+            attr, delta = lig.attribute(inputs=input_ids,
+                                        baselines=baseline_ids,
+                                        target=labels[i].item(),
+                                        n_steps=5,
+                                        return_convergence_delta=True)
+            attr_sum = attr.sum(dim=-1).squeeze(0)
+            attr_accumulator[labels[i].item()].append(attr_sum.detach().cpu())
 
 if is_master:
     os.makedirs(args.output_dir, exist_ok=True)
     records = []
-    for cls, attr_list in attr_accumulator.items():
+    for cls_idx, attr_list in attr_accumulator.items():
         cls_attr = torch.stack(attr_list).mean(dim=0)
         topk = torch.topk(cls_attr, 15)
         bottomk = torch.topk(-cls_attr, 15)
-        for rank, idx in enumerate(topk.indices.tolist()):
-            records.append({"class": cls, "rank": rank + 1, "type": "top", "gene_index": idx, "score": topk.values[rank].item()})
-        for rank, idx in enumerate(bottomk.indices.tolist()):
-            records.append({"class": cls, "rank": rank + 1, "type": "bottom", "gene_index": idx, "score": -bottomk.values[rank].item()})
+        class_name = label_dict[cls_idx]
+        for rank, gene_idx in enumerate(topk.indices.tolist()):
+            gene_name = data.var_names[gene_idx]
+            records.append({
+                "class": class_name,
+                "rank": rank + 1,
+                "type": "top",
+                "gene_name": gene_name,
+                "score": topk.values[rank].item()
+            })
+        for rank, gene_idx in enumerate(bottomk.indices.tolist()):
+            gene_name = data.var_names[gene_idx]
+            records.append({
+                "class": class_name,
+                "rank": rank + 1,
+                "type": "bottom",
+                "gene_name": gene_name,
+                "score": -bottomk.values[rank].item()
+            })
     df = pd.DataFrame(records)
     df.to_csv(os.path.join(args.output_dir, 'IG_top_bottom_genes_per_class.csv'), index=False)
 
