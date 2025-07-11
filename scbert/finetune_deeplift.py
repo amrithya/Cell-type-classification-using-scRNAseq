@@ -89,10 +89,12 @@ class Identity(torch.nn.Module):
         return x
 
 print("Loading data...")
-data = sc.read_h5ad(args.data_path)
-label_dict, label = np.unique(np.array(data.obs['celltype']), return_inverse=True)
+adata = sc.read_h5ad(args.data_path)
+gene_names = np.array(adata.var_names)
+
+label_dict, label = np.unique(np.array(adata.obs['celltype']), return_inverse=True)
 label = torch.from_numpy(label)
-data = data.X
+data = adata.X
 
 sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=SEED)
 for _, index_val in sss.split(data, label):
@@ -161,7 +163,6 @@ for batch_idx, (data_v, labels_v) in enumerate(tqdm(val_loader, desc="DeepLIFT o
         all_labels.append(labels_v.detach().cpu().numpy())
 
 print("Completed DeepLIFT attribution on validation set.")
-
 dist.barrier()
 
 if is_master:
@@ -173,8 +174,6 @@ if is_master:
 
     gene_attrs = all_attrs[:, :-1]
     results = []
-
-    gene_names = np.array(data.var_names) if hasattr(data, 'var_names') else np.array([f'gene_{i}' for i in range(SEQ_LEN - 1)])
 
     for class_idx in np.unique(all_labels):
         class_mask = all_labels == class_idx
