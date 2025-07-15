@@ -3,32 +3,32 @@ import os
 from glob import glob
 
 input_dir = '/data1/data/corpus/scDATA/cancer/data/pc_UterusG_eac'
-combined_path = os.path.join(input_dir, 'pc_UterusG_eac_combined.csv')
-
-if os.path.exists(combined_path):
-    os.remove(combined_path)
-    print(f"Deleted existing file: {combined_path}\n")
-
 csv_files = glob(os.path.join(input_dir, '*.csv'))
 
-reference_columns = None
-mismatched_files = []
+column_sets = {}
+all_equal = True
 
 for file_path in csv_files:
-    df = pd.read_csv(file_path)
+    df = pd.read_csv(file_path, nrows=1)
     file_name = os.path.basename(file_path)
-    print(f"File: {file_name}")
-    print(f"Shape: {df.shape}")
-    #print(f"Columns: {list(df.columns)}\n")
+    columns = list(df.columns)
+    column_sets[file_name] = columns
 
-    if reference_columns is None:
-        reference_columns = list(df.columns)
-    elif list(df.columns) != reference_columns:
-        mismatched_files.append((file_name, list(df.columns)))
+reference_file, reference_columns = next(iter(column_sets.items()))
 
-if mismatched_files:
-    print("Mismatched column files:")
-    for fname, cols in mismatched_files:
-        print(f"- {fname} columns: {cols}")
+for fname, cols in column_sets.items():
+    if cols != reference_columns:
+        all_equal = False
+        print(f"{fname} has different columns.")
+        missing = set(reference_columns) - set(cols)
+        extra = set(cols) - set(reference_columns)
+        if missing:
+            print(f"  Missing: {missing}")
+        if extra:
+            print(f"  Extra: {extra}")
+        print()
+        
+if all_equal:
+    print("All CSV files have identical feature (column) names.")
 else:
-    print("All files have matching columns.")
+    print("Some files have mismatched columns.")
