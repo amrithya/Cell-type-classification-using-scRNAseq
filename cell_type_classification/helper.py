@@ -83,7 +83,7 @@ def load_data(samp,cluster, smote):
                 adata_test.write('/data1/data/corpus/scDATA/Zheng68K_smote_data_test.h5ad')
         else:
             print("Preprocessing raw data without SMOTE on cluster")
-            adata = sc.read_h5ad('/data1/data/corpus/scDATA/Zheng68K.h5ad')
+            adata = sc.read_h5ad('/data1/data/corpus/scDATA/cancer/data/pc_UterusG_eac/pc_UterusG_eac.h5ad')
             gene_names = adata.var_names
             X_train, y_train, X_test, y_test, le = preprocess_data(adata, samp, cluster)
 
@@ -116,7 +116,7 @@ def load_data(samp,cluster, smote):
 def log_norm(adata):
     #sc.pp.normalize_total(adata, target_sum=1e4)
     #sc.pp.log1p(adata)
-    cell_type_series = adata.obs['celltype']
+    cell_type_series = adata.obs['class']
     le = LabelEncoder()
     y = le.fit_transform(cell_type_series)
     X = adata.X
