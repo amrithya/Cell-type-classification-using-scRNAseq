@@ -10,4 +10,3 @@ for file_path in csv_files:
     file_name = os.path.basename(file_path)
     print(f"File: {file_name}")
     print(f"Shape: {df.shape}")
-    print(f"Columns: {list(df.columns)}\n")
