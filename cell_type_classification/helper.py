@@ -368,6 +368,7 @@ def evaluate_model(clf, X, y, label_encoder=None, mode="",model="",samp=""):
     results_file = os.path.join(results_dir, f"results_file_{model}_{'smote' if samp else 'raw'}.csv")
     if os.path.exists(results_file):
         os.remove(results_file)
+    print("Results", df)
     df.to_csv(results_file, mode='a', header=not os.path.exists(results_file), index=False)
     print(f"Results saved to {results_file}")
 
