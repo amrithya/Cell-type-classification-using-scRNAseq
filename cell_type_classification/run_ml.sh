@@ -14,7 +14,7 @@
 
 
 poetry run python -u gene_final.py \
-    -m sgd \
+    -m rf \
     -c \
 
 echo "All Done at $(date)!"
