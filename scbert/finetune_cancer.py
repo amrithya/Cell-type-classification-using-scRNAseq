@@ -27,6 +27,7 @@ from utils import *
 import pickle as pkl
 from tqdm import tqdm
 
+# === Argument Parser ===
 parser = argparse.ArgumentParser()
 parser.add_argument("--local_rank", "--local-rank", type=int, default=-1)
 parser.add_argument("--bin_num", type=int, default=5)
@@ -42,8 +43,8 @@ parser.add_argument("--data_path", type=str, default='./data/Zheng68K.h5ad')
 parser.add_argument("--model_path", type=str, default='./panglao_pretrained.pth')
 parser.add_argument("--ckpt_dir", type=str, default='./ckpts/')
 parser.add_argument("--model_name", type=str, default='finetune')
-
 args = parser.parse_args()
+
 rank = int(os.environ["RANK"])
 local_rank = args.local_rank
 is_master = local_rank == 0
@@ -55,13 +56,10 @@ GRADIENT_ACCUMULATION = args.grad_acc
 LEARNING_RATE = args.learning_rate
 SEQ_LEN = args.gene_num + 1
 VALIDATE_EVERY = args.valid_every
-
 PATIENCE = 10
 UNASSIGN_THRES = 0.0
-
 CLASS = args.bin_num + 2
 POS_EMBED_USING = args.pos_embed
-
 model_name = args.model_name
 
 dist.init_process_group(backend='nccl')
@@ -72,7 +70,6 @@ world_size = torch.distributed.get_world_size()
 seed_all(SEED + torch.distributed.get_rank())
 
 ckpt_path = f"/data1/data/corpus/scMODEL/{model_name}_full_model_cancer.pkl"
-
 ckpt_dir = f"/data1/data/corpus/scMODEL/{model_name}_model_cancer.pkl"
 
 print(f"[Init] Seed: {SEED}, Epochs: {EPOCHS}, Batch size: {BATCH_SIZE}, LR: {LEARNING_RATE}")
@@ -90,14 +87,12 @@ class SCDataset(Dataset):
         full_seq[full_seq > (CLASS - 2)] = CLASS - 2
         full_seq = torch.from_numpy(full_seq).long()
         full_seq = torch.cat((full_seq, torch.tensor([0]))).to(device)
-
         seq_label = int(self.label[rand_start])
         return full_seq, torch.tensor(seq_label, dtype=torch.long, device=device)
 
     def __len__(self):
         return self.data.shape[0]
 
- 
 class Identity(torch.nn.Module):
     def __init__(self, dropout = 0., h_dim = 100, out_dim = 10):
         super(Identity, self).__init__()
@@ -213,7 +208,6 @@ loss_fn = nn.CrossEntropyLoss(weight=None).to(local_rank)
 dist.barrier()
 trigger_times = 0
 max_acc = 0.0
-
 start_epoch = 1
 
 if os.path.exists(ckpt_path):
