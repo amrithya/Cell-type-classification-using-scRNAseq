@@ -32,7 +32,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--local_rank", "--local-rank", type=int, default=-1)
 parser.add_argument("--bin_num", type=int, default=5)
 parser.add_argument("--gene_num", type=int, default=16906)
-parser.add_argument("--epoch", type=int, default=50)
+parser.add_argument("--epoch", type=int, default=15)
 parser.add_argument("--seed", type=int, default=2021)
 parser.add_argument("--batch_size", type=int, default=4)
 parser.add_argument("--learning_rate", type=float, default=1e-4)
@@ -70,6 +70,8 @@ world_size = torch.distributed.get_world_size()
 seed_all(SEED + torch.distributed.get_rank())
 
 ckpt_path = f"/data1/data/corpus/scMODEL/{model_name}_full_model_cancer.pkl"
+if os.path.exists(ckpt_path):
+    os.remove(ckpt_path)
 ckpt_dir = f"/data1/data/corpus/scMODEL/{model_name}_model_cancer.pkl"
 
 print(f"[Init] Seed: {SEED}, Epochs: {EPOCHS}, Batch size: {BATCH_SIZE}, LR: {LEARNING_RATE}")
@@ -187,7 +189,7 @@ for param in model.parameters():
     param.data = param.data.float()
 for param in model.norm.parameters():
     param.requires_grad = True
-for param in model.performer.net.layers[-2].parameters():
+for param in model.performer.net.layers[-2:].parameters():
     param.requires_grad = True
 
 model.to_out = Identity(dropout=0., h_dim=128, out_dim=label_dict_cancer.shape[0])
