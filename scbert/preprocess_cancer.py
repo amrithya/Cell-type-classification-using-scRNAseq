@@ -21,5 +21,5 @@ new.obs = data.obs
 new.uns = panglao.uns
 
 sc.pp.filter_cells(new, min_genes=200)
-new.write('./data/preprocessed_data_pc_UterusG_eac_bert.h5ad')
+new.write('/data1/data/corpus/scDATA/cancer/data/pc_UterusG_eac/preprocessed_data_pc_UterusG_eac_bert.h5ad')
 print(new.shape)
