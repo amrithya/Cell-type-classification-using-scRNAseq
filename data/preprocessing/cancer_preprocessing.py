@@ -1,9 +1,12 @@
 import pandas as pd
 import os
 from glob import glob
+import scanpy as sc
+import scipy.sparse as sp
 
 input_dir = '/data1/data/corpus/scDATA/cancer/data/pc_UterusG_eac'
 combined_path = os.path.join(input_dir, 'pc_UterusG_eac_combined.csv')
+output_h5ad = os.path.join(input_dir, 'pc_UterusG_eac.h5ad')
 
 if os.path.exists(combined_path):
     df = pd.read_csv(combined_path)
@@ -19,9 +22,21 @@ else:
         df['class'] = os.path.splitext(file_name)[0]
         all_dfs.append(df)
 
-    combined_df = pd.concat(all_dfs, ignore_index=True)
+    df = pd.concat(all_dfs, ignore_index=True)
     print("\nCombined DataFrame preview:")
-    print(combined_df.head())
-
-    combined_df.to_csv(combined_path, index=False)
+    print(df.head())
+    df.to_csv(combined_path, index=False)
     print(f"\nCombined CSV saved to {combined_path}")
+
+df = pd.read_csv(combined_path)
+
+df = df.set_index('gene_id')
+X = df.drop(columns=['class'])
+obs = pd.DataFrame({'class': df['class']})
+obs.index = df.index
+var = pd.DataFrame(index=X.columns)
+X_sparse = sp.csr_matrix(X.values)
+
+adata = sc.AnnData(X=X_sparse, obs=obs, var=var)
+adata.write(output_h5ad, compression='gzip')
+print(f"Saved: {output_h5ad}")
