@@ -14,7 +14,6 @@ from scipy.sparse import issparse
 from imblearn.over_sampling import SMOTE
 from sklearn.linear_model import SGDClassifier
 from sklearn.preprocessing import LabelEncoder
-from lime.lime_tabular import LimeTabularExplainer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from torch.utils.data import DataLoader, TensorDataset

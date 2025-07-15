@@ -41,7 +41,6 @@ def run_model(model,X_train, y_train, X_test, y_test, samp, le):
         h.evaluate_model(lr, X_train, y_train,le,"train",model,samp)
         h.evaluate_model(lr, X_test, y_test,le,"test",model,samp)
         #shap_values, explainer = xai.shap_explain(lr, X_test, y_test, le)
-        #h.lime_explain(lr, X_train, X_test,le,"lr")
     elif model == "rf":
         rf = h.train_rf(X_train, y_train)
         h.evaluate_model(rf, X_train, y_train, le,"train",model,samp)
