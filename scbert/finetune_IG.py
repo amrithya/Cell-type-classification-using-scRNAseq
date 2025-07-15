@@ -164,7 +164,8 @@ for batch_idx, (seqs, labels) in enumerate(val_iter):
             correct_preds[true_label] += 1
             input_ids, baseline_ids = construct_input_and_baseline(seqs[i])
             torch.cuda.empty_cache()
-            attr, delta = lig.attribute(inputs=input_ids,
+            if torch.distributed.get_rank() == 0:
+                attr, delta = lig.attribute(inputs=input_ids,
                                         baselines=baseline_ids,
                                         target=true_label,
                                         n_steps=5,
