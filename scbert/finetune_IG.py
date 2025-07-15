@@ -164,14 +164,19 @@ for batch_idx, (seqs, labels) in enumerate(val_iter):
             correct_preds[true_label] += 1
             input_ids, baseline_ids = construct_input_and_baseline(seqs[i])
             torch.cuda.empty_cache()
-            if torch.distributed.get_rank() == 0:
-                attr, delta = lig.attribute(inputs=input_ids,
-                                        baselines=baseline_ids,
-                                        target=true_label,
-                                        n_steps=5,
-                                        return_convergence_delta=True)
-            attr_sum = attr.sum(dim=-1).squeeze(0)
-            attr_accumulator[true_label].append(attr_sum.detach().cpu())
+            print("torch.distributed.get_rank()", torch.distributed.get_rank())
+            if dist.get_rank() == 0:
+                attr, delta = lig.attribute(
+                    inputs=input_ids,
+                    baselines=baseline_ids,
+                    target=true_label,
+                    n_steps=5,
+                    return_convergence_delta=True
+                )
+                attr_sum = attr.sum(dim=-1).squeeze(0)
+                attr_accumulator[true_label].append(attr_sum.detach().cpu())
+
+            dist.barrier()
 
 print(f"[RANK {rank}] Processed {total_samples} validation samples")
 
