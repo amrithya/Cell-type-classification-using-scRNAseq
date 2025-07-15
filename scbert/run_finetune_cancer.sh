@@ -16,7 +16,7 @@
 export CUDA_LAUNCH_BLOCKING=1
 
 poetry run python -m torch.distributed.launch --nproc_per_node=2 finetune_cancer.py \
-    --data_path "/data1/data/corpus/scDATA/cancer/data/pc_UterusG_eac/pc_UterusG_eac.h5ad" \
+    --data_path "/data1/data/corpus/scDATA/cancer/data/pc_UterusG_eac/preprocessed_data_pc_UterusG_eac_bert.h5ad" \
     --model_path "/data1/data/corpus/scMODEL/panglao_pretrain.pth"
 
 echo "All Done at $(date)!"
