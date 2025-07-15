@@ -85,17 +85,19 @@ class SCDataset(Dataset):
         self.label = label
 
     def __getitem__(self, index):
-        rand_start = random.randint(0, self.data.shape[0]-1)
-        full_seq = self.data[rand_start].toarray()[0]
+        rand_start = random.randint(0, self.data.shape[0] - 1)
+        full_seq = self.data[rand_start].toarray()[0].astype(np.int64)
         full_seq[full_seq > (CLASS - 2)] = CLASS - 2
         full_seq = torch.from_numpy(full_seq).long()
         full_seq = torch.cat((full_seq, torch.tensor([0]))).to(device)
-        seq_label = self.label[rand_start]
-        return full_seq, seq_label
+
+        seq_label = int(self.label[rand_start])
+        return full_seq, torch.tensor(seq_label, dtype=torch.long, device=device)
 
     def __len__(self):
         return self.data.shape[0]
 
+ 
 class Identity(torch.nn.Module):
     def __init__(self, dropout = 0., h_dim = 100, out_dim = 10):
         super(Identity, self).__init__()
@@ -133,7 +135,7 @@ try:
         pkl.dump(label_cancer, fp)
     class_num = np.unique(label_cancer, return_counts=True)[1].tolist()
     class_weight = torch.tensor([(1 - (x / sum(class_num))) ** 2 for x in class_num])
-    label = torch.from_numpy(label_cancer)
+    label = torch.tensor(label_cancer, dtype=torch.long)
     data = data.X
 except Exception as e:
     print(f"[ERROR] Data loading failed: {e}")
