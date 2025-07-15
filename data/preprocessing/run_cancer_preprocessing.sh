@@ -13,7 +13,7 @@
 #SBATCH --array=1
 
 
-poetry run python -u cancer_preprocessing.py
+python -u cancer_preprocessing.py
 
 echo "All Done at $(date)!"
 wait
