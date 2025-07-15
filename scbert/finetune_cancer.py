@@ -184,13 +184,14 @@ except Exception as e:
 
 for param in model.parameters():
     param.requires_grad = False
+    param.data = param.data.float()
 for param in model.norm.parameters():
     param.requires_grad = True
 for param in model.performer.net.layers[-2].parameters():
     param.requires_grad = True
 
 model.to_out = Identity(dropout=0., h_dim=128, out_dim=label_dict_cancer.shape[0])
-model = model.to(device)
+model = model.to(device).to(dtype=torch.float32)
 model = DDP(model, device_ids=[local_rank], output_device=local_rank)
 
 optimizer = Adam(model.parameters(), lr=LEARNING_RATE)
@@ -273,10 +274,12 @@ for i in range(start_epoch, start_epoch + 1):
             if index % GRADIENT_ACCUMULATION != 0:
                 with model.no_sync():
                     logits = model(data)
+                    logits = logits.float() 
                     loss = loss_fn(logits, labels)
                     loss.backward()
             if index % GRADIENT_ACCUMULATION == 0:
                 logits = model(data)
+                logits = logits.float() 
                 loss = loss_fn(logits, labels)
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(model.parameters(), int(1e6))
