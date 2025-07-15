@@ -27,9 +27,14 @@ parser.add_argument("--model_path", type=str, default='./panglao_pretrained.pth'
 parser.add_argument("--output_dir", type=str, default='./IG_outputs/')
 args = parser.parse_args()
 
-rank = int(os.environ["RANK"])
+dist.init_process_group(backend='nccl')
+rank = dist.get_rank()
+world_size = dist.get_world_size()
 local_rank = args.local_rank
-is_master = local_rank == 0
+is_master = rank == 0
+
+torch.cuda.set_device(local_rank)
+device = torch.device("cuda", local_rank)
 
 SEED = args.seed
 BATCH_SIZE = args.batch_size
@@ -37,17 +42,13 @@ SEQ_LEN = args.gene_num + 1
 CLASS = args.bin_num + 2
 POS_EMBED_USING = args.pos_embed
 
-dist.init_process_group(backend='nccl')
-torch.cuda.set_device(local_rank)
-device = torch.device("cuda", local_rank)
-
 random.seed(SEED + rank)
+np.random.seed(SEED + rank)
 torch.manual_seed(SEED + rank)
 torch.cuda.manual_seed_all(SEED + rank)
 
 class SCDataset(Dataset):
     def __init__(self, data, label):
-        super().__init__()
         self.data = data
         self.label = label
 
@@ -64,16 +65,16 @@ class SCDataset(Dataset):
 
 class Identity(torch.nn.Module):
     def __init__(self, dropout=0., h_dim=100, out_dim=10):
-        super(Identity, self).__init__()
+        super().__init__()
         self.conv1 = torch.nn.Conv2d(1, 1, (1, 200))
         self.act = torch.nn.ReLU()
-        self.fc1 = torch.nn.Linear(in_features=SEQ_LEN, out_features=512, bias=True)
+        self.fc1 = torch.nn.Linear(in_features=SEQ_LEN, out_features=512)
         self.act1 = torch.nn.ReLU()
         self.dropout1 = torch.nn.Dropout(dropout)
-        self.fc2 = torch.nn.Linear(in_features=512, out_features=h_dim, bias=True)
+        self.fc2 = torch.nn.Linear(512, h_dim)
         self.act2 = torch.nn.ReLU()
         self.dropout2 = torch.nn.Dropout(dropout)
-        self.fc3 = torch.nn.Linear(in_features=h_dim, out_features=11, bias=True)
+        self.fc3 = torch.nn.Linear(h_dim, out_dim)
 
     def forward(self, x):
         x = x[:, None, :, :]
@@ -94,16 +95,18 @@ label_dict, label = np.unique(np.array(data.obs['celltype']), return_inverse=Tru
 label = torch.from_numpy(label)
 data_matrix = data.X
 
-print(f"[RANK {rank}] Loaded data: {data_matrix.shape}, Labels: {label.shape}")
+if is_master:
+    print(f"[RANK {rank}] Loaded data: {data_matrix.shape}, Labels: {label.shape}")
 
 sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=SEED)
 for _, index_val in sss.split(data_matrix, label):
     data_val, label_val = data_matrix[index_val], label[index_val]
 
-print(f"[RANK {rank}] Validation split: {data_val.shape}, Labels: {label_val.shape}")
+if is_master:
+    print(f"[RANK {rank}] Validation split: {data_val.shape}, Labels: {label_val.shape}")
 
 val_dataset = SCDataset(data_val, label_val)
-val_sampler = DistributedSampler(val_dataset, shuffle=False)
+val_sampler = DistributedSampler(val_dataset, num_replicas=world_size, rank=rank, shuffle=False, drop_last=False)
 val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, sampler=val_sampler)
 
 model = PerformerLM(
@@ -118,12 +121,12 @@ model = PerformerLM(
 model.to_out = Identity(dropout=0., h_dim=128, out_dim=11)
 
 ckpt = torch.load(args.model_path, map_location='cpu')
-model.load_state_dict(ckpt['model_state_dict'])
+model.load_state_dict(ckpt['model_state_dict'], strict=False)
 
-print(f"[RANK {rank}] Loaded model checkpoint from: {args.model_path}")
+if is_master:
+    print(f"[RANK {rank}] Loaded model checkpoint from: {args.model_path}")
 
-model = model.float()
-model.to(device)
+model = model.float().to(device)
 model.eval()
 
 def model_forward(input_ids):
@@ -143,16 +146,18 @@ val_sampler.set_epoch(0)
 attr_accumulator = defaultdict(list)
 total_preds = Counter()
 correct_preds = Counter()
+total_samples = 0
 
 val_iter = tqdm(val_loader, desc=f"[RANK {rank}] IG Attribution") if is_master else val_loader
 
 for batch_idx, (seqs, labels) in enumerate(val_iter):
     with torch.no_grad():
-        outputs = model(seqs.to(device))
+        outputs = model(seqs)
         preds = torch.argmax(outputs, dim=1)
     for i in range(seqs.size(0)):
         true_label = labels[i].item()
         pred_label = preds[i].item()
+        total_samples += 1
         total_preds[pred_label] += 1
         if pred_label == true_label:
             correct_preds[true_label] += 1
@@ -165,6 +170,8 @@ for batch_idx, (seqs, labels) in enumerate(val_iter):
                                         return_convergence_delta=True)
             attr_sum = attr.sum(dim=-1).squeeze(0)
             attr_accumulator[true_label].append(attr_sum.detach().cpu())
+
+print(f"[RANK {rank}] Processed {total_samples} validation samples")
 
 if is_master:
     print("\nClass prediction stats:")
