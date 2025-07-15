@@ -261,7 +261,7 @@ else:
 
 print(f"[INFO] Starting training from epoch {start_epoch}.")
 
-for i in range(start_epoch, start_epoch + 1):
+for i in range(start_epoch, EPOCHS):
     train_loader.sampler.set_epoch(i)
     model.train()
     dist.barrier()
