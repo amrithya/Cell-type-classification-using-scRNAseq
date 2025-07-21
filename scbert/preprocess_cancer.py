@@ -2,7 +2,7 @@ import scanpy as sc, numpy as np, pandas as pd, anndata as ad
 from scipy import sparse
 
 panglao = sc.read_h5ad('/data1/data/corpus/scDATA/panglao_human.h5ad')
-data = sc.read_h5ad('/data1/data/corpus/scDATA/cancer/data/pc_UterusG_eac/pc_UterusG_eac.h5ad')
+data = sc.read_h5ad('/data1/data/corpus/scDATA/cancer/data/mt_kidney_rcc_cca_paa_2/grade/mt_kidney_rcc_cca_paa_2.h5ad')
 
 counts = sparse.lil_matrix((data.X.shape[0], panglao.X.shape[1]), dtype=np.float32)
 ref = panglao.var_names.tolist()
@@ -21,5 +21,5 @@ new.obs = data.obs
 new.uns = panglao.uns
 
 sc.pp.filter_cells(new, min_genes=200)
-new.write('/data1/data/corpus/scDATA/cancer/data/pc_UterusG_eac/preprocessed_data_pc_UterusG_eac_bert.h5ad')
+new.write('/data1/data/corpus/scDATA/cancer/data/mt_kidney_rcc_cca_paa_2/grade/preprocessed_data_mt_kidney_rcc_cca_paa_2.h5ad')
 print(new.shape)
