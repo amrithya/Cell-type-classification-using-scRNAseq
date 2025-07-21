@@ -2,7 +2,7 @@ import scanpy as sc
 import scipy.sparse as sp
 import numpy as np
 
-adata_path = '/data1/data/corpus/scDATA/cancer/data/pc_UterusG_eac/pc_UterusG_eac.h5ad'
+adata_path = '/data1/data/corpus/scDATA/cancer/data/mt_kidney_rcc_cca_paa_2/grade/mt_kidney_rcc_cca_paa_2.h5ad'
 adata = sc.read_h5ad(adata_path)
 
 print(adata)

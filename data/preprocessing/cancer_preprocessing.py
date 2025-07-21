@@ -4,13 +4,13 @@ from glob import glob
 import scanpy as sc
 import scipy.sparse as sp
 
-input_dir = '/data1/data/corpus/scDATA/cancer/data/pc_UterusG_eac'
-combined_path = os.path.join(input_dir, 'pc_UterusG_eac_combined.csv')
-output_h5ad = os.path.join(input_dir, 'pc_UterusG_eac.h5ad')
+input_dir = '/data1/data/corpus/scDATA/cancer/data/mt_kidney_rcc_cca_paa_2/grade'
+combined_path = os.path.join(input_dir, 'mt_kidney_rcc_cca_paa_2_combined.csv')
+output_h5ad = os.path.join(input_dir, 'mt_kidney_rcc_cca_paa_2.h5ad')
 
 if os.path.exists(combined_path):
     df = pd.read_csv(combined_path)
-    print(f"pc_UterusG_eac_combined.csv shape: {df.shape}")
+    print(f"mt_kidney_rcc_cca_paa_2_combined.csv shape: {df.shape}")
 else:
     csv_files = glob(os.path.join(input_dir, '*.csv'))
     all_dfs = []
