@@ -69,10 +69,10 @@ world_size = torch.distributed.get_world_size()
 
 seed_all(SEED + torch.distributed.get_rank())
 
-ckpt_path = f"/data1/data/corpus/scMODEL/{model_name}_full_model_cancer.pkl"
+ckpt_path = f"/data1/data/corpus/scMODEL/{model_name}_full_model_cancer_kidney.pkl"
 if os.path.exists(ckpt_path):
     os.remove(ckpt_path)
-ckpt_dir = f"/data1/data/corpus/scMODEL/{model_name}_model_cancer.pkl"
+ckpt_dir = f"/data1/data/corpus/scMODEL/{model_name}_model_cancer_kidney.pkl"
 
 print(f"[Init] Seed: {SEED}, Epochs: {EPOCHS}, Batch size: {BATCH_SIZE}, LR: {LEARNING_RATE}")
 print(f"[Init] Using {world_size} GPUs, local_rank: {local_rank}")
@@ -336,7 +336,7 @@ for i in range(start_epoch, EPOCHS):
         if cur_acc > max_acc:
             max_acc = cur_acc
             trigger_times = 0
-            save_ckpt(i, model, optimizer, scheduler, val_loss, model_name)
+            save_ckpt_cancer(i, model, optimizer, scheduler, val_loss, model_name)
         else:
             trigger_times += 1
             if trigger_times > PATIENCE:
