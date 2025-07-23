@@ -103,10 +103,7 @@ class Identity(torch.nn.Module):
         self.fc1 = nn.Linear(in_features=SEQ_LEN, out_features=512, bias=True)
         self.act1 = nn.ReLU()
         self.dropout1 = nn.Dropout(dropout)
-        self.fc2 = nn.Linear(in_features=512, out_features=h_dim, bias=True)
-        self.act2 = nn.ReLU()
-        self.dropout2 = nn.Dropout(dropout)
-        self.fc3 = nn.Linear(in_features=h_dim, out_features=out_dim, bias=True)
+        self.fc3 = nn.Linear(in_features=512, out_features=out_dim, bias=True)
 
     def forward(self, x):
         x = x[:,None,:,:]
@@ -116,15 +113,13 @@ class Identity(torch.nn.Module):
         x = self.fc1(x)
         x = self.act1(x)
         x = self.dropout1(x)
-        x = self.fc2(x)
-        x = self.act2(x)
-        x = self.dropout2(x)
         x = self.fc3(x)
         return x
 
 try:
     print("Loading data...")
     data = sc.read_h5ad(args.data_path)
+    print(f"Shape: {data.shape}")
     label_dict_cancer, label_cancer = np.unique(np.array(data.obs['class']), return_inverse=True)
     with open('label_dict_cancer', 'wb') as fp:
         pkl.dump(label_dict_cancer, fp)
@@ -189,7 +184,7 @@ for param in model.parameters():
     param.data = param.data.float()
 for param in model.norm.parameters():
     param.requires_grad = True
-for param in model.performer.net.layers[-2:].parameters():
+for param in model.performer.net.layers[-2].parameters():
     param.requires_grad = True
 
 model.to_out = Identity(dropout=0., h_dim=128, out_dim=label_dict_cancer.shape[0])
@@ -342,7 +337,7 @@ for i in range(start_epoch, EPOCHS):
         if cur_acc > max_acc:
             max_acc = cur_acc
             trigger_times = 0
-            save_ckpt_cancer(i, model, optimizer, scheduler, val_loss, model_name)
+            save_ckpt(i, model, optimizer, scheduler, val_loss, model_name)
         else:
             trigger_times += 1
             if trigger_times > PATIENCE:
