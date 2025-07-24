@@ -169,13 +169,17 @@ def main():
                 else:
                     totalcount = gexpr_feature.iloc[i,:].sum()
 
+                eps = 1e-8
+                safe_totalcount = max(totalcount, eps)
+                log_totalcount = np.log10(safe_totalcount)
+
                 # select resolution
                 if args.tgthighres[0] == 'f':
-                    pretrain_gene_x = torch.tensor(tmpdata+[np.log10(totalcount*float(args.tgthighres[1:])),np.log10(totalcount)]).unsqueeze(0).cuda()
+                    pretrain_value = np.log10(safe_totalcount * float(args.tgthighres[1:]))
                 elif args.tgthighres[0] == 'a':
-                    pretrain_gene_x = torch.tensor(tmpdata+[np.log10(totalcount)+float(args.tgthighres[1:]),np.log10(totalcount)]).unsqueeze(0).cuda()
+                    pretrain_value = log_totalcount + float(args.tgthighres[1:])
                 elif args.tgthighres[0] == 't':
-                    pretrain_gene_x = torch.tensor(tmpdata+[float(args.tgthighres[1:]),np.log10(totalcount)]).unsqueeze(0).cuda()
+                    pretrain_value = float(args.tgthighres[1:])
                 else:
                     raise ValueError('tgthighres must be start with f, a or t')
                 data_gene_ids = torch.arange(19266, device=pretrain_gene_x.device).repeat(pretrain_gene_x.shape[0], 1)
