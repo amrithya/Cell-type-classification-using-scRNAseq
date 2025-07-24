@@ -105,6 +105,7 @@ def main():
     test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
 
     num_classes = len(train_dataset.label_map)
+    print(f"Number of classes: {num_classes}")
     model = LinearProbingClassifier(ckpt_path='/data1/data/corpus/scMODEL/scfoundation/models.ckpt', n_class=num_classes)
     model.build()
     model = model.to(device)
