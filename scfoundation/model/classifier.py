@@ -112,8 +112,8 @@ def interpret_with_shap(shap_layer, embeddings, adata, token_weights, background
     }
 
 def main():
-    embedding_path = '/data1/data/corpus/scDATA/scfoundation/cell-anno_cell-anno_singlecell_cell_embedding_t4_resolution.npy'
-    label_path = '/data1/data/corpus/scDATA/scfoundation/Zheng68K_foundation.h5ad'
+    embedding_path = '/data1/data/corpus/scDATA/scfoundation/mt_kidney_rcc_cca_paa_2_scf.npy'
+    label_path = '/data1/data/corpus/scDATA/cancer/data/mt_kidney_rcc_cca_paa_2/grade/mt_kidney_rcc_cca_paa_2.h5ad'
 
     print("[DEBUG] Loading embeddings and labels")
     embeddings = np.load(embedding_path)
@@ -150,7 +150,7 @@ def main():
 
     print("[DEBUG] Extracting first FC layer weights for SHAP interpretation")
     token_weights = model.fc[0].weight.detach().cpu().numpy()
-    shap_results = interpret_with_shap(model.fc[0], embeddings, adata, token_weights, background_samples=100, n_genes=15)
+    # shap_results = interpret_with_shap(model.fc[0], embeddings, adata, token_weights, background_samples=100, n_genes=15)
 
 if __name__ == '__main__':
     main()

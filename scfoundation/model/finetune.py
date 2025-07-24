@@ -94,7 +94,7 @@ def evaluate(model, dataloader, device):
 
 def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    full_df = pd.read_csv('/data1/data/corpus/scDATA/Zheng68K_scf_preprocessed.csv', index_col=0)
+    full_df = pd.read_csv('/data1/data/corpus/scDATA/cancer/data/mt_kidney_rcc_cca_paa_2/grade/mt_kidney_rcc_cca_paa_2_scf_preprocessed.csv', index_col=0)
     train_df, test_df = train_test_split(full_df, test_size=0.2, stratify=full_df['label'], random_state=42)
     train_df.to_csv('train_temp.csv')
     test_df.to_csv('test_temp.csv')
