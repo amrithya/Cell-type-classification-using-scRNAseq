@@ -69,7 +69,7 @@ def save_ckpt_cancer(epoch, model, optimizer, scheduler, losses, model_name):
     """
     Save checkpoint including epoch, model, optimizer, scheduler states and losses.
     """
-    save_path = f"/data1/data/corpus/scMODEL/{model_name}_full_model_cancer_kidney.pkl"
+    save_path = f"/data1/data/corpus/scMODEL/{model_name}_full_model_cancer_kidney_lr.pkl"
     ckpt_dir = os.path.dirname(save_path)
     if not os.path.exists(ckpt_dir):
         os.makedirs(ckpt_dir)
