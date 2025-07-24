@@ -37,7 +37,7 @@ class LinearProbingClassifier(nn.Module):
 def load_labels(path):
     print(f"[DEBUG] Loading labels from {path}")
     adata = sc.read_h5ad(path)
-    labels = adata.obs['celltype'].values
+    labels = adata.obs['class'].values
     print(f"[DEBUG] Loaded {len(labels)} labels")
     le = LabelEncoder()
     labels_encoded = le.fit_transform(labels)
