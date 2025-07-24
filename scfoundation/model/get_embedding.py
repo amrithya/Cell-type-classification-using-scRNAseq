@@ -182,6 +182,9 @@ def main():
                     pretrain_value = float(args.tgthighres[1:])
                 else:
                     raise ValueError('tgthighres must be start with f, a or t')
+                
+                pretrain_gene_x = torch.tensor(tmpdata + [pretrain_value, log_totalcount]).unsqueeze(0).cuda()
+
                 data_gene_ids = torch.arange(19266, device=pretrain_gene_x.device).repeat(pretrain_gene_x.shape[0], 1)
 
             value_labels = pretrain_gene_x > 0
