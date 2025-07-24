@@ -31,7 +31,7 @@ from tqdm import tqdm
 parser = argparse.ArgumentParser()
 parser.add_argument("--local_rank", "--local-rank", type=int, default=-1)
 parser.add_argument("--bin_num", type=int, default=5)
-parser.add_argument("--gene_num", type=int, default=1136)
+parser.add_argument("--gene_num", type=int, default=16906)
 parser.add_argument("--epoch", type=int, default=15)
 parser.add_argument("--seed", type=int, default=2021)
 parser.add_argument("--batch_size", type=int, default=4)
