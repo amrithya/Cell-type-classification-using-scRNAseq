@@ -256,7 +256,9 @@ def main():
                 raise ValueError('output_type must be cell or gene or gene_batch or gene_expression')
     geneexpemb = np.squeeze(np.array(geneexpemb))
     print(geneexpemb.shape)
+
     np.save(strname,geneexpemb)
+    print('Embedding saved at {}'.format(strname))
     
 
 if __name__=='__main__':
