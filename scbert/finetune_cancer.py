@@ -103,7 +103,10 @@ class Identity(torch.nn.Module):
         self.fc1 = nn.Linear(in_features=SEQ_LEN, out_features=512, bias=True)
         self.act1 = nn.ReLU()
         self.dropout1 = nn.Dropout(dropout)
-        self.fc3 = nn.Linear(in_features=512, out_features=out_dim, bias=True)
+        self.fc2 = nn.Linear(in_features=512, out_features=h_dim, bias=True)
+        self.act2 = nn.ReLU()
+        self.dropout2 = nn.Dropout(dropout)
+        self.fc3 = nn.Linear(in_features=h_dim, out_features=out_dim, bias=True)
 
     def forward(self, x):
         x = x[:,None,:,:]
@@ -113,6 +116,9 @@ class Identity(torch.nn.Module):
         x = self.fc1(x)
         x = self.act1(x)
         x = self.dropout1(x)
+        x = self.fc2(x)
+        x = self.act2(x)
+        x = self.dropout2(x)
         x = self.fc3(x)
         return x
 
