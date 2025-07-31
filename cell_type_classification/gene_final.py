@@ -121,7 +121,8 @@ if __name__ == "__main__":
                 for lr in lr_rates:
                     model, test_accuracy, train_accuracy, test_correct_indices = nnm.train_nn(device, train_data, test_data, lr, weights, input_size, output_size, dropout, hidden_size)
                     results.append((hidden_size, lr, dropout, train_accuracy, test_accuracy))
-                    nnm.shap_explain_nn(model, train_data, test_data, gene_names, le, device=device)
+                    nnm.analyze_gradient_input_classwise(model, X_test, y_test, test_correct_indices, gene_names, le, device)
+                    #nnm.shap_explain_nn(model, train_data, test_data, gene_names, le, device=device)
                     #lrp = nnm.LRP(model)
                     #nnm.analyze_lrp_classwise(model, lrp, X_test, y_test, test_correct_indices, gene_names, le, device)
         

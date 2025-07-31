@@ -285,6 +285,72 @@ def train_gru(device, train_data, test_data, lr_rate, weights, input_size, outpu
     return model, final_acc, epoch_accuracy, final_correct_indices
 
 
+def analyze_gradient_input_classwise(model, X_test, y_test, test_correct_indices, gene_names, le, device):
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    results_dir = os.path.join(base_dir, 'results')
+    os.makedirs(results_dir, exist_ok=True)
+
+    results_file = os.path.join(results_dir, "nn_top_bottom15_genes_all_classes_from_gradient_input.csv")
+
+    num_classes = int(y_test.max() + 1)
+    class_names = le.inverse_transform(np.arange(num_classes))
+    feature_dim = gene_names.shape[0]
+    class_relevance = torch.zeros((num_classes, feature_dim), device=device)
+    class_counts = torch.zeros(num_classes, dtype=torch.int)
+
+    model.eval()
+    for idx in test_correct_indices:
+        sample_slice = X_test[idx:idx+1]
+        if issparse(sample_slice):
+            sample_slice = sample_slice.toarray()
+
+        label = y_test[idx]
+        sample_input = torch.tensor(sample_slice, dtype=torch.float32, requires_grad=True).to(device)
+        if sample_input.ndim == 1:
+            sample_input = sample_input.unsqueeze(0)
+
+        model.zero_grad()
+        output = model(sample_input)
+        class_score = output[0, label]
+        class_score.backward()
+
+        gradient = sample_input.grad.detach()
+        relevance = (gradient * sample_input).squeeze(0)
+
+        class_relevance[label] += relevance
+        class_counts[label] += 1
+
+    for c in range(num_classes):
+        if class_counts[c] > 0:
+            class_relevance[c] /= class_counts[c]
+
+    records = []
+    for c in range(num_classes):
+        relevance = class_relevance[c].cpu().numpy()
+        top_indices = np.argsort(relevance)[-15:][::-1]
+        bottom_indices = np.argsort(relevance)[:15]
+
+        top_genes = [gene_names[i] for i in top_indices]
+        bottom_genes = [gene_names[i] for i in bottom_indices]
+        class_name = class_names[c]
+
+        for i in range(15):
+            records.append({
+                "class": class_name,
+                "rank": i + 1,
+                "top_gene": top_genes[i],
+                "top_score": relevance[top_indices[i]],
+                "bottom_gene": bottom_genes[i],
+                "bottom_score": relevance[bottom_indices[i]]
+            })
+
+    df = pd.DataFrame(records)
+    if os.path.exists(results_file):
+        os.remove(results_file)
+    df.to_csv(results_file, mode='a', header=True, index=False)
+
+
+
 def analyze_lrp_classwise(model, lrp, X_test, y_test, test_correct_indices, gene_names, le, device):
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
