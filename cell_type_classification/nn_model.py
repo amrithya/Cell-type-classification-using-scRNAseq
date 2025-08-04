@@ -305,9 +305,11 @@ def analyze_gradient_input_classwise(model, X_test, y_test, test_correct_indices
             sample_slice = sample_slice.toarray()
 
         label = y_test[idx]
-        sample_input = torch.tensor(sample_slice, dtype=torch.float32, requires_grad=True).to(device)
+        sample_input = torch.from_numpy(sample_slice.astype(np.float32))
         if sample_input.ndim == 1:
             sample_input = sample_input.unsqueeze(0)
+        sample_input = sample_input.to(device)
+        sample_input.requires_grad_()
 
         model.zero_grad()
         output = model(sample_input)
