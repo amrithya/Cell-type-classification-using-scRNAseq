@@ -328,7 +328,7 @@ def analyze_gradient_input_classwise(model, X_test, y_test, test_correct_indices
 
     records = []
     for c in range(num_classes):
-        relevance = class_relevance[c].cpu().numpy()
+        relevance = class_relevance[c].detach().cpu().numpy()
         top_indices = np.argsort(relevance)[-15:][::-1]
         bottom_indices = np.argsort(relevance)[:15]
 
