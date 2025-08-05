@@ -16,6 +16,7 @@
 poetry run python -u gene_final.py \
     -m rf \
     -c \
+    -d
 
 echo "All Done at $(date)!"
 wait
