@@ -9,20 +9,19 @@ cell_type_classification/
 │
 ├── poetry_demo/              # Example or test project managed by Poetry
 ├── results/                  # Output directory for trained models, logs, and metrics
-├── sc-foundation-lr/         # Likely stores pretrained models or learning rate experiments
-├── tests/                    # Unit and integration tests
+├── sc-foundation-lr/         # Replicated LR from sc-foundation-eval repo 
+├── tests/                    # Tests for your setup
 │
-├── gene_final.py             # Finalized pipeline for gene-level classification
-├── helper.py                 # Utility functions used across the project
+├── gene_final.py             # Finalized pipeline for cell classification with basline ML
+├── helper.py                 # Utility functions
 ├── nn_model.py               # Neural network model definitions
 ├── preprocess.py             # Preprocessing pipeline for scRNA-seq data
-├── top_genes.py              # Extracts top/bottom influential genes
-├── xai_model.py              # Explainability/interpretability pipeline (e.g., SHAP/attention)
+├── top_genes.py              # Extracts feature importance ( not used as a main result)
+├── xai_model.py              # Explainability/interpretability pipeline (e.g., SHAP)
 │
 ├── run_gru.sh                # Run script for GRU-based models
 ├── run_ml.sh                 # Run script for baseline ML models (e.g., logistic regression, RF)
 ├── run_nn.sh                 # Run script for neural network training
-├── run_tests.sh              # Run unit tests
 ├── run_top_genes.sh          # Run script to extract top influential genes
 ├── run_xai.sh                # Run explainability pipeline
 │
@@ -39,9 +38,6 @@ This project uses Poetry for dependency management.
 ```bash
 # Install dependencies
 poetry install
-
-# Activate the virtual environment
-poetry shell
 ```
 
 ## Usage
@@ -82,11 +78,6 @@ bash run_top_genes.sh
 bash run_xai.sh
 ```
 
-### Run All Tests
-
-```bash
-bash run_tests.sh
-```
 
 ## Results
 
