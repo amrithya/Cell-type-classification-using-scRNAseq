@@ -151,9 +151,8 @@ if __name__ == "__main__":
             print(f"Hidden: {hidden_size}, LR: {lr}, Dropout: {dropout} => Train Accuracy: {train_acc:.2f}, Test Accuracy: {acc:.2f}%")
 
     else:
-        models = ["lr", "rf", "xg"]
-        for model_name in models:
-            print(f"Running model: {model_name}")
-            run_model(model_name, X_train, y_train, X_test, y_test, args.samp, le)
+        model_name = args.model
+        print(f"Running model: {model_name}")
+        run_model(model_name, X_train, y_train, X_test, y_test, args.samp, le)
     
 
