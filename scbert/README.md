@@ -22,5 +22,56 @@ The pre-trained model checkpoint can be downloaded from this link. If you have a
 
 https://drive.weixin.qq.com/s?k=AJEAIQdfAAoUxhXE7r
 
-## Usage in our project 
+# scBERT Experiments
+
+This folder contains scripts, utilities, and run pipelines for **fine-tuning scBERT** on scRNA-seq datasets (e.g., zheng and cancer).  
+It also includes scripts for **interpretability methods** such as Integrated Gradients, DeepLIFT, Gradient-based methods, SHAP, and Attention-based explanations.
+
+---
+
+## Folder Structure
+
+scbert/  
+│  
+├── IG_outputs/                 # Results from Integrated Gradients runs  
+├── archive/                    # Archived logs or older runs  
+├── ckpts/                      # Saved checkpoints of fine-tuned scBERT models  
+├── deeplift_outputs/           # Results from DeepLIFT interpretability runs  
+├── performer_pytorch/          # Performer-based transformer variant implementation  
+├── poetry_demo/                # Poetry demo environment  
+├── results/                    # Final metrics, outputs, logs  
+│  
+├── LICENSE                     # License file  
+├── README.md                   # Documentation for this folder  
+
+---
+
+## Key Scripts
+
+- **Fine-tuning**
+  - `finetune.py` – Base script for fine-tuning scBERT  
+  - `finetune_cancer.py` – Fine-tuning on cancer datasets  
+  - `finetune_lr.py` – Logistic regression head with scBERT embeddings  
+  - `besteffort_finetuning.py` – Optimized fine-tuning strategy  
+
+- **Interpretability**
+  - `finetune_IG.py` – Integrated Gradients  
+  - `finetune_deeplift.py` – DeepLIFT  
+  - `finetune_gradcam.py` – Gradient-based CAM  
+  - `finetune_shap.py` – SHAP  
+  - `finetune_attn.py` – Attention-based explanations  
+
+- **Run scripts**
+  - `run_finetune.sh` – Standard fine-tuning run  
+  - `run_finetune_IG.sh` – Run fine-tuning with Integrated Gradients  
+  - `run_finetune_deeplift.sh` – Run with DeepLIFT  
+  - `run_finetune_gradcam.sh` – Run with Grad-CAM  
+  - `run_finetune_shap.sh` – Run with SHAP  
+  - `run_finetune_attn.sh` – Run with Attention explanations  
+  - `run_cancer_preprocess.sh` – Preprocessing step for cancer datasets  
+
+- **Utilities**
+  - `utils.py` – Helper functions for preprocessing, training, or logging  
+
+---
 
