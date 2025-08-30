@@ -1,4 +1,4 @@
-# scRNAseq
+# Cell type classification using single cell RNAseq data
 
 This repository provides scripts, models, and utilities for **cell type classification** and experiments on single-cell RNA sequencing (scRNA-seq) data.  
 It covers baseline machine learning models, deep neural networks, explainability methods, and foundation models (e.g., scBERT, scFoundation).
